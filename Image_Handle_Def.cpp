@@ -28,7 +28,7 @@ using namespace std;
 #define KEY_LEFT 75
 #define KEY_RIGHT 77
 
-
+#define FaceDebug
 
 
 
@@ -214,6 +214,60 @@ void set_pixel_color(pixel &pix, char color) {
 		break;
 	}
 }
+void operator+(pixel &a, pixel  &b) {
+	a.r += b.r;
+	if (a.r > 255) {
+		a.r = a.r % 255;
+	}
+	a.b += b.b;
+	if (a.b > 255) {
+		a.b = a.b % 255;
+	}
+	a.g += b.g;
+	if (a.g > 255) {
+		a.g = a.g % 255;
+	}
+}
+bool operator==(pixel&a, pixel const &b) {
+	if (a.r == b.r && a.g == b.g && a.b == b.b) {
+		return true;
+	}
+	else { return false; }
+}
+bool operator!=(pixel&a, pixel const &b) {
+	if (a.b != b.b || a.r != b.r || a.g != b.g) {
+		return true;
+	}
+	else { return false; }
+}
+pixel &operator*(pixel const &a, pixel const &b) {
+	pixel ret;
+	ret.r = a.r*b.r;
+	if (ret.r > 255) {
+		ret.r = ret.r % 255;
+	}
+	ret.g = a.g*b.g;
+	if (ret.g > 255) {
+		ret.g = ret.g % 255;
+	}
+	ret.b = a.b*b.b;
+	if (ret.b > 255) {
+		ret.b = ret.b % 255;
+	}
+	ret.index_range = a.index_range;
+	return ret;
+}
+void operator+=(pixel &a ,pixel &b) {
+	a + b;
+}
+bool operator>(pixel &a, pixel &b) {
+	if (a.r > b.r && a.g > b.g && a.b > b.b) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
 
 void Image::color_set(char color_choice, int &index) {
 
@@ -285,7 +339,7 @@ Image::Image() {
 	this->image_data = NULL;
 	this->Height = 0;
 	this->width = 0;
-
+	this->Pixel_Matrix = nullptr;
 	this->channel = 0;
 	this->im_size = 0;
 	this->pos_X = 0;
@@ -300,6 +354,7 @@ Image::Image(unsigned char *image_data, int Height, int width, int channel) {
 	this->im_size = width * Height*channel;
 	this->pos_X = 0;
 	this->pos_Y = 0;
+	this->Pixel_Matrix = nullptr;
 
 
 
@@ -310,10 +365,18 @@ Image::Image(int Height, int width, int channel) {
 	this->channel = channel;
 	this->pos_X = 0;
 	this->pos_Y = 0;
+	this->Pixel_Matrix = nullptr;
+
 }
 Image::~Image() {
 	stbi_image_free(image_data);
 
+}
+int Image::getWidth() const {
+	return this->width;
+}
+int Image::getHeight()const {
+	return this->Height;
 }
 void Image::Load_Blank_Canvas() {
 	cout << "\nPlease Enter Height Of Image: ";
@@ -522,7 +585,7 @@ void Image::Load_Image() {
 	cin >> f_name;
 	strcpy(this->f_name, f_name);
 	this->image_data = stbi_load(f_name, &width, &Height, &channel, 3);
-
+	this->im_size = width * Height;
 	if (this->image_data == NULL) {
 		cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
 	}
@@ -533,6 +596,7 @@ void Image::Load_Image() {
 void Image::Load_Image(const char *f_name) {
 	strcpy(this->f_name, f_name);
 	this->image_data = stbi_load((char*)f_name, &width, &Height, &channel, 3);
+	this->im_size = width * Height;
 	if (this->image_data == NULL) {
 		cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
 	}
@@ -676,6 +740,14 @@ bool Image::operator==(Image const &b) {
 		return true;
 	}
 }
+bool Image::operator!=(Image const &b) {
+	if (this->operator==(b) == true) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
 
 void Image::init_pixel_matrix() {
 	int j = 0, k = 0, clock = 0;
@@ -696,6 +768,35 @@ void Image::init_pixel_matrix() {
 		Pixel_Matrix[j][k].b = (int)image_data[i + 2];
 		k++;
 		clock++;
+	}
+}
+void Image::init_pixel_matrix(const char *mode) {
+	char m1[9];
+	strcpy(m1, "Rewrite");
+	if (strcmp(mode, m1) == 0) {
+		if (Pixel_Matrix = nullptr) {
+			this->Pixel_Matrix = (pixel**)malloc(sizeof(pixel*)*Height);
+			for (int i = 0; i < Height; i++) {
+				Pixel_Matrix[i] = (pixel*)malloc(sizeof(pixel)*width);
+			}
+		}
+		else {
+
+			int j = 0, k = 0, clock = 0;
+			for (int i = 0; i < width*Height * 3; i += 3) {
+				if (clock == width) {
+					j++;
+					k = 0;
+					clock = 0;
+				}
+				Pixel_Matrix[j][k].index_range = i;
+				Pixel_Matrix[j][k].r = (int)image_data[i];
+				Pixel_Matrix[j][k].g = (int)image_data[i + 1];
+				Pixel_Matrix[j][k].b = (int)image_data[i + 2];
+				k++;
+				clock++;
+			}
+		}
 	}
 }
 pixel Image::Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols) {
@@ -884,6 +985,7 @@ void Image::Compress() {
 	
 	
 }
+
 void Image::Text_To_Image(const char *file_name)
 {
 	fstream file;
@@ -1014,8 +1116,10 @@ void Image::Insert_Text_Into_Image(const char *file_name, const char *Image_Name
 	file.close();
 }
 void Image::Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, const unsigned char color) {
-	init_pixel_matrix();
-	if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (center_x + s_width > width || center_y + s_height >= Height || center_x - s_width < 0 || center_y - s_height < 0) {
 		cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
 		cout << "Height Of Image: " << Height << endl;
 		cout << "Width Of Image: " << width << endl;
@@ -1047,7 +1151,9 @@ void Image::Draw_Square(const int center_x, const int center_y,
 	strcpy(mode_f, "Fill");
 	strcpy(mode_c, "Checkered");
 	if (strcmp(mode_f, mode) == 0) {
-		init_pixel_matrix();
+		if (this->Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
 			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
 			cout << "Height Of Image: " << Height << endl;
@@ -1062,7 +1168,11 @@ void Image::Draw_Square(const int center_x, const int center_y,
 		}
 	}
 	if (strcmp(mode_c, mode) == 0) {
-		init_pixel_matrix();
+		if (this->Pixel_Matrix == nullptr) {
+			if (this->Pixel_Matrix == nullptr) {
+				init_pixel_matrix();
+			}
+		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
 			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
 			cout << "Height Of Image: " << Height << endl;
@@ -1083,7 +1193,9 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 	char mode_c[10];
 	strcpy(mode_c, "Checkered");
 	if (strcmp(mode_c, mode) == 0) {
-		init_pixel_matrix();
+		if (this->Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
 			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
 			cout << "Height Of Image: " << Height << endl;
@@ -1099,10 +1211,12 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 	}
 }
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const unsigned char color) {
-	init_pixel_matrix();
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
 	int x, y, r2;
 	unsigned i = 0;
-	if (center_x + c_radius > width || center_x - c_radius <0 || center_y + c_radius > Height || center_y - c_radius < 0) {
+	if (center_x + c_radius >= width || center_x - c_radius <= 0 || center_y + c_radius >= Height || center_y - c_radius <= 0) {
 		cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
 		cout << "Height Of Image: " << Height << endl;
 		cout << "Width Of Image: " << width << endl;
@@ -1145,7 +1259,9 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	char mode_f[5];
 	strcpy(mode_f, "Fill");
 	if (strcmp(mode_f, mode)==0) {
-		init_pixel_matrix();
+		if (this->Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
 		int x, y;
 		unsigned i = 0;
 		if (center_x + c_radius > width || center_x - c_radius <0 || center_y + c_radius > Height || center_y - c_radius < 0) {
@@ -1161,10 +1277,1804 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 					Color_Spec(Pixel_Matrix[center_y+y][center_x +x].index_range, color);
 	}
 }
+void Image::Draw_Line(const int start_x, const int start_y, const int target_y, const unsigned char color) {
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	if (target_y > this->Height || start_y > this->Height || start_y < 0 || start_x > width || start_x < 0) {
+		cout << "Line Out Of Image Range\nDraw Action Aborted\n";
+		return;
+	}
+
+	if (start_y < target_y) {
+		for (int i = start_y; i < target_y; i++) {
+			Color_Spec(Pixel_Matrix[i][start_x].index_range, color);
+		}
+	}
+	else {
+		for (int i = start_y; i > target_y; i--) {
+			Color_Spec(Pixel_Matrix[i][start_x].index_range, color);
+		}
+	}
+
+}
+void Image:: Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, const unsigned char color) {
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	if (target_y > this->Height || start_y > this->Height || start_y < 0 || start_x > width || start_x < 0 || target_x > width) {
+		cout << "Line Out Of Image Range\nDraw Action Aborted\n";
+		return;
+	}
+	int marker = 0;
+
+	if (start_y == target_y) {
+		
+		if (target_x > start_x) {
+
+			for (int i = start_x; i < target_x; i++) {
+				Color_Spec(Pixel_Matrix[start_y][i].index_range, color);
+
+			}
+		}
+		else {
+			for (int i = start_x; i > target_x ; i--) {
+				Color_Spec(Pixel_Matrix[start_y][i].index_range, color);
+
+			}
+		}
+	}
+	else if(start_x == target_x){
+
+		if (target_y > start_y) {
+			for (int i = start_y; i < target_y; i++) {
+				Color_Spec(Pixel_Matrix[i][start_x].index_range, color);
+
+
+			}
+		}
+		else {
+			for (int i = start_y; i > target_y; i--) {
+				Color_Spec(Pixel_Matrix[i][start_x].index_range, color);
+
+
+			}
+		}
+	}
+	else if (start_x != target_x || start_y != target_y) {
+		int marker = 0;
+		if (start_y > target_y) {
+			if (target_x > start_x) {
+				marker = start_y;
+				for (int i = start_x; i < target_x; i++) {
+					Color_Spec(Pixel_Matrix[marker][i].index_range, color);
+					if (marker > target_y) {
+						marker--;
+					}
+				}
+			}
+			else {
+				marker = start_y;
+				for (int i = start_x; i > target_x; i--) {
+					Color_Spec(Pixel_Matrix[marker][i].index_range, color);
+					if (marker > target_y) {
+						marker--;
+					}
+				}
+			}
+		}
+		else {
+			if (target_x > start_x) {
+				marker = start_y;
+				for (int i = start_x; i < target_x; i++) {
+					Color_Spec(Pixel_Matrix[marker][i].index_range, color);
+					if (marker < target_y) {
+						marker++;
+					}
+				}
+			}
+			else {
+				marker = start_y;
+				for (int i = start_x; i > target_x; i--) {
+					Color_Spec(Pixel_Matrix[marker][i].index_range, color);
+					if (marker < target_y) {
+						marker++;
+					}
+				}
+			}
+		}
+	}
+}
 void Image::Get_Center(unsigned &center_x, unsigned &center_y)const {
 	center_x = width / 2;
 	center_y = Height / 2;
 }
+void Image::Grayscale() {
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	int index = 0;
+	for (int i = 0; i < Height; i++) {
+
+		for (int j = 0; j < width; j++) {
+
+			if (Pixel_Matrix[i][j].b >= Pixel_Matrix[i][j].r && Pixel_Matrix[i][j].b >= Pixel_Matrix[i][j].g) {
+				Pixel_Matrix[i][j].r = Pixel_Matrix[i][j].b;
+				Pixel_Matrix[i][j].g = Pixel_Matrix[i][j].b;
+			}
+			else if (Pixel_Matrix[i][j].r >= Pixel_Matrix[i][j].b &&Pixel_Matrix[i][j].r >= Pixel_Matrix[i][j].g) {
+				Pixel_Matrix[i][j].b = Pixel_Matrix[i][j].r;
+				Pixel_Matrix[i][j].g = Pixel_Matrix[i][j].r;
+			}
+			else if (Pixel_Matrix[i][j].g >= Pixel_Matrix[i][j].r &&Pixel_Matrix[i][j].g >= Pixel_Matrix[i][j].b) {
+				Pixel_Matrix[i][j].r = Pixel_Matrix[i][j].g;
+				Pixel_Matrix[i][j].b = Pixel_Matrix[i][j].g;
+			}
+
+		}
+	}
+
+	for (int i = 0; i < Height; i++) {
+
+		for (int j = 0; j < width; j++) {
+
+			image_data[index++] = Pixel_Matrix[i][j].r;
+			image_data[index++] = Pixel_Matrix[i][j].g;
+			image_data[index++] = Pixel_Matrix[i][j].b;
+
+		}
+	}
+
+}
+void Image::Convert_Grayscale() {
+	this->Grayscale();
+}
+
+int Image::Color_Distance(pixel const &a, pixel const &b){
+	int recored;
+	recored = (a.b - b.b) + (a.r - b.r) + (a.g - b.g);
+	if (recored < 0) {
+		recored *= -1;
+	}
+
+	return recored;
+}
+float Image::Color_DistanceSq(pixel const &a, pixel const &b) {
+	float  recored;
+	recored = (b.r - a.r)*(b.r - a.r) + (b.g - a.g)*(b.g - a.g) + (b.b - a.b)*(b.b - a.b);
+	return sqrt(recored);
+}
+bool Image::Distance_Neighbors(const float max_distance, int i, int j) {
+	pixel center, point;
+	center = Pixel_Matrix[i][j];
+	float dist = 0;
+	if (i - 1 < 0 && j+1 <width && j-1 > 0 && i+1 < Height) {
+		point = Pixel_Matrix[i][j+1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i][j-1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i + 1][j];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i+1][j - 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i+1][j + 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+
+	}
+	 if(i+1 > Height && j + 1 < width && j - 1 > 0 && i-1 >0)
+	{
+		 point = Pixel_Matrix[i][j + 1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i][j - 1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i-1][j];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i - 1][j+1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i - 1][j-1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+
+	}
+	 if (j-1 < 0 && i + 1 < Height && i - 1 > 0 && j +1 < width) {
+		 point = Pixel_Matrix[i+1][j];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i + 1][j+1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i -1][j + 1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i - 1][j];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i][j + 1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+	}
+	 if (j + 1 > width && i + 1 < Height && i - 1 > 0 && j-1 >0) {
+		 point = Pixel_Matrix[i][j -1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i-1][j];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i-1][j - 1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i+1][j];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+		 point = Pixel_Matrix[i + 1][j-1];
+		 dist = Color_DistanceSq(point, center);
+		 if (dist > max_distance) {
+			 return false;
+		 }
+	}
+
+	 return true;
+
+	
+}
+
+void Image::Mark_Identical_Pixels(pixel const &Target) {
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	
+	for (int i = 0; i < Height;i++) {
+		for (int j = 0; j < width; j++) {
+			if (Pixel_Matrix[i][j] == Target) {
+				this->Draw_Square(j,i, 2, 2, 'r');
+			}
+		}
+	}
+	
+}
+void Image::Mark_Identical_Pixels(Image &Source) {
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (Source.Pixel_Matrix == nullptr) {
+		Source.init_pixel_matrix();
+	}
+	if (this->im_size <= Source.im_size) {
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
+					this->Draw_Square(j, i, 2, 2, 'r');
+				}
+			}
+		}
+	}
+	else if (this->im_size > Source.im_size) {
+		for (int i = 0; i < Source.Height; i++) {
+			for (int j = 0; j < Source.width; j++) {
+				if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
+					this->Draw_Square(j, i, 2, 2, 'r');
+				}
+			}
+		}
+	}
+
+}
+void Image::Mark_Identical_Pixels(Image &Source,const char *mode) {
+	char m1[7] = "Strict";
+	char m2[6] = "Loose";
+
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (Source.Pixel_Matrix == nullptr) {
+		Source.init_pixel_matrix();
+	}
+	if (strcmp(m1, mode) == 0) {//strict
+		if (this->im_size <= Source.im_size) {
+			for (int i = 0; i < Height; i++) {
+				for (int j = 0; j < width; j++) {
+					if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
+						this->Draw_Square(j, i, 2, 2, 'r');
+					}
+				}
+			}
+		}
+		else if (this->im_size > Source.im_size) {
+			for (int i = 0; i < Source.Height; i++) {
+				for (int j = 0; j < Source.width; j++) {
+					if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
+						this->Draw_Square(j, i, 2, 2, 'r');
+					}
+				}
+			}
+		}
+	}
+	else if (strcmp(m2, mode) == 0) {//loose
+
+		if (this->im_size <= Source.im_size) {
+			for (int i = 0; i < Height; i++) {
+				for (int j = 0; j < width; j++) {
+					if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50 ) {
+						this->Draw_Square(j, i, 2, 2, 'r');
+					}
+				}
+			}
+		}
+		else if (this->im_size > Source.im_size) {
+			for (int i = 0; i < Source.Height; i++) {
+				for (int j = 0; j < Source.width; j++) {
+					if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50) {
+						this->Draw_Square(j, i, 2, 2, 'r');
+					}
+				}
+			}
+		}
+	}
+}
+
+void Image::Write_Pixel_Difference(Image &Source) {
+	if (this->width != Source.width || this->Height != Source.Height) {
+		return;
+	}
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (Source.Pixel_Matrix == nullptr) {
+		Source.init_pixel_matrix();
+	}
+	unsigned char *diffrence = (unsigned char*)calloc(this->width*this->Height * 3, sizeof(unsigned char));
+	int index = 0;
+	for (int i = 0; i < this->Height; i++) {
+		for (int j = 0; j < this->width; j++) {
+			if (Pixel_Matrix[i][j] != Source.Pixel_Matrix[i][j]) {
+				diffrence[Pixel_Matrix[i][j].index_range] = 255;
+				diffrence[Pixel_Matrix[i][j].index_range+1] = 0;
+				diffrence[Pixel_Matrix[i][j].index_range+2] = 0;
+			}
+		}
+	}
+	stbi_write_jpg("Pixel_Diffrence.jpg", this->width, this->Height, 3, diffrence, 100);
+}
+void Image::Write_Pixel_Difference(Image &Source,const char *mode, int min_diff) {
+	char m1[5];
+	strcpy(m1, "Copy");
+	if (strcmp(m1, mode) == 0) {
+		if (this->width != Source.width || this->Height != Source.Height) {
+			return;
+		}
+		if (this->Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
+		if (Source.Pixel_Matrix == nullptr) {
+			Source.init_pixel_matrix();
+		}
+		unsigned char *diffrence = (unsigned char*)calloc(this->width*this->Height * 3, sizeof(unsigned char));
+		int index = 0;
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				if (Color_Distance(Pixel_Matrix[i][j],Source.Pixel_Matrix[i][j]) > min_diff){
+					diffrence[Pixel_Matrix[i][j].index_range] = Pixel_Matrix[i][j].r;
+					diffrence[Pixel_Matrix[i][j].index_range + 1] = Pixel_Matrix[i][j].g;
+					diffrence[Pixel_Matrix[i][j].index_range + 2] = Pixel_Matrix[i][j].b;
+				}
+			}
+		}
+		stbi_write_jpg("Pixel_Diffrence.jpg", this->width, this->Height, 3, diffrence, 100);
+	}
+	else {
+		return;
+	}
+}
+
+void Image::Mark_Different_Pixels(Image &Source) {
+	if (this->width != Source.width || this->Height != Source.Height) {
+		return;
+	}
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (Source.Pixel_Matrix == nullptr) {
+		Source.init_pixel_matrix();
+	}
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			if (Pixel_Matrix[i][j] != Source.Pixel_Matrix[i][j]) {
+				this->Draw_Square(j, i, 2, 2, 'r');
+			}
+		}
+	}
+
+
+}
+void Image::Mark_Different_Pixels(Image &Source, const char *mode) {
+	char m1[7] = "Strict";
+	
+
+	if (this->width != Source.width || this->Height != Source.Height) {
+		return;
+	}
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (Source.Pixel_Matrix == nullptr) {
+		Source.init_pixel_matrix();
+	}
+
+	if (strcmp(m1, mode) == 0) {
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				if (Pixel_Matrix[i][j] != Source.Pixel_Matrix[i][j]) {
+					this->Draw_Square(j, i, 2, 2, 'r');
+				}
+			}
+		}
+	} 
+
+}
+void Image::Write_ChannelGraph() {
+	int posR, PosG, PosB, H = 500, W = 1300;
+	int bar_width = this->width / 300;
+	if (bar_width == 0) {
+		bar_width = 1;
+	}
+	int sR = 0, sG = 0, sB = 0;
+	Image frame;
+	frame.Load_Blank_Canvas(W, H, 'B');
+	frame.Draw_Square(250, 250, 150, 150, 'r');
+	frame.Draw_Square(650, 250, 150, 150, 'g');
+	frame.Draw_Square(1050, 250, 150, 150, 'b');
+	frame.Draw_Square(250, 250, 151, 151, 'r');
+	frame.Draw_Square(650, 250, 151, 151, 'g');
+	frame.Draw_Square(1050, 250, 151, 151, 'b');
+	posR = 101;
+	PosG = 501;
+	PosB = 901;
+
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+
+	for (int i = 0; i < this->width; i++) {
+		for (int k = 0; k < bar_width; k++) {
+			for (int j = 0; j < this->Height; j++) {
+				if (Pixel_Matrix[j][i].r >= Pixel_Matrix[j][i].g &&Pixel_Matrix[j][i].r >= Pixel_Matrix[j][i].b &&
+					decode_color(Pixel_Matrix[j][i].r, Pixel_Matrix[j][i].g, Pixel_Matrix[j][i].b) != 'B'
+					&&decode_color(Pixel_Matrix[j][i].r, Pixel_Matrix[j][i].g, Pixel_Matrix[j][i].b) != 'W') {
+					//sR += Pixel_Matrix[j][i].r;
+					sR++;
+				}
+				else if (Pixel_Matrix[j][i].g >= Pixel_Matrix[j][i].r &&Pixel_Matrix[j][i].g >= Pixel_Matrix[j][i].b
+					&& decode_color(Pixel_Matrix[j][i].r, Pixel_Matrix[j][i].g, Pixel_Matrix[j][i].b) != 'B'
+					&&decode_color(Pixel_Matrix[j][i].r, Pixel_Matrix[j][i].g, Pixel_Matrix[j][i].b) != 'W') {
+					//sG += Pixel_Matrix[j][i].g;
+					sG++;
+				}
+				else if (Pixel_Matrix[j][i].b >= Pixel_Matrix[j][i].r &&Pixel_Matrix[j][i].b >= Pixel_Matrix[j][i].g
+					&&decode_color(Pixel_Matrix[j][i].r, Pixel_Matrix[j][i].g, Pixel_Matrix[j][i].b) != 'B'
+					&& decode_color(Pixel_Matrix[j][i].r, Pixel_Matrix[j][i].g, Pixel_Matrix[j][i].b) != 'W') {
+					//sB += Pixel_Matrix[j][i].b;
+					sB++;
+				}
+
+			}
+			if (bar_width > 1) {
+				i++;
+			}
+		}
+
+		sR /= bar_width;
+		sG /= bar_width;
+		sB /= bar_width;
+
+		sR %= 300;
+		sG %= 300;
+		sB %= 300;
+
+		if (posR < 399) {
+			frame.Draw_Line(posR, 399, 399 - sR, 'r');
+		}
+		if (PosG < 799) {
+			frame.Draw_Line(PosG, 399, 399 - sG, 'g');
+		}
+		if (PosB < 1199) {
+			frame.Draw_Line(PosB, 399, 399 - sB, 'b');
+		}
+
+		posR += bar_width;
+		PosG += bar_width;
+		PosB += bar_width;
+
+		sR = sG = sB = 0;
+
+	}
+
+
+
+
+	frame.Write_Image("ChannelGraph");
+}
+void Image::Write_Channel(const char color) {
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	int index=0;
+	switch (color)
+	{
+	case 'R':
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = Pixel_Matrix[i][j].r;
+				image_data[index++] = 0;
+				image_data[index++] = 0;
+			}
+		}
+		break;
+	case 'G':
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = 0;
+				image_data[index++] = Pixel_Matrix[i][j].g;
+				image_data[index++] = 0;
+			}
+		}
+		break;
+	case 'B':
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = 0;
+				image_data[index++] = 0;
+				image_data[index++] = Pixel_Matrix[i][j].b;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+
+}
+void Image::Shutdown_Channel(const char color) {
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	int index = 0;
+	switch (color)
+	{
+	case 'R':
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = 0;
+				image_data[index++] = Pixel_Matrix[i][j].g;
+				image_data[index++] = Pixel_Matrix[i][j].b;
+				Pixel_Matrix[i][j].r = 0;
+			}
+		}
+		break;
+	case 'G':
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = Pixel_Matrix[i][j].r;
+				image_data[index++] = 0;
+				image_data[index++] = Pixel_Matrix[i][j].b;
+				Pixel_Matrix[i][j].g = 0;
+
+			}
+		}
+		break;
+	case 'B':
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = Pixel_Matrix[i][j].r;
+				image_data[index++] = Pixel_Matrix[i][j].g;
+				image_data[index++] = 0;
+				Pixel_Matrix[i][j].b = 0;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+void Image::Flip180() {
+	unsigned char *flip = (unsigned char *)malloc(width*Height * 3*sizeof(unsigned char));
+	int index = 0;
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	for (int i = Height-1; i >= 0; i--) {
+		for (int j = width-1; j >= 0; j--) {
+			flip[index++] = Pixel_Matrix[i][j].r;
+			flip[index++] = Pixel_Matrix[i][j].g;
+			flip[index++] = Pixel_Matrix[i][j].b;
+
+		}
+	}
+
+	delete[] this->image_data;
+	this->image_data = flip;
+}
+void Image::Tresholding(const char *mode,int value) {
+	int index = 0;
+	char m1[6];
+	char m2[15];
+	strcpy(m1, "Trunc");
+	strcpy(m2, "EdgeTriggerd");
+	if (strcmp(m1, mode) == 0) {
+		if (Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				if (Pixel_Matrix[i][j].r > value || Pixel_Matrix[i][j].g > value || Pixel_Matrix[i][j].b > value) {
+					image_data[index++] = 255;
+					image_data[index++] = 255;
+					image_data[index++] = 255;
+				}
+				else {
+					image_data[index++] = 0;
+					image_data[index++] = 0;
+					image_data[index++] = 0;
+				}
+			}
+		}
+	}
+	else if (strcmp(m2, mode) == 0) {
+		int index = 0, recored = 0, max_gap = 1;
+		pixel prev;
+		if (Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
+
+		for (int i = 0; i < Height; i++) {
+			prev.r = Pixel_Matrix[i][0].r;
+			prev.g = Pixel_Matrix[i][0].g;
+			prev.b = Pixel_Matrix[i][0].b;
+
+			Pixel_Matrix[i][0].r = 0;
+			Pixel_Matrix[i][0].g = 0;
+			Pixel_Matrix[i][0].b = 0;
+
+			for (int j = 1; j < width; j++) {
+				if (Color_Distance(prev, Pixel_Matrix[i][j]) > value)
+				{
+					Pixel_Matrix[i][j].r = 255;
+					Pixel_Matrix[i][j].g = 255;
+					Pixel_Matrix[i][j].b = 255;
+
+
+
+				}
+				else {
+					Pixel_Matrix[i][j].r = 0;
+					Pixel_Matrix[i][j].g = 0;
+					Pixel_Matrix[i][j].b = 0;
+
+
+
+				}
+
+			}
+		}
+		index = 0;
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = Pixel_Matrix[i][j].r;
+				image_data[index++] = Pixel_Matrix[i][j].g;
+				image_data[index++] = Pixel_Matrix[i][j].b;
+
+			}
+		}
+	}
+
+}
+void Image::Edge_Detection() {
+
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	int index = 0, recored = 0, max_gap = 1;
+	pixel prev;
+
+	for (int i = 0; i < Height; i++) {
+		prev.r = Pixel_Matrix[i][0].r;
+		prev.g = Pixel_Matrix[i][0].g;
+		prev.b = Pixel_Matrix[i][0].b;
+
+		Pixel_Matrix[i][0].r = 0;
+		Pixel_Matrix[i][0].g = 0;
+		Pixel_Matrix[i][0].b = 0;
+
+		for (int j = 1; j < width; j++) {
+			if (Color_Distance(prev,Pixel_Matrix[i][j]) > 50 )
+			{
+				prev.r = Pixel_Matrix[i][j].r;
+				prev.g = Pixel_Matrix[i][j].g;
+				prev.b = Pixel_Matrix[i][j].b;
+
+				Pixel_Matrix[i][j].r = 255;
+				Pixel_Matrix[i][j].g = 255;
+				Pixel_Matrix[i][j].b = 255;
+	
+				
+
+			}
+			else {
+				prev.r = Pixel_Matrix[i][j].r;
+				prev.g = Pixel_Matrix[i][j].g;
+				prev.b = Pixel_Matrix[i][j].b;
+
+				Pixel_Matrix[i][j].r = 0;
+				Pixel_Matrix[i][j].g = 0;
+				Pixel_Matrix[i][j].b = 0;
+
+	
+				
+			}
+
+		}
+	}
+	index = 0;
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			image_data[index++] = Pixel_Matrix[i][j].r;
+			image_data[index++] = Pixel_Matrix[i][j].g;
+			image_data[index++] = Pixel_Matrix[i][j].b;
+
+		}
+	}
+}
+void Image::Edge_Detection(const int max_color_gap) {
+
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	int index = 0, recored = 0, max_gap = 1;
+	pixel prev;
+
+	for (int i = 0; i < Height; i++) {
+		prev.r = Pixel_Matrix[i][0].r;
+		prev.g = Pixel_Matrix[i][0].g;
+		prev.b = Pixel_Matrix[i][0].b;
+
+		Pixel_Matrix[i][0].r = 0;
+		Pixel_Matrix[i][0].g = 0;
+		Pixel_Matrix[i][0].b = 0;
+
+		for (int j = 1; j < width; j++) {
+			if (Color_Distance(prev, Pixel_Matrix[i][j]) > max_color_gap)
+			{
+				prev.r = Pixel_Matrix[i][j].r;
+				prev.g = Pixel_Matrix[i][j].g;
+				prev.b = Pixel_Matrix[i][j].b;
+
+				Pixel_Matrix[i][j].r = 255;
+				Pixel_Matrix[i][j].g = 255;
+				Pixel_Matrix[i][j].b = 255;
+
+
+
+			}
+			else {
+				prev.r = Pixel_Matrix[i][j].r;
+				prev.g = Pixel_Matrix[i][j].g;
+				prev.b = Pixel_Matrix[i][j].b;
+
+				Pixel_Matrix[i][j].r = 0;
+				Pixel_Matrix[i][j].g = 0;
+				Pixel_Matrix[i][j].b = 0;
+
+
+
+			}
+
+		}
+	}
+	index = 0;
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			image_data[index++] = Pixel_Matrix[i][j].r;
+			image_data[index++] = Pixel_Matrix[i][j].g;
+			image_data[index++] = Pixel_Matrix[i][j].b;
+
+		}
+	}
+}
+void Image::Mark_Contour(const char color, const int max_color_gap) {
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	int index = 0, recored = 0, max_gap = 1;
+	pixel prev;
+
+	for (int i = 0; i < Height; i++) {
+		prev.r = Pixel_Matrix[i][0].r;
+		prev.g = Pixel_Matrix[i][0].g;
+		prev.b = Pixel_Matrix[i][0].b;
+
+		for (int j = 1; j < width; j++) {
+			if (Color_Distance(prev, Pixel_Matrix[i][j]) > max_color_gap)
+			{
+				prev.r = Pixel_Matrix[i][j].r;
+				prev.g = Pixel_Matrix[i][j].g;
+				prev.b = Pixel_Matrix[i][j].b;
+
+				Color_Spec(Pixel_Matrix[i][j].index_range, color);
+
+
+
+			}
+			else {
+				prev.r = Pixel_Matrix[i][j].r;
+				prev.g = Pixel_Matrix[i][j].g;
+				prev.b = Pixel_Matrix[i][j].b;
+
+
+
+			}
+
+		}
+	}
+
+	for (int i = 0; i < width; i++) {
+		prev.r = Pixel_Matrix[0][i].r;
+		prev.g = Pixel_Matrix[0][i].g;
+		prev.b = Pixel_Matrix[0][i].b;
+
+		for (int j = 1; j < Height; j++) {
+			if (Color_Distance(prev, Pixel_Matrix[j][i]) > max_color_gap)
+			{
+				prev.r = Pixel_Matrix[j][i].r;
+				prev.g = Pixel_Matrix[j][i].g;
+				prev.b = Pixel_Matrix[j][i].b;
+
+				Color_Spec(Pixel_Matrix[j][i].index_range, color);
+
+
+
+			}
+			else {
+				prev.r = Pixel_Matrix[j][i].r;
+				prev.g = Pixel_Matrix[j][i].g;
+				prev.b = Pixel_Matrix[j][i].b;
+
+
+
+			}
+
+		}
+	}
+
+}
+void Image::Feature_Matching(const int source_x, const int source_y) {
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	if (source_x + 1 > width | source_x - 1 < 0 || source_y + 1 > Height || source_y - 1 < 0) {
+		//out of image border;
+		return;
+	}
+	pixel up, down, left, right, center;
+	int band = 5;
+	center.r = Pixel_Matrix[source_y][source_x].r;
+	center.g = Pixel_Matrix[source_y][source_x].g;
+	center.b = Pixel_Matrix[source_y][source_x].b;
+
+	up.r = Pixel_Matrix[source_y - 1][source_x].r;
+	up.g = Pixel_Matrix[source_y - 1][source_x].g;
+	up.b = Pixel_Matrix[source_y - 1][source_x].b;
+
+	down.r = Pixel_Matrix[source_y + 1][source_x].r;
+	down.g = Pixel_Matrix[source_y + 1][source_x].g;
+	down.b = Pixel_Matrix[source_y + 1][source_x].b;
+
+	left.r = Pixel_Matrix[source_y][source_x - 1].r;
+	left.g = Pixel_Matrix[source_y][source_x - 1].g;
+	left.b = Pixel_Matrix[source_y][source_x - 1].b;
+
+	right.r = Pixel_Matrix[source_y][source_x + 1].r;
+	right.g = Pixel_Matrix[source_y][source_x + 1].g;
+	right.b = Pixel_Matrix[source_y][source_x + 1].b;
+
+	Draw_Circle(source_x, source_y, 3, 'r');
+	Draw_Circle(source_x, source_y, 2, 'b');
+
+
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			
+			if (i + 1 < Height && i - 1 > 0 && j + 1 < width && j - 1 > 0) {
+				if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], down) < band &&Color_Distance(Pixel_Matrix[i - 1][j], up) < band
+					&&Color_Distance(Pixel_Matrix[i][j + 1], right) < band &&Color_Distance(Pixel_Matrix[i][j - 1], left) < band) {
+					Draw_Circle(j, i, 3, 'r');
+					Draw_Line(source_x, source_y, j, i, 'b');
+				}
+				else if(Color_Distance(Pixel_Matrix[i][j],center) < band && Color_Distance(Pixel_Matrix[i + 1][j],left)< band &&Color_Distance(Pixel_Matrix[i - 1][j],right)< band
+					&&Color_Distance(Pixel_Matrix[i][j + 1],down)< band &&Color_Distance(Pixel_Matrix[i][j - 1],up)< band) {
+					Draw_Circle(j, i, 3, 'r');
+					Draw_Line(source_x, source_y, j, i, 'b');
+
+				}
+				else if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], left) < band &&Color_Distance(Pixel_Matrix[i - 1][j], right) < band
+					&&Color_Distance(Pixel_Matrix[i][j + 1], down) < band &&Color_Distance(Pixel_Matrix[i][j - 1], up) < band) {
+					Draw_Circle(j, i, 3, 'r');
+					Draw_Line(source_x, source_y, j, i, 'b');
+
+				}
+				else if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], left) < band &&Color_Distance(Pixel_Matrix[i - 1][j], right) < band
+					&&Color_Distance(Pixel_Matrix[i][j + 1], down) < band &&Color_Distance(Pixel_Matrix[i][j - 1], up) < band) {
+					Draw_Circle(j, i, 3, 'r');
+					Draw_Line(source_x, source_y, j, i, 'b');
+
+				}
+			}
+		}
+	}
+
+
+
+}
+
+
+void Image::Pixel_Matrix_Multiplication(Image &b) {
+
+	if (this->width != b.Height) {
+		cout << "Cannot Multiply Pixel Please Make Sure Image A's Width = Image B's Height\n";
+		return;
+	}
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	if (b.Pixel_Matrix == nullptr) {
+		b.init_pixel_matrix();
+	}
+
+	pixel sum;
+
+	if (this->Height != b.width) {
+		pixel **n_mat = (pixel**)malloc(sizeof(pixel*)*this->Height);
+		for (int i = 0; i < b.width; i++) {
+			n_mat[i] = (pixel*)malloc(sizeof(pixel)*b.width);
+		}
+	
+
+		for (int i = 0; i < this->width; i++) {
+			pixel temp;
+			for (int j = 0; j < b.width; j++) {
+				for (int k = 0; k < this->width; k++) {
+					temp = Pixel_Matrix[i][k] * b.Pixel_Matrix[k][j];
+					sum + temp;
+				}
+				n_mat[i][j] = sum;
+				sum.r = 0;
+				sum.g = 0;
+				sum.b = 0;
+			}
+		}
+
+		delete[] this->Pixel_Matrix;
+		delete[] this->image_data;
+		unsigned char *updated = (unsigned char*)malloc(this->Height *b.width * 3 * sizeof(unsigned char));
+		int index = 0;
+		this->Pixel_Matrix = n_mat;
+		this->width = b.width;
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				updated[index++] = Pixel_Matrix[i][j].r;
+				updated[index++] = Pixel_Matrix[i][j].g;
+				updated[index++] = Pixel_Matrix[i][j].b;
+
+			}
+		}
+		
+
+	}
+	else {/////////////
+
+		for (int i = 0; i < this->width; i++) {
+			pixel temp;
+			for (int j = 0; j < b.width; j++) {
+				for (int k = 0; k < this->width; k++) {
+					temp = Pixel_Matrix[i][k] * b.Pixel_Matrix[k][j];
+					sum + temp;
+				}
+				this->Pixel_Matrix[i][j] = sum;
+				sum.r = 0;
+				sum.g = 0;
+				sum.b = 0;
+			}
+		}
+
+		int index = 0;
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				image_data[index++] = Pixel_Matrix[i][j].r;
+				image_data[index++] = Pixel_Matrix[i][j].g;
+				image_data[index++] = Pixel_Matrix[i][j].b;
+
+			}
+		}
+	}
+
+}
+
+void Image::Quarantine_Pixel(pixel const &sample,const float max_difference, const char *mode, const int Alter) {
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	char m1[10], m2[10];
+	strcpy(m1, "Drop_Self");
+	strcpy(m2, "Keep_Self");
+	if (strcmp(m2, mode) == 0) {
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				if (Color_DistanceSq(Pixel_Matrix[i][j], sample) > max_difference) {
+					Pixel_Matrix[i][j].r = 0;
+					Pixel_Matrix[i][j].g = 0;
+					Pixel_Matrix[i][j].b = 0;
+
+				}
+			}
+		}
+
+		if (Alter == 1) {
+			int index = 0;
+			for (int i = 0; i < Height; i++) {
+				for (int j = 0; j < width; j++) {
+					image_data[index++] = Pixel_Matrix[i][j].r;
+					image_data[index++] = Pixel_Matrix[i][j].g;
+					image_data[index++] = Pixel_Matrix[i][j].b;
+
+				}
+			}
+		}
+	}
+	else if (strcmp(m1,mode)==0) {
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				if (Color_DistanceSq(Pixel_Matrix[i][j], sample) < max_difference) {
+					Pixel_Matrix[i][j].r = 0;
+					Pixel_Matrix[i][j].g = 0;
+					Pixel_Matrix[i][j].b = 0;
+
+				}
+			}
+		}
+		if (Alter == 1) {
+			int index = 0;
+			for (int i = 0; i < Height; i++) {
+				for (int j = 0; j < width; j++) {
+					image_data[index++] = Pixel_Matrix[i][j].r;
+					image_data[index++] = Pixel_Matrix[i][j].g;
+					image_data[index++] = Pixel_Matrix[i][j].b;
+
+				}
+			}
+		}
+	}
+}
+
+void Image::Kronecker_product(Image &b,const char *mode, const int Alter){
+	char m1[4], m2[5],m3[15],m4[8];
+	strcpy(m1, "Mul");
+	strcpy(m2, "Size");
+	strcpy(m3, "Build_From");
+	strcpy(m4, "Mix");
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	if (b.Pixel_Matrix == nullptr) {
+		b.init_pixel_matrix();
+	}
+
+	if (strcmp(m1, mode) == 0) {
+		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
+		for (int i = 0; i < b.Height*this->Height; i++) {
+			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
+		}
+
+		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height*b.Height*b.width*this->width * 3));
+		unsigned long long startRow, startCol, index = 0;
+		pixel temp;
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				startRow = i * b.Height;
+				startCol = j * b.width;
+				for (int k = 0; k < b.Height; k++) {
+					for (int l = 0; l < b.width; l++) {
+						temp = this->Pixel_Matrix[i][j] * b.Pixel_Matrix[k][l];
+						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+
+					}
+				}
+			}
+		}
+
+		if (Alter == 1) {
+			this->width *= b.width;
+			this->Height *= b.Height;
+			delete[] this->image_data;
+			delete[] this->Pixel_Matrix;
+			this->Pixel_Matrix = Kronecker_pixel_mat;
+			for (long long i = 0; i < this->Height; i++) {
+				for (long long j = 0; j < this->width; j++) {
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+				}
+			}
+			this->image_data = Kronecker;
+
+		}
+		
+		
+	}
+	else if (strcmp(m2, mode) == 0) {
+		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
+		for (int i = 0; i < b.Height*this->Height; i++) {
+			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
+		}
+
+		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height * b.Height * b.width * this->width * 3));
+		pixel temp;
+		unsigned long long startRow, startCol, index = 0;
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				startRow = i * b.Height;
+				startCol = j * b.width;
+				for (int k = 0; k < b.Height; k++) {
+					for (int l = 0; l < b.width; l++) {
+						if (this->Pixel_Matrix[i][j] > b.Pixel_Matrix[k][l]) {
+							temp = this->Pixel_Matrix[i][j];
+						}
+						else {
+							temp = b.Pixel_Matrix[k][l];
+						}
+
+						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+
+					}
+				}
+			}
+		}
+
+		if (Alter == 1) {
+			this->width *= b.width;
+			this->Height *= b.Height;
+			delete[] this->image_data;
+			delete[] this->Pixel_Matrix;
+			this->Pixel_Matrix = Kronecker_pixel_mat;
+			for (long long i = 0; i < this->Height; i++) {
+				for (long long j = 0; j < this->width; j++) {
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+				}
+			}
+			this->image_data = Kronecker;
+
+		}
+	}
+	else if (strcmp(m3, mode) == 0) {
+
+		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
+		for (int i = 0; i < b.Height*this->Height; i++) {
+			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
+		}
+		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height * b.Height * b.width * this->width * 3));
+		pixel temp;
+		unsigned long long startRow, startCol, index = 0;
+		int flag = 0;
+		for (int i = 0; i < this->Height; i++) {
+			for (int j = 0; j < this->width; j++) {
+				startRow = i * b.Height;
+				startCol = j * b.width;
+				for (int k = 0; k < b.Height; k++) {
+					for (int l = 0; l < b.width; l++) {
+						if (flag == 0) {
+							temp = this->Pixel_Matrix[i][j];
+							flag = 1;
+						}
+						else {
+							temp = b.Pixel_Matrix[k][l];
+							flag = 0;
+						}
+
+						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+
+					}
+				}
+			}
+		}
+
+		if (Alter == 1) {
+			this->width *= b.width;
+			this->Height *= b.Height;
+			delete[] this->image_data;
+			delete[] this->Pixel_Matrix;
+			this->Pixel_Matrix = Kronecker_pixel_mat;
+			for (long long i = 0; i < this->Height; i++) {
+				for (long long j = 0; j < this->width; j++) {
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+				}
+			}
+			this->image_data = Kronecker;
+
+		}
+	}
+	else if (strcmp(m4, mode) == 0) {
+
+		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height * b.Height * b.width * this->width * 3));
+		pixel temp;
+		unsigned long long startRow, startCol, index = 0;
+		int flag = 0;
+
+		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
+		for (int i = 0; i < b.Height*this->Height;i++) {
+			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
+		}
+
+		for (int i = 0; i < this->Height; i++) {
+
+			for (int j = 0; j < this->width; j++) 
+			{
+				startRow = i * b.Height;
+				startCol = j * b.width;
+				for (int k = 0; k < b.Height; k++) 
+				{
+					if (flag == 1) {
+						temp = this->Pixel_Matrix[i][j];
+					}
+					else if (flag == 0) {
+						temp = b.Pixel_Matrix[i][j];
+					}
+
+					for (int l = 0; l < b.width; l++) 
+					{
+						
+						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+					}
+					if (flag == 1) {
+						flag = 0;
+					}
+					else {
+						flag = 1;
+					}
+				}
+
+			
+			}
+		
+		}
+
+		if (Alter == 1) {
+			this->width *= b.width;
+			this->Height *= b.Height;
+			delete[] this->image_data;
+			delete[] this->Pixel_Matrix;
+			this->Pixel_Matrix = Kronecker_pixel_mat;
+			for (long long i = 0; i < this->Height; i++) {
+				for (long long j = 0; j < this->width; j++) {
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+				}
+			}
+			this->image_data = Kronecker;
+
+		}
+	}
+
+
+}
+
+void Image::Image_Transpose(const int Alter) {
+	int H = this->width, W = this->Height;
+	//unsigned char *T = (unsigned char*)malloc(sizeof(unsigned char)*this->width*this->Height * 3);
+	pixel **T_mat = (pixel**)malloc(sizeof(pixel*)*H);
+	for (int i = 0; i < H; i++) {
+		T_mat[i] = (pixel*)malloc(sizeof(pixel)*W);
+	}
+
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+
+	for (int i = 0; i < this->Height; i++) {
+		for (int j = 0; j < this->width; j++) {
+			T_mat[j][i] = this->Pixel_Matrix[i][j];
+		}
+	}
+	
+	delete[] this->Pixel_Matrix;
+	this->Pixel_Matrix = T_mat;
+	
+	if (Alter == 1) {
+		int index = 0;
+		this->Height = H;
+		this->width = W;
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				this->image_data[index++] = Pixel_Matrix[i][j].r;
+				this->image_data[index++] = Pixel_Matrix[i][j].g;
+				this->image_data[index++] = Pixel_Matrix[i][j].b;
+
+			}
+		}
+	}
+}
+
+// Under DEV
+
+void Image::Mark_Different_Pixels(Image &Source, const char *mode, int min_diff) {
+	char m2[6] = "Loose";
+	char m3[6] = "Area";
+	int frame_w = 0, frame_h = 0;
+
+
+	if (strcmp(m2, mode) == 0) {
+		if (this->width != Source.width || this->Height != Source.Height) {
+			return;
+		}
+		if (this->Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
+		if (Source.Pixel_Matrix == nullptr) {
+			Source.init_pixel_matrix();
+		}
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) > min_diff) {
+					this->Draw_Square(j, i, 2, 2, 'r');
+				}
+			}
+		}
+
+	}
+	else if (strcmp(m3, mode) == 0) {
+		if (this->width != Source.width || this->Height != Source.Height) {
+			return;
+		}
+		if (this->Pixel_Matrix == nullptr) {
+			init_pixel_matrix();
+		}
+		if (Source.Pixel_Matrix == nullptr) {
+			Source.init_pixel_matrix();
+		}
+
+		for (int i = 0; i < Height; i++) { // marking all diffrent pixels
+			for (int j = 0; j < width; j++) {
+				if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) > min_diff) {
+					this->Pixel_Matrix[i][j].r = 43;
+					this->Pixel_Matrix[i][j].g = 43;
+					this->Pixel_Matrix[i][j].b = 43;
+
+				}
+			}
+		}
+		//seaching with dymanic frame for 43,43,43 collored areas
+		if (Height < 1000 && width < 100) {
+			frame_h = this->Height / 10;
+			frame_w = this->width / 10;
+		}
+		else {
+			frame_h = frame_w = 6;
+		}
+		if (frame_h <= 1) {
+			frame_h = 2;
+		}
+		if (frame_w <= 1) {
+			frame_h = 2;
+		}
+
+		int start_row = 0, start_col = 0, j = 0, si = 0, sj = 0;
+		short flag = 0;
+
+		/*pixel **pixel_sigment = (pixel**)malloc(sizeof(pixel*)* frame_h);
+		for (int i = 0; i < frame_w; i++) {
+			pixel_sigment[i] = (pixel*)malloc(sizeof(pixel)*(frame_w));
+		}*/
+
+		while (true) {
+
+			for (int i = start_row; i < start_row + (frame_h); i++) {
+
+				for (j = start_col; j < start_col + (frame_w); j++) {
+
+					if (Pixel_Matrix[i][j].r == 43 && Pixel_Matrix[i][j].g == 43 && Pixel_Matrix[i][j].b == 43) {
+						flag = 1;
+					}
+					/*pixel_sigment[si][sj] = Pixel_Matrix[i][j];
+					sj++;*/
+				}
+				//si++;
+				//sj = 0;
+			}
+			//si = sj = 0;
+
+			if (flag == 1)
+			{
+				/*
+				for (int k = 0; k < frame_h; k++) {
+					if (pixel_sigment[k][0].r == 43 && pixel_sigment[k][0].b == 43 && pixel_sigment[k][0].g == 43) {
+						flag =0;
+						break;
+					}
+				}
+				if (flag != 0) {
+					for (int k = 0; k < frame_h; k++) {
+						if (pixel_sigment[k][frame_w-1].r == 43 && pixel_sigment[k][frame_w - 1].b == 43 && pixel_sigment[k][frame_w - 1].g == 43) {
+							flag = 0;
+							break;
+						}
+					}
+				}
+				if (flag != 0) {
+					for (int k = 0; k < frame_w; k++) {
+						if (pixel_sigment[0][k].r == 43 && pixel_sigment[0][k].b == 43 && pixel_sigment[0][k].g == 43) {
+							flag = 0;
+							break;
+						}
+					}
+				}
+				if (flag != 0) {
+					for (int k = 0; k < frame_w; k++) {
+						if (pixel_sigment[frame_h-1][k].r == 43 && pixel_sigment[frame_h - 1][k].b == 43 && pixel_sigment[frame_h - 1][k].g == 43) {
+							flag = 0;
+							break;
+						}
+					}*/
+
+
+				for (int k = start_row; k < start_row + frame_h; k++) {
+					if (Pixel_Matrix[k][start_col].r == 43 && Pixel_Matrix[k][start_col].g == 43 && Pixel_Matrix[k][start_col].b == 43) {
+						flag = 0;
+						break;
+					}
+				}
+				for (int k = start_row; k < start_row + frame_h; k++) {
+					if (Pixel_Matrix[k][start_col + frame_w].r == 43 && Pixel_Matrix[k][start_col + frame_w].g == 43 && Pixel_Matrix[k][start_col + frame_w].b == 43) {
+						flag = 0;
+						break;
+					}
+				}
+				for (int k = start_col; k < start_col + frame_w; k++) {
+					if (Pixel_Matrix[start_row][k].r == 43 && Pixel_Matrix[start_row][k].g == 43 && Pixel_Matrix[start_row][k].b == 43) {
+						flag = 0;
+						break;
+					}
+				}
+				for (int k = start_col; k < start_col + frame_w; k++) {
+					if (Pixel_Matrix[start_row + frame_h][k].r == 43 && Pixel_Matrix[start_row + frame_h][k].g == 43 && Pixel_Matrix[start_row + frame_h][k].b == 43) {
+						flag = 0;
+						break;
+					}
+				}
+				//draw the square
+				if (flag != 0) {
+					//this->Draw_Square(start_col + frame_w / 2, start_row + frame_h / 2, frame_w, frame_h, 'r');
+					this->Draw_Circle(start_col + frame_w, start_col + frame_h, frame_h, 'r');
+					flag = 0;
+				}
+			}
+
+
+			frame_h++;
+			frame_w++;
+
+
+
+
+			start_col += frame_w;
+
+			if (start_col >= width) {
+				start_row += frame_h;
+				start_col = 0;
+				if (start_row + frame_h >= Height || start_col + frame_w >= width) {
+					break;
+				}
+			}
+
+
+
+		}
+
+	}
+	else
+	{
+		return;
+	}
+}
+//ver 1 under development
+
+void Image::Detect_Faces() {
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	short flag = 0;
+	int distance = 0,treshold =50,min_d = 15;
+	int validation_level = 0;
+	int n_valid_bounty = 10;
+	coordinate left_eye, right_eye;
+	left_eye.x = right_eye.x = 0;
+	left_eye.y = right_eye.y = 0;
+	pixel black;
+	pixel skin_graph,nose_graph,forhead_graph,chin_graph;
+	black.r = black.g = black.b = 0;
+
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+
+			if (flag == 0) {
+				if (/*Pixel_Matrix[i][j].r < treshold  && Pixel_Matrix[i][j].g < treshold && Pixel_Matrix[i][j].b < treshold*/
+					Color_DistanceSq(black,Pixel_Matrix[i][j])<30
+					) {
+					left_eye.x = j;
+					left_eye.y = i;
+					flag = 1;
+#ifdef FaceDebug	
+
+
+
+					Draw_Circle(j, i, 3, 'g'); //detected eye loctaion -left eye-
+					
+#endif
+				}
+			}
+			else if (flag == 1) {
+				if (distance > width / 3) {
+					break;
+				}
+				else if (/*Pixel_Matrix[i][j].r < treshold && Pixel_Matrix[i][j].g < treshold && Pixel_Matrix[i][j].b < treshold && distance >min_d*/
+					Color_DistanceSq(black, Pixel_Matrix[i][j]) < 30
+					) {
+					right_eye.x = j;
+					right_eye.y = i;
+					flag = 2;
+					//i += 4;
+#ifdef FaceDebug
+
+
+					Draw_Circle(j, i, 3, 'r'); //detected eye location -right eye
+					Draw_Circle(left_eye.x, left_eye.y , 3, 'g'); //detected eye location -right eye
+#endif
+
+
+					//defenition of skin graphs for validation sequance
+					skin_graph = Pixel_Matrix[(left_eye.y)][(left_eye.x) + (distance / 2)];
+					if ((left_eye.y) + (distance / 2) < Height && (left_eye.x) + (distance / 2) < width ){
+					nose_graph = Pixel_Matrix[(left_eye.y) + (distance / 2)][(left_eye.x) + (distance / 2)];
+					}
+					if (left_eye.y - (distance / 4) > 0) {
+						forhead_graph = Pixel_Matrix[(left_eye.y - (distance / 4))][(left_eye.x) + (distance / 2)];
+					}
+					if (left_eye.y + 1.3*distance < Height) {
+						int temp = 1.3*distance;
+						chin_graph = Pixel_Matrix[(left_eye.y + (temp))][(left_eye.x) + (distance / 2)];
+					}
+					//
+
+					//in case skin graph is black -> most likely not a skin color
+					if (Color_Distance(black, skin_graph) < 30) {
+						flag = 0;
+						break;
+					}
+				}
+				distance++;
+			}
+
+		}
+		if (flag == 2 && distance > 50 && left_eye.x +(distance /2 ) <width && 	
+			left_eye.y + (distance / 2) < Height &&Color_Distance(Pixel_Matrix[(left_eye.y) + (distance / 2)][(left_eye.x) + (distance / 2)], black) > 200 ){
+
+			
+			skin_graph = Pixel_Matrix[(left_eye.y)][(left_eye.x) + (distance / 2)];
+
+			if (skin_graph.r <120 && skin_graph.g<120 && skin_graph.b<120) {
+				continue;
+			}
+
+
+			
+
+
+
+#ifdef FaceDebug
+
+			Draw_Circle((left_eye.x) + (distance / 2), (left_eye.y), 3, 'b'); //sking graph location
+			Draw_Circle((left_eye.x) + (distance / 2), (left_eye.y), 4, 'r'); //sking graph location
+			Draw_Circle((left_eye.x) + (distance / 2), (left_eye.y), 2, 'g'); //sking graph location
+
+			Draw_Line(left_eye.x, left_eye.y, left_eye.x + distance / 2, left_eye.y, 'b'); // line to cetner point 
+#endif
+			if (Color_Distance(skin_graph, Pixel_Matrix[left_eye.y + distance / 2][left_eye.x]) < 50) {
+
+				if (Color_Distance(skin_graph, Pixel_Matrix[left_eye.y + distance /2 ][left_eye.x]) < 40) { // left chick cmp
+
+					validation_level++; //level 1
+
+					if (Distance_Neighbors(treshold, left_eye.y + distance / 2, left_eye.x)) {
+						validation_level += n_valid_bounty;
+						cout << "Validated --Neighbor-- left chick: " << validation_level << endl;
+
+					}
+#ifdef FaceDebug
+					Draw_Circle((left_eye.x), (left_eye.y) + (distance / 2), 3, 'W'); //chick graph location -left eye-
+					Draw_Line(left_eye.x, left_eye.y, left_eye.x, left_eye.y + distance / 2, 'W'); // line to chick point -left eye-
+					cout << "Validated left chick: " << validation_level << endl;
+#endif // FaceDebug
+
+
+				}
+
+				if (Color_Distance(skin_graph, Pixel_Matrix[right_eye.y + distance / 2][right_eye.x]) < 40) {//right chick
+					validation_level++; //level 2
+					cout << "Validated Right chick: " << validation_level << endl;
+
+					if (Distance_Neighbors(treshold, right_eye.y + distance / 2, right_eye.x)) {
+						validation_level += n_valid_bounty;
+						cout << "Validated  --Neighbor-- right chick: " << validation_level << endl;
+
+					}
+
+				}
+
+
+
+				if (Color_Distance(skin_graph, forhead_graph) < 70) { //forhead vs skin center cmp
+#ifdef FaceDebug
+					Draw_Circle(left_eye.x + distance / 2, left_eye.y - (distance / 4), 3, 'W'); //at forhead
+					Draw_Line(left_eye.x + distance / 2, left_eye.y, left_eye.x + distance / 2, left_eye.y - (distance / 4), 'W');
+
+#endif
+					validation_level++; //level 3
+					cout << "Validated Forhead - Center: " << validation_level << endl;
+					
+					if (Distance_Neighbors(treshold, left_eye.y - (distance / 4), left_eye.x + distance / 2)) {
+						validation_level += n_valid_bounty;
+						cout << "Validated  --Neighbor-- Forhead - Center: " << validation_level << endl;
+
+					}
+
+				}
+
+
+
+
+
+				if (Color_Distance(nose_graph, skin_graph) < 70) {//nose vs middle face cmp
+#ifdef FaceDebug
+					Draw_Circle(left_eye.x + distance / 2, left_eye.y + distance / 2, 3, 'W');
+					Draw_Line(left_eye.x + distance / 2, left_eye.y, left_eye.x + distance / 2, left_eye.y + (distance / 2), 'W');
+
+#endif
+					validation_level++; //level 4
+					cout << "Validated Nose - Center: " << validation_level << endl;
+
+					if (Distance_Neighbors(treshold, left_eye.y + distance / 2, left_eye.x + distance / 2)) {
+						validation_level += n_valid_bounty;
+						cout << "Validated  --Neighbor-- Nose - Center: " << validation_level << endl;
+
+					}
+				}
+
+
+				if (Color_Distance(chin_graph, skin_graph) < 70) {//chin vs middle face cmp
+#ifdef FaceDebug
+					Draw_Circle(left_eye.x + distance / 2, left_eye.y + 1.3*distance, 3, 'W');
+					Draw_Line(left_eye.x + distance / 2, left_eye.y, left_eye.x + distance / 2, left_eye.y + 1.3*(distance), 'W');
+
+#endif
+					validation_level++; //level 5
+					cout << "Validated Chin - Center: " << validation_level << endl;
+
+					if (Distance_Neighbors(treshold, left_eye.y + 1.3*distance, left_eye.x + distance / 2)) {
+						validation_level += n_valid_bounty;
+						cout << "Validated  --Neighbor-- Chin - Center: " << validation_level << endl;
+
+					}
+				}
+
+
+
+
+
+#ifdef FaceDebug
+
+				
+
+
+				//right eye validate for v2 yet to be added to calculation
+				Draw_Line(right_eye.x, right_eye.y, right_eye.x - distance / 2, right_eye.y, 'b'); // line to cetner point from -right eye-
+				Draw_Circle((right_eye.x), (right_eye.y) + (distance / 2), 3, 'W'); //chick graph location -right eye- 
+				Draw_Line(right_eye.x, right_eye.y, right_eye.x, right_eye.y + distance / 2, 'W'); // line to chick point -right eye-
+
+#endif
+			
+				if (validation_level >= 30) {
+					Draw_Square(left_eye.x + distance / 2, left_eye.y + distance / 2, distance, distance, 'r');
+					i += 4;
+					validation_level = 0;
+				}
+				
+			}
+
+			flag = 0;
+			distance = 0;
+		}
+		else {
+			flag = 0;
+			distance = 0;
+		}
+		
+	}
+
+}
+
+//
+
+
+
 
 
 
