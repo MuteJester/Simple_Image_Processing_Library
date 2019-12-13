@@ -1,8 +1,10 @@
-# Cpp-Image-Handle-Class
-A small class based on the stb image library created for simple use and analysis of image pixel data in cpp
+# _C++ Simple Image Processing Library_
 
-After searching the web for an easy and quick image handling library the closest thing i found that didnt include importing a nice amount 
-data into each project was the std-image library which is a fantastic tool so first of all a big thank you to the creators and programers
+
+Image Processing Library For C++ ,Just Include The Header File And Your Are Ready To Code!
+
+After searching the web for an easy and quick pixel data reading / writing library the closest thing i found that didnt include importing a nice amount of
+data into each project was the std-image library which is a fantastic tool so first of all a big shout out to the creators and programers
 of std library
 https://github.com/nothings/stb
 
@@ -18,7 +20,7 @@ __Face Detection (Alpha Version Still Under Development)__:
 
 Use:
 
-void Detect_Faces()
+`void Detect_Faces();`
 
 Method scans images pixel and try to detect and mark faces with a red square
 if #define FaceDebug is defined then it will also mark and print in console all the verification steps
@@ -33,7 +35,7 @@ __Channel Graph__
 
 Use:
 
-void Write_ChannelGraph();
+`void Write_ChannelGraph();`
 
 Method analyzes images data an saves a new image with RGB graps which show the amount of each color 
 in each one of the image rows.
@@ -46,7 +48,7 @@ __Pixel Compressor__
 
 Use:
 
-void Compress();
+`void Compress();`
 
 Method runs performs a check if and in what level the image pixel could be compressed then the method prompts the user
 to select a level of compression and saves the compressed image to project diractory as well as modifying image data inside
@@ -63,7 +65,7 @@ __Locate Pixel Difference__
 
 Use:
 
-void Write_Pixel_Difference(Image &Source,const char *mode, int min_diff);
+`void Write_Pixel_Difference(Image &Source,const char *mode, int min_diff);`
 
 Method takes as arguments ,another image object , you can also spesify "Copy" in the mode arguemnt in order to write and image with
 an exact copy of the diffrent pixel between both images that will also require you to add the min differnce you allow to count
@@ -100,7 +102,7 @@ __Kronecker Product__
 
 Use:
 
-void Kronecker_product(Image &b,const char *mode, const int Alter)
+`void Kronecker_product(Image &b,const char *mode, const int Alter)`
 
 Method converts both images to matrices and preforms Kronecker multiplication between all pixel creating
 a new image loaded to the matrix part of object.
@@ -136,7 +138,7 @@ __Write Channels__
 
 Use:
 
-void Write_Channel(const char color);
+`void Write_Channel(const char color);`
 
 method takes as argument one of RGB colors as ,'r','g','b'.
 and saves to project diractory only the selected channel of the picture;
@@ -157,7 +159,7 @@ __Image Thresholding__
 
 Use:
 
-void Tresholding(const char *mode,int value);
+`void Tresholding(const char *mode,int value);`
 
 methood takes as arguments one of current 2 modes and a value of diffrence on which the algorithm will run the tresholding
 process ,the larger the value of "value" argument the staturation effected will be greater.
@@ -180,7 +182,7 @@ __Feature Matching__
 
 Use:
 
-void Feature_Matching(const int source_x, const int source_y);
+`void Feature_Matching(const int source_x, const int source_y);`
 
 method takes a sample from the pixel located at passed by argument coordinates ,
 runs trough images data inorder to find the same pixel in side the image.
@@ -199,7 +201,7 @@ __Edge Detection__
 
 Use:
 
-void Image::Edge_Detection(const int max_color_gap);
+`void Image::Edge_Detection(const int max_color_gap);`
 
 methood runs trough image data and modifying the loaded data in object in a way where only the edges of the image
 remain colored in white.
@@ -215,9 +217,12 @@ after methood is called:
 
 You can also use :
 
-void Mark_Contour(const char color, const int max_color_gap)
+`void Mark_Contour(const char color, const int max_color_gap)`
 
 to mark the Contour of an images without blacking the rest of the pixels.
+
+Example:
+![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Mark%20Countur.jpg)
 
 
 
