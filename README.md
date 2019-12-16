@@ -335,3 +335,6 @@ __Modifying A Single Index__
   
   overload of the Color_Spec() method, change a spesific pixel color by its starting index.
   (changes the whole pixel sequance of the spesific pixel)
+  
+  
+  
