@@ -1,17 +1,29 @@
 # _C++ Simple Image Processing Library_
 
+__General Info__
 
-Image Processing Library For C++ ,Just Include The Header File And Your Are Ready To Code!
+Image Processing Library For C++ or __SIPL__ ,Just Include The Header Files And Your Are Ready To Code!
+A simple solution if you desire to process image data our work with images in general without altering 
+projects linker settings and without adding additional dependencies .
 
-After searching the web for an easy and quick pixel data reading / writing library the closest thing i found that didnt include importing a nice amount of
-data into each project was the std-image library which is a fantastic tool so first of all a big shout out to the creators and programers
-of std library
-https://github.com/nothings/stb
+SIPL work best with __.jpg__  format ,
+the infrastructure used to load image binray data
+was recently updated for better preformance
+as for now SIPL uses stb-image library to load image data to memory and
+to write processed data back to drive.
 
-all you need to start using this class is to import 
-the class header file and cpp file
-as well as  the "stb_image_write.h"
-and  "stb_image.h" and you are ready to code!
+#### Inorder To Use SIPL:
+
+SIPL can be used just by adding to your project all the 
+header files and cpp files located in the __SIPL Core__ folder.
+include only the core of the library will allow you to use all core features and methods without
+the added functionality of the sub class.
+the main core provides all needed tools for image processing and handeling.
+__!Important!__ all sub librarys and functionality relay on the Core files always include core folder first!.
+
+if getting security error while compiling  
+please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor defenitions setting 
+
 
 
 ## Class Functionality:
