@@ -337,4 +337,18 @@ __Modifying A Single Index__
   (changes the whole pixel sequance of the spesific pixel)
   
   
+  # Additional SIPL SubLibrarys
+  
+  ## SIPL-Mole
+  
+  Mole is a deraction based drawer , mole takes angles and distances as parameters and draws the equivalent on a jpg image
+  Here are some examples of Mole functionality.
+  more info about Mole Usage can be found in the wiki tab of this project.
+  
+Example1:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/MoleExample3.jpg)
+
+Example2:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/MoleExample1.jpg)
+  
+  
+  
   
