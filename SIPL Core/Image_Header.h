@@ -71,7 +71,6 @@ protected:
 	void color_set(pixel const &color, int &index);
 
 	char decode_color(uint8_t r, uint8_t g, uint8_t b);
-	void init_pixel_matrix();
 	void init_pixel_matrix(const char *mode);
 	pixel Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols);
 	void Grayscale();
@@ -79,16 +78,23 @@ protected:
 	float Color_DistanceSq(pixel const &a, pixel const &b);
 	bool Distance_Neighbors(const float max_distance, int i, int j);
 	float Get_Angle_Between_Coordinates(int const start_x, int const start_y, int const target_x, int const target_y,const char *mode);
-
+	void LineHigh(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
+	void LineLow(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
+	void BresenhamsLine(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
+	void BresenhamsLine(const int start_x, const int start_y, const int target_x, const int target_y, const unsigned char color);
 
 public:
-	pixel **Pixel_Matrix;
+
 	Image();
 	Image(unsigned char *image_data, int Height, int width, int channel);
 	Image(int Height, int width, int channel);
 	virtual ~Image();
+
+	pixel **Pixel_Matrix;
+	void init_pixel_matrix();
 	int getWidth() const;
 	int getHeight()const;
+	void getPixelCopy(int Height, int Width, pixel &save_pixel);
 	void Set_Pixel_By_Inedx(int index, uint8_t value);
 	void Load_Blank_Canvas();
 	void Load_Blank_Canvas(int width, int height, char set_color);
@@ -137,7 +143,7 @@ public:
 	void Draw_Line(const int start_x, const int start_y, const int target_y, const unsigned char color);
 	void Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, const unsigned char color);
 	void Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
-
+	void Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color, int const &line_width);
 
 
 
@@ -169,6 +175,8 @@ public:
 	void Draw_Text(const int center_y, const int center_x, const char *text, pixel const &color);
 
 	void Draw_Graph(const int graph_height, const int graph_width, const int Space_Between_Lines);
+
+	void Figure_Detection();
 
 };
 
