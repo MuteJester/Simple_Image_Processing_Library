@@ -337,7 +337,7 @@ __Modifying A Single Index__
   (changes the whole pixel sequance of the spesific pixel)
   
   
-  # Additional SIPL SubLibrarys
+  # Additional SIPL SubLibraries
   
   ## SIPL-Mole
   
