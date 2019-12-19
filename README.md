@@ -34,7 +34,7 @@ Use:
 
 `void Detect_Faces();`
 
-Method scans images pixel and try to detect and mark faces with a red square
+Method scans image pixels and tries to detect and mark faces with a red square
 if #define FaceDebug is defined then it will also mark and print in console all the verification steps
 taken when the algorithm tries to recognize if it is looking at a face or not.
 the algorithm uses real time data without comparing to eigenface or templates from memory nor any kind
