@@ -3,10 +3,10 @@
 __General Info__
 
 Simple Image Processing Library For C++ or __SIPL__ ,Just Include The Header Files And Your Are Ready To Code!
-A simple solution if you desire to process image data our work with images in general without altering 
+A simple solution if you desire to process image data or work with images in general without altering 
 projects linker settings and without adding additional dependencies .
 
-SIPL work best with __.jpg__  format ,
+SIPL works best with __.jpg__  format ,
 the infrastructure used to load image binray data
 was recently updated for better preformance
 as for now SIPL uses stb-image library to load image data to memory and
