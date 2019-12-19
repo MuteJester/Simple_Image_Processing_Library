@@ -341,7 +341,7 @@ __Modifying A Single Index__
   
   ## SIPL-Mole
   
-  Mole is a deraction based drawer , mole takes angles and distances as parameters and draws the equivalent on a jpg image
+  Mole is a direction based drawer , mole takes angles and distances as parameters and draws the equivalent on a jpg image
   Here are some examples of Mole functionality.
   more info about Mole Usage can be found in the wiki tab of this project.
   
