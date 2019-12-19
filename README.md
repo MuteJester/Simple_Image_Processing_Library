@@ -2,7 +2,7 @@
 
 __General Info__
 
-Image Processing Library For C++ or __SIPL__ ,Just Include The Header Files And Your Are Ready To Code!
+Simple Image Processing Library For C++ or __SIPL__ ,Just Include The Header Files And Your Are Ready To Code!
 A simple solution if you desire to process image data our work with images in general without altering 
 projects linker settings and without adding additional dependencies .
 
