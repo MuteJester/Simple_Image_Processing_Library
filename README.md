@@ -21,6 +21,9 @@ the added functionality of the sub class.
 the main core provides all needed tools for image processing and handeling.
 __!Important!__ all sub librarys and functionality relay on the Core files always include core folder first!.
 
+
+* Detailed tutorials about how to work with SIPL can be found in the wiki tab of this repository 
+
 if getting security error while compiling  
 please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor defenitions setting 
 
@@ -49,7 +52,7 @@ Use:
 
 `void Write_ChannelGraph();`
 
-Method analyzes images data an saves a new image with RGB graps which show the amount of each color 
+Method analyzes images data and saves a new image with RGB graps which show the amount of each color 
 in each one of the image rows.
 the image in project folder will be named "ChannelGraph.jpg"
 
@@ -79,11 +82,11 @@ Use:
 
 `void Write_Pixel_Difference(Image &Source,const char *mode, int min_diff);`
 
-Method takes as arguments ,another image object , you can also spesify "Copy" in the mode arguemnt in order to write and image with
+Method takes as arguments ,another image object , you can also spesify "Copy" in the mode arguemnt in order to write an image with
 an exact copy of the diffrent pixel between both images that will also require you to add the min differnce you allow to count
 as a diffrent pixel.
-leaving the method call with just another image will result an image inside the project diractory which will only color red the
-Area and shape of diffrent pixels;
+leaving the method call with just another image will result an image inside the project directory which will only color red the
+Area and shape of different pixels;
 image will be saved as Pixel_Diffrence.jpg inside project diractory.
 
 example:
@@ -101,12 +104,12 @@ After Running the differnce writing algorithm:
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Pixel_Diffrence.jpg)
 
 
-A method is availabe to mark the diffrene on the image it self.
-for marking functionality use:
+The method is availabe to mark the difference on the image it self.
+ functionality usage:
 
 void Image::Mark_Identical_Pixels(Image &Source,const char *mode);
 
-Passing aside another image one of 2 string which represent modes:
+Passing aside another image one of 2 strings which represent mods:
 1)"Strict" - will find and mark anything even slightly different between 2 image pixels
 2)"Loose" - will find and mark pixel which share no more then a color distance of 40 between both images
 
@@ -123,12 +126,12 @@ the height and width.
 
 please keep in mind Kronecker product takes Image A an m × n Image and B is a p × q Image ,  Kronecker product will create a
 new image A ⊗ B that will be:
-the mp × nq of oiginal A and B, meaning if you use to images 100x100 pixels , the new image created will be 10,000x10,000 pixel
+the mp × nq of oiginal A and B, meaning if you use two images 100x100 pixels , the new image created will be 10,000x10,000 pixels
 and the weight of the image will be corresponding. 
 also please keep in mind there is a maximum an jpg can carry , the maximum is 65,535×65,535 pixels.
 processing time may vary from 1 to 6 minutes depending on both image sizes.
 
-the method contains 4 mode;
+the method contains 4 mods;
 1. "Mul" - method will preforme a simple ,classic Kronecker multiplication 
 2. "Size" - method will create a  Kronecker Product where the biggest pixels is selected each iteration 
 3. "Build_From" - method will construct calling objects images using passed by argument image (as shown in example)
@@ -173,12 +176,12 @@ Use:
 
 `void Tresholding(const char *mode,int value);`
 
-methood takes as arguments one of current 2 modes and a value of diffrence on which the algorithm will run the tresholding
+method takes as arguments one of current 2 mods and a value of difference on which the algorithm will run the thresholding
 process ,the larger the value of "value" argument the staturation effected will be greater.
 
 The two mode are:
 1)"Trunc" - method using this mode will drop the lower pixel value and increase the larger
-2)"EdgeTriggerd" - will drop pixels that are diffrent then the sequal before them. and increse the ones that follow the same weight.
+2)"EdgeTriggerd" - will drop pixels that are different then the sequal before them. and increse the ones that follow the same weight.
 
 example:
 
