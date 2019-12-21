@@ -2,30 +2,29 @@
 
 __General Info__
 
-Simple Image Processing Library For C++ or __SIPL__ ,Just Include The Header Files And Your Are Ready To Code!
+Simple Image Processing Library For C++ or __SIPL__ , Just Include The Header Files And Your Are Ready To Code!
 A simple solution if you desire to process image data or work with images in general without altering 
-projects linker settings and without adding additional dependencies .
+projects linker settings and without adding additional dependencies.
 
-SIPL works best with __.jpg__  format ,
-the infrastructure used to load image binray data
-was recently updated for better preformance
-as for now SIPL uses stb-image library to load image data to memory and
+SIPL works best with __.jpg__  format,
+the infrastructure used to load image binary data
+was recently updated for better performance
+as for now, SIPL uses the stb-image library to load image data to memory and
 to write processed data back to drive.
 
-#### Inorder To Use SIPL:
+#### In order To Use SIPL:
 
-SIPL can be used just by adding to your project all the 
-header files and cpp files located in the __SIPL Core__ folder.
-include only the core of the library will allow you to use all core features and methods without
-the added functionality of the sub class.
-the main core provides all needed tools for image processing and handeling.
-__!Important!__ all sub librarys and functionality relay on the Core files always include core folder first!.
+SIPL can be used just by adding to your project all the header files and CPP files located in the __SIPL Core__ folder.
+including only the core of the library will allow you to use all core features and methods without
+the added functionality of the subclasses.
+the main core provides all needed tools for image processing, analysis, and handling.
+__!Important!__ all sub-libraries and functionality relay on the Core files always include the core folder first!.
 
 
 * Detailed tutorials about how to work with SIPL can be found in the wiki tab of this repository 
 
 if getting security error while compiling  
-please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor defenitions setting 
+please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor definitions setting 
 
 
 
@@ -37,10 +36,10 @@ Use:
 
 `void Detect_Faces();`
 
-Method scans image pixels and tries to detect and mark faces with a red square
+The method scans image pixels and tries to detect and mark faces with a red square
 if #define FaceDebug is defined then it will also mark and print in console all the verification steps
 taken when the algorithm tries to recognize if it is looking at a face or not.
-the algorithm uses real time data without comparing to eigenface or templates from memory nor any kind
+the algorithm uses real-time data without comparing to eigenface or templates from memory nor any kind
 of AI.
 
 Example :
@@ -52,9 +51,8 @@ Use:
 
 `void Write_ChannelGraph();`
 
-Method analyzes images data and saves a new image with RGB graps which show the amount of each color 
-in each one of the image rows.
-the image in project folder will be named "ChannelGraph.jpg"
+The method analyzes images data and saves a new image with RGB graphs which show the amount of each color in each one of the image rows.
+the image in the project folder will be named "ChannelGraph.jpg"
 
 Example: 
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/ChannelGraph%20Example.jpg )
@@ -65,10 +63,10 @@ Use:
 
 `void Compress();`
 
-Method runs performs a check if and in what level the image pixel could be compressed then the method prompts the user
-to select a level of compression and saves the compressed image to project diractory as well as modifying image data inside
+The method performs a check if and in what level the image pixel could be compressed then the method prompts the user
+to select a level of compression and saves the compressed image to project directory as well as modifying image data inside
 the carrying object itself.
-image is saved in diractory as "Compressed.jpg"
+image is saved in directory as "Compressed.jpg"
 
 example:
 before: ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Image3.jpg)
@@ -82,16 +80,15 @@ Use:
 
 `void Write_Pixel_Difference(Image &Source,const char *mode, int min_diff);`
 
-Method takes as arguments ,another image object , you can also spesify "Copy" in the mode arguemnt in order to write an image with
-an exact copy of the diffrent pixel between both images that will also require you to add the min differnce you allow to count
-as a diffrent pixel.
-leaving the method call with just another image will result an image inside the project directory which will only color red the
+The method takes as arguments another image object, you can also specify "Copy" in the mode argument in order to write an image with
+an exact copy of the different pixels between both images that will also require you to add a value that will represent the minimum difference to be considered.
+leaving the method call with just another image will result in an image inside the project directory which will only color red the
 Area and shape of different pixels;
-image will be saved as Pixel_Diffrence.jpg inside project diractory.
+the image will be saved as Pixel_Diffrence.jpg inside the project directory.
 
 example:
 
-Here are two images with some diffrences between them.
+Here are two images with some differences between them.
 
 Imgage1:
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/D6_1.jpg)
@@ -99,19 +96,19 @@ Imgage1:
 Image2:
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/D6_2.jpg)
 
-After Running the differnce writing algorithm: 
+After Running the difference writing algorithm: 
 
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Pixel_Diffrence.jpg)
 
 
-The method is availabe to mark the difference on the image it self.
+There is a method for marking of different pixels as well.
  functionality usage:
 
 void Image::Mark_Identical_Pixels(Image &Source,const char *mode);
 
 Passing aside another image one of 2 strings which represent mods:
 1)"Strict" - will find and mark anything even slightly different between 2 image pixels
-2)"Loose" - will find and mark pixel which share no more then a color distance of 40 between both images
+2)"Loose" - will find and mark pixels which share no more than a color distance of 40 between both images
 
 __Kronecker Product__
 
@@ -119,22 +116,21 @@ Use:
 
 `void Kronecker_product(Image &b,const char *mode, const int Alter)`
 
-Method converts both images to matrices and preforms Kronecker multiplication between all pixel creating
-a new image loaded to the matrix part of object.
-if alter arguemnt will be passed as one the pixel data of the image itself holded in object will be alterd as well as 
-the height and width.
+The method converts both images to matrices and preforms Kronecker multiplication between all pixels creating
+a new image loaded to the matrix part of the object.
+if alter argument will be passed as '1' the pixel data of the image itself held in the object will be altered as well as the height and width.
 
-please keep in mind Kronecker product takes Image A an m × n Image and B is a p × q Image ,  Kronecker product will create a
+please keep in mind Kronecker product takes Image A an m × n Image and B is a p × q Image,  Kronecker product will create a
 new image A ⊗ B that will be:
-the mp × nq of oiginal A and B, meaning if you use two images 100x100 pixels , the new image created will be 10,000x10,000 pixels
+the mp × nq of original A and B, meaning if you use two images 100x100 pixels, the new image created will be 10,000x10,000 pixels
 and the weight of the image will be corresponding. 
-also please keep in mind there is a maximum an jpg can carry , the maximum is 65,535×65,535 pixels.
+also please keep in mind there is a maximum a jpg can carry, the maximum is 65,535×65,535 pixels.
 processing time may vary from 1 to 6 minutes depending on both image sizes.
 
 the method contains 4 mods;
-1. "Mul" - method will preforme a simple ,classic Kronecker multiplication 
+1. "Mul" - method will perform a simple, classic Kronecker multiplication 
 2. "Size" - method will create a  Kronecker Product where the biggest pixels is selected each iteration 
-3. "Build_From" - method will construct calling objects images using passed by argument image (as shown in example)
+3. "Build_From" - method will construct calling objects images using passed by argument image (as shown in the example)
 4. "Mix" - method will mix between the pixel of both images creating the Kroneckers Product of  the pixel mixture ;
  
  example:
@@ -155,8 +151,8 @@ Use:
 
 `void Write_Channel(const char color);`
 
-method takes as argument one of RGB colors as ,'r','g','b'.
-and saves to project diractory only the selected channel of the picture;
+the method takes as argument one of RGB colors as,'r','g','b'.
+and saves to project directory only the selected channel of the picture;
 example:
 
 Image ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Image3.jpg)
@@ -176,12 +172,12 @@ Use:
 
 `void Tresholding(const char *mode,int value);`
 
-method takes as arguments one of current 2 mods and a value of difference on which the algorithm will run the thresholding
-process ,the larger the value of "value" argument the staturation effected will be greater.
+the method takes as arguments one of current 2 mods and a value of difference on which the algorithm will run the thresholding
+process, the larger the value of the "value" argument the saturation effected will be greater.
 
-The two mode are:
+The two modes are:
 1)"Trunc" - method using this mode will drop the lower pixel value and increase the larger
-2)"EdgeTriggerd" - will drop pixels that are different then the sequal before them. and increse the ones that follow the same weight.
+2)"EdgeTriggerd" - will drop pixels that are different than the sequel before them. and increase the ones that follow the same weight.
 
 example:
 
@@ -199,12 +195,12 @@ Use:
 
 `void Feature_Matching(const int source_x, const int source_y);`
 
-method takes a sample from the pixel located at passed by argument coordinates ,
-runs trough images data inorder to find the same pixel in side the image.
-its not enough for a pixel to have the same color it also needs to have the same surrounding,meaning
+the method takes a sample from the pixel located at passed by argument coordinates,
+runs trough images data in order to find the same pixel inside the image.
+it's not enough for a pixel to have the same color it also needs to have the same surrounding, meaning
 it will only mark the pixel that is identical to the one selected (if there is one such)
-in the example i copied a the same image with some small differences .
-you can see the algorithms marks in blue_red circles the matching pixels(the ones located in the postion passed by argument).
+in the example, I copied the same image with some small differences.
+you can see the algorithms marks in blue_red circles the matching pixels(the ones located in the position passed by argument).
 the algorithm connects the identical pixels with a blue line.
 
 example:
@@ -218,10 +214,10 @@ Use:
 
 `void Image::Edge_Detection(const int max_color_gap);`
 
-methood runs trough image data and modifying the loaded data in object in a way where only the edges of the image
+the method runs trough image data and modifying the loaded data in an object in a way where only the edges of the image
 remain colored in white.
-the passed agrument is the maxium color gap allowed between pixels.
-the higher the number the more loose the algorithm will treat pixel difference.
+the passed argument is the maximum color gap allowed between pixels.
+the higher the number the looser the algorithm will treat pixel difference.
 
 example:
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Image5.jpg)
@@ -234,7 +230,7 @@ You can also use :
 
 `void Mark_Contour(const char color, const int max_color_gap)`
 
-to mark the Contour of an images without blacking the rest of the pixels.
+to mark the Contour of an image without blacking the rest of the pixels.
 
 Example:
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Mark%20Countur.jpg)
@@ -251,50 +247,50 @@ Example:
 __Modifying A Single Index__ 
 
 
-	void Set_Pixel_By_Inedx(int index, uint8_t value) :-
+    void Set_Pixel_By_Inedx(int index, uint8_t value) :-
   
-  Use an index in order to modify a spesific 1/3 pixel of an image
-  keep in mind the each pixel consists of 3 index's
+  Use an index to modify a specific 1/3 pixel of an image
+  keep in mind each pixel consists of 3 index's
   
   __Loading A Blank Frame__
   
-	void Load_Blank_Canvas() ;-
+    void Load_Blank_Canvas() ;-
   
-  Use the following function in order to load into class memory a black image
-  when calling the methood it will prompt the user to input all needed data for 
+  Use the following function to load into class memory a black image
+  when calling the method it will prompt the user to input all needed data for 
   creation of the Canvas.
   
   
-	void Load_Blank_Canvas(int width,int height,char set_color) :-
+    void Load_Blank_Canvas(int width,int height,char set_color) :-
   
-  Create clear canvas and load it the calss memory with starting fill defined by "set_color"
-  the height of the canvas and the width passed to the method as argumetns
-  no user prompt in the methood itself;
+  Create a clear canvas and load it the class memory with starting fill defined by "set_color"
+  the height of the canvas and the width passed to the method as arguments
+  no user prompt in the method itself;
   
   __Printing Pixel Data To Console__
  
-	void printImdata() ;-
+    void printImdata() ;-
   
-  prints to consle a matrix of pixel (already compressed each 3 index's into a single color)
+  prints to console a matrix of pixels (already compressed each 3 index's into a single color)
   the matrix is a char matrix where each char represents the color in the same position in the
-  image , meaning if the (i,j) in matrix are = "b" it meants the(i,j) pixel in the image is
+  image , meaning if the (i,j) in matrix are = "b" it means the(i,j) pixel in the image is
   blue, same goes for all base colors,
-  for colors which are'nt in the base color group ,(r,g,b,W,B,G,y) , the matrix will display 'M'
-  for "mixed" .
+  for colors which aren't in the base color group ,(r,g,b,W,B,G,y) , the matrix will display 'M'
+  for "mixed".
   
  
  __Prompt Drawing Method__
  
-	void Manual_Draw():-
+    void Manual_Draw():-
   
-  calling this method prompts the user to use the arrow keys inorder to draw on loaded image\canvas
-  it is not recomended for large images or canvas sizes as for the interface is being displayed on the
-  consle window and large images will cause the console to shift values as for lack of space.
+  calling this method prompts the user to use the arrow keys in order to draw on loaded image\canvas
+  it is not recommended for large images or canvas sizes as for the interface is being displayed on the
+  console window and large images will cause the console to shift values as for lack of space.
   
-  Useage:
-  arrow key to navigate accross pixels;
-  press 'e' when the selector '[]',
-  is on the disierd pixel.
+  Usage:
+  arrow key to navigate across pixels;
+  Press 'e' when the selector '[]',
+  is on the desired pixel.
   
   Insure that the selctor changed into "input mode" ,
   after hiting 'e', the selctor should go from '[]',to '_'.
@@ -311,40 +307,40 @@ __Modifying A Single Index__
   __Load An Image Into Created Object__
   
   
-	void Load_Image();
+    void Load_Image();
   
-   calling the methood will prompt the user to load an image into method memory.
+   calling the method will prompt the user to load an image into method memory.
   
-	void Load_Image(const char *f_name);
+    void Load_Image(const char *f_name);
   
-  overload of Load_Image() ,allows to load image into memory with prompting user simply by sending the method the file name.
+  overload of Load_Image() , allows loading image into memory with prompting user simply by sending the method the file name.
   
-  __Write The Image Data From Object To a .jpg In Poject Diractory__
+  __Write The Image Data From Object To a .jpg In Project Diractory__
   
-	void Write_Image();
+    void Write_Image();
   
-  prompts the user the saving sequance of the data loaded into calss memory.
+  prompts the user the saving sequence of the data loaded into class memory.
   
-	void Write_Image(const char *f_name);
+    void Write_Image(const char *f_name);
 
-  overload of the Write_Image() method, allows to saved the image data in calss by the name passed in the method call.
+  overload of the Write_Image() method, allows us to save the image data in class by the name passed in the method call.
   
-	void Color_Spec(int w, int h, char color);
+    void Color_Spec(int w, int h, char color);
   
-   method allows to change the color of the image ,it takes 'w' and 'h' ,as the 'x' and 'y' cords of the disired pixel and 
+   the method allows to change the color of the image, it takes 'w' and 'h' , as the 'x' and 'y' cords of the desired pixel and 
    modify it to the passed color 'color'.
   
-	void Color_Spec(int index, char color);
+    void Color_Spec(int index, char color);
   
-  overload of the Color_Spec() method, change a spesific pixel color by its starting index.
-  (changes the whole pixel sequance of the spesific pixel)
+  overload of the Color_Spec() method, change a specific pixel color by its starting index.
+  (changes the whole pixel sequence of the specific pixel)
   
   
   # Additional SIPL SubLibraries
   
   ## SIPL-Mole
   
-  Mole is a direction based drawer , mole takes angles and distances as parameters and draws the equivalent on a jpg image
+  Mole is a direction based drawer, mole takes angles and distances as parameters and draws the equivalent on a jpg image
   Here are some examples of Mole functionality.
   more info about Mole Usage can be found in the wiki tab of this project.
   
@@ -357,7 +353,7 @@ Example2:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_L
   
 ## SIPL- Grapher
 
-Grapher is another SIPL sub library ,
+Grapher is another SIPL sub library,
 Grapher allows you to plot graphs with an orientation to graph theory graphs.
 More info about the usage of Grapher can be found in the wiki tab of this project.
 
