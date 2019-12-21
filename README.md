@@ -55,7 +55,7 @@ The method analyzes images data and saves a new image with RGB graphs which show
 the image in the project folder will be named "ChannelGraph.jpg"
 
 Example: 
-![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/ChannelGraph%20Example.jpg )
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/ChannelGraph.jpg )
 
 __Pixel Compressor__
 
