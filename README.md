@@ -344,10 +344,11 @@ __Modifying A Single Index__
   Here are some examples of Mole functionality.
   more info about Mole Usage can be found in the wiki tab of this project.
   
-Example1:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/MoleExample3.jpg)
+* Example1:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/MoleExample3.jpg)
 
-Example2:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/MoleExample1.jpg)
+* Example2:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/MoleExample1.jpg)
   
+* Example3: ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Mole%20Example2.jpg)
   
   
   
