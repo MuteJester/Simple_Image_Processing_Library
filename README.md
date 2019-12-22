@@ -45,6 +45,26 @@ of AI.
 Example :
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/FaceDetectionEX.jpg  )
 
+
+__Figure Detection__
+
+Use:
+
+`	void Figure_Detection(int const &blob_distance_treshold, int const &color_distance_treshold,int const &Thresholding_level);`
+
+The method runs an analysis and mark all the significant objects in the picture (compared to the the whole image)
+and loads an edited image to object's memory , all the "significant" objects will be marked by a red frame around the object.
+
+Example:
+
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/OD%20example%204.jpg)
+
+
+
+
+
+
+
 __Channel Graph__
 
 Use:
