@@ -423,4 +423,17 @@ Examples Of Grapher.
 An image created of an Interval Graph made from intervals loaded to Interval_Graph class.
 ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/GrapherExample1.jpg)
 
+A Regular Graph Illustration:
+* Example of a graph G made from 4 vertices and 4 edges between {V0-V1,V0-V3,V1-V2,V1-V3};
+
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/G%20Example%20Drawer.jpg)
+
+* the method also allows the user to choose if to out put the regular graph or its complement ,here is the complement  of the above example :
+
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/G%20comp%20Example%20Drawer.jpg)
+
+
+
+Detailed instructions on how to use SIPL - Grapher can be found in the wiki tab;
+
   
