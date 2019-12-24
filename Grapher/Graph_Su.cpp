@@ -3,6 +3,111 @@
 #include <string>
 #include <time.h>
 
+Graph::Graph(int const &Number_Of_Vertices) {
+	this->number_of_vertices = Number_Of_Vertices;
+	this->edges = (int**)malloc(sizeof(int*)*Number_Of_Vertices);
+	for (int i = 0; i < Number_Of_Vertices; i++) {
+		edges[i] = (int*)calloc(number_of_vertices, sizeof(int));
+	}
+}
+void Graph::Add_Edge(int const &Vr, int const &Vl) {
+	if (Vr > number_of_vertices || Vl > number_of_vertices) {
+		return;
+	}
+	edges[Vr][Vl] = 1;
+	edges[Vl][Vr] = 1;
+
+}
+
+void Graph::Print_Edges() {
+	stringstream ss;
+	string build;
+	cout << endl << "Graph Edges" << endl << endl;
+	for (int i = 0; i < number_of_vertices; i++) {
+		for (int j = 0; j < number_of_vertices; j++) {
+			if (edges[i][j] == 1) {
+				ss << "{V" << i << ", " << "V" << j << "}";
+				build = ss.str();
+				cout << build << endl;
+				ss.str(string());
+			}
+		}
+	}
+}
+
+void Graph::Export_Graph_Image(const char *type) {
+	char m1[5],m2[8];
+	strcpy(m1, "Comp");
+	strcpy(m2, "Regular");
+
+	Image Output;
+	Color_Palette CSET;
+	stringstream ss;
+	string via;
+	int cx, cy, angle = 0,delta=1,draw_y =20;
+	Output.Load_Blank_Canvas(number_of_vertices * 50+100, number_of_vertices * 50, CSET.Azure);
+	Output.Get_Center(cx, cy);
+	//Output.Draw_Circle(cx, cy, 4, CSET.Green);
+	angle = 360 / number_of_vertices;
+	vector<Vert> vertc;
+	
+		for (int i = 0; i < number_of_vertices; i++) {
+			vertc.push_back({ (int)(cy + cos(angle)*(number_of_vertices * 10)), (int)(cx + sin(angle)*(number_of_vertices * 10)),CSET.Color_Serial_Number[i + 2 + rand() % 134 ] });
+			Output.Draw_Circle((int)(cx + sin(angle)*(number_of_vertices * 10)), (int)(cy + cos(angle)*(number_of_vertices * 10)),4,vertc.back().Color,"Fill");
+			//Output.Draw_Line(cy, cx, cy + cos(angle)*(number_of_vertices * 10), cx + sin(angle)*(number_of_vertices * 10), CSET.Black);
+			angle += (360 / number_of_vertices - 1) +delta;
+			delta++;
+		}
+
+		for (int i = 5; i < 80; i++) {
+			Output.Draw_Line(15, i, draw_y*number_of_vertices-10, i, CSET.Dark_Gray);
+		}
+		Output.Draw_Text(4, 40, "VERTICES");
+		for (int i = 0; i < number_of_vertices; i++) {
+			ss << "V" << i;
+			via = ss.str();
+			Output.Draw_Text(draw_y, 25,via.c_str(),vertc[i].Color);
+			ss.str(string());
+			draw_y += 10;
+		}
+
+		if (strcmp(m1, type) == 0) {
+
+			for (int i = 0; i < number_of_vertices; i++) {
+
+				for (int j = 0; j < number_of_vertices; j++) {
+					if (this->edges[i][j] != 1) {
+						Output.Draw_Line(vertc[i].Right, vertc[i].Left, vertc[j].Right, vertc[j].Left, vertc[i].Color);
+		/*				Output.Draw_Circle(vertc[i].Left, vertc[i].Right, 4, vertc[i].Color);
+						Output.Draw_Circle(vertc[j].Left, vertc[j].Right, 4, vertc[j].Color);
+*/
+					}
+				}
+
+			}
+			Output.Draw_Text(4, (number_of_vertices * 50 + 100) / 2 + 5, "G COMP ILLUSTRATION");
+
+			Output.Write_Image("Graph_Output");
+		}	
+		else if (strcmp(m2, type) == 0) {
+			for (int i = 0; i < number_of_vertices; i++) {
+
+				for (int j = 0; j < number_of_vertices; j++) {
+					if (this->edges[i][j] == 1) {
+						Output.Draw_Line(vertc[i].Right, vertc[i].Left, vertc[j].Right, vertc[j].Left, vertc[i].Color);
+				/*		Output.Draw_Circle(vertc[i].Left, vertc[i].Right, 4, vertc[i].Color);
+						Output.Draw_Circle(vertc[j].Left, vertc[j].Right, 4, vertc[j].Color,"Fill");*/
+					}
+				
+				}
+
+			}
+			Output.Draw_Text(4, (number_of_vertices * 50 + 100) / 2 + 5, "G ILLUSTRATION");
+			Output.Write_Image("Graph_Output");
+		}
+
+}
+
 
 Interval_Graph::Interval_Graph() {
 	this->vertices = nullptr;
@@ -189,11 +294,10 @@ void Interval_Graph::Output_Graph_Image() {
 			}
 		}
 		
-		graph.Draw_Line(ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height - 2, ZeroGx + (40)*vertices[i].Right, ZeroGy - draw_height - 2, Palette.Color_Serial_Number[rand_select]);
-		graph.Draw_Line(ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height-1, ZeroGx + (40)*vertices[i].Right, ZeroGy - draw_height-1, Palette.Color_Serial_Number[rand_select]);
-		graph.Draw_Line(ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height, ZeroGx + (40)*vertices[i].Right, ZeroGy - draw_height,Palette.Dark_Red);
-		graph.Draw_Line(ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height+1, ZeroGx + (40)*vertices[i].Right, ZeroGy - draw_height+1, Palette.Color_Serial_Number[rand_select]);
-		graph.Draw_Line(ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height + 2, ZeroGx + (40)*vertices[i].Right, (ZeroGy - draw_height) + 2, Palette.Color_Serial_Number[rand_select]);
+		graph.Draw_Line(ZeroGy - draw_height-1, ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height-1, ZeroGx + (40)*vertices[i].Right, Palette.Color_Serial_Number[rand_select],2);
+		graph.Draw_Line(ZeroGy - draw_height, ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height,ZeroGx + (40)*vertices[i].Right,Palette.Dark_Red);
+		graph.Draw_Line(ZeroGy - draw_height+1, ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height+1, ZeroGx + (40)*vertices[i].Right, Palette.Color_Serial_Number[rand_select],2);
+
 
 
 		graph.Draw_Circle(ZeroGx + (40)*vertices[i].Left, ZeroGy - draw_height, 5, Palette.Color_Serial_Number[rand_select], "Fill");
@@ -215,17 +319,17 @@ void Interval_Graph::Output_Graph_Image() {
 	graph.Draw_Text(40, 80, "LIST OF VERTICES");
 
 	//left info frame
-	if (allocated_vertices <= 10) {
+	if (allocated_vertices < 10) {
 		left_multiplyer = (4 * allocated_vertices) * 2 + 10;
 	}
 	else {
-		left_multiplyer = (allocated_vertices) * 2 + 10;
+		left_multiplyer = (allocated_vertices) * 2 + 30;
 	}
 
 
 
 	for (int i = 5; i <= 140; i++) {
-		graph.Draw_Line(i, 55,i, 55 + (allocated_vertices * left_multiplyer), Palette.Dark_Gray);
+		graph.Draw_Line(55, i,55 + (allocated_vertices * left_multiplyer),i, Palette.Dark_Gray);
 	}
 
 	
@@ -268,16 +372,16 @@ void Interval_Graph::Output_Graph_Image() {
 	
 	//right info frame
 
-	if (allocated_vertices <= 10) {
+	if (allocated_vertices < 10) {
 		right_multipyer = (4 * allocated_vertices)*2 + 10;
 	}
 	else {
-		right_multipyer = (allocated_vertices);
+		right_multipyer = (allocated_vertices*2 + 10);
 
 	}
 
 	for (int i = W-200; i <= W-20; i++) {
-		graph.Draw_Line(i, 55, i, 55 + (allocated_vertices * right_multipyer), Palette.Dark_Gray);
+		graph.Draw_Line(55,i,55 + (allocated_vertices * right_multipyer),i, Palette.Dark_Gray);
 	}
 
 	graph.Draw_Text(draw_height - 20, W - 150, "[G STATS]");
