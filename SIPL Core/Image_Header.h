@@ -9,9 +9,14 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <list>
 
 
 using namespace std;
+
+
+
+
 typedef struct pixel {
 	uint8_t r;
 	uint8_t g;
@@ -24,6 +29,13 @@ struct coordinate {
 	int x;
 	int y;
 };
+
+struct Point {
+	double x{ 0 }, y{ 0 },z{ 0 };
+	//int i, j;
+};
+
+using VectorFrame = vector<Point>;
 
 class Pixel_C {
 private:
@@ -50,6 +62,21 @@ public:
 
 };
 
+class Blob {
+public:
+	int Upleft_X, Upleft_Y;
+	int Downright_X, Downright_Y;
+	int Distnace_Treshold;
+
+	Blob(int const &x, int const &y, int const &Distnace_Treshold );
+	void Clear();
+	void SetProps(int const &x, int const &y);
+	void add(int const &px, int const &py);
+	bool Near(int const &x, int const &y);
+	float Size();
+	
+};
+
 
 class Image {
 protected:
@@ -73,15 +100,18 @@ protected:
 	char decode_color(uint8_t r, uint8_t g, uint8_t b);
 	void init_pixel_matrix(const char *mode);
 	pixel Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols);
-	void Grayscale();
+	void Grayscale(int const &alter);
 	int Color_Distance(pixel const &a, pixel const &b);
 	float Color_DistanceSq(pixel const &a, pixel const &b);
+	float Color_Delta(pixel const &A, pixel const &B);
 	bool Distance_Neighbors(const float max_distance, int i, int j);
 	float Get_Angle_Between_Coordinates(int const start_x, int const start_y, int const target_x, int const target_y,const char *mode);
 	void LineHigh(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
 	void LineLow(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
 	void BresenhamsLine(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
 	void BresenhamsLine(const int start_x, const int start_y, const int target_x, const int target_y, const unsigned char color);
+	void Blob_Framing(int const &distance_treshold,pixel const &frame_color);
+	VectorFrame K_Means(const VectorFrame& data, size_t k, size_t number_of_iterations);
 
 public:
 
@@ -90,8 +120,11 @@ public:
 	Image(int Height, int width, int channel);
 	virtual ~Image();
 
+
+
 	pixel **Pixel_Matrix;
 	void init_pixel_matrix();
+
 	int getWidth() const;
 	int getHeight()const;
 	void getPixelCopy(int Height, int Width, pixel &save_pixel);
@@ -99,6 +132,7 @@ public:
 	void Load_Blank_Canvas();
 	void Load_Blank_Canvas(int width, int height, char set_color);
 	void Load_Blank_Canvas(int width, int height, pixel const &background_color);
+	void Get_Center(int &center_x, int &center_y)const;
 
 	void printImdata();
 	void printImdata(char color);
@@ -118,13 +152,11 @@ public:
 	bool operator==(Image const &b);
 	bool operator!=(Image const &b);
 
-	void Compress();
 
 	void Text_To_Image(const char *file_name);
 	void Image_To_Text(const char *Image_name);
-	void Get_Center(int &center_x, int &center_y)const;
-
 	void Insert_Text_Into_Image(const char *file_name, const char *Image_Name);
+
 	void Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, const unsigned char color);
 	void Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, const unsigned char color, const char *mode);
 	void Draw_Square(const int center_x, const int center_y, const int s_width,
@@ -132,8 +164,7 @@ public:
 
 	void Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, pixel const &color);
 	void Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, pixel const &color, const char *mode);
-	void Draw_Square(const int center_x, const int center_y, const int s_width,
-		const int s_height, pixel const &color, const char *mode, const unsigned space);
+	void Draw_Square(const int center_x, const int center_y, const int s_width,const int s_height, pixel const &color, const char *mode, const unsigned space);
 
 	void Draw_Circle(const int center_x, const int center_y, const int c_radius, const unsigned char color);
 	void Draw_Circle(const int center_x, const int center_y, const int c_radius, pixel const &color);
@@ -142,12 +173,14 @@ public:
 
 	void Draw_Line(const int start_x, const int start_y, const int target_y, const unsigned char color);
 	void Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, const unsigned char color);
-	void Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color);
-	void Draw_Line(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color, int const &line_width);
+	void Draw_Line(const int start_y, const int start_x, const int target_y, const int target_x, pixel const &color);
+	void Draw_Line(const int start_y, const int start_x, const int target_y, const int target_x, pixel const &color, int const &line_width);
 
+	void Draw_Graph(const int graph_height, const int graph_width, const int Space_Between_Lines);
 
 
 	void Convert_Grayscale();
+	void Compress();
 	void Mark_Identical_Pixels(pixel const &Target);
 	void Mark_Identical_Pixels(Image &Source);
 	void Mark_Identical_Pixels(Image &Source, const char *mode);
@@ -155,13 +188,13 @@ public:
 	void Write_Pixel_Difference(Image &Source, const char *mode, int min_diff);
 	void Mark_Different_Pixels(Image &Source);
 	void Mark_Different_Pixels(Image &Source, const char *mode);
-	void Mark_Different_Pixels(Image &Source, const char *mode, int min_diff);
+	void Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int const &Distnace_Treshold, pixel const &frame_color);
 	void Write_ChannelGraph();
 	void Write_Channel(const char color);
 	void Shutdown_Channel(const char color);
 	void Flip180();
 	void Detect_Faces();
-	void Tresholding(const char *mode, int value);
+	void Tresholding(const char *mode, int const &value, int const &alter);
 	void Edge_Detection();
 	void Edge_Detection(const int max_color_gap);
 	void Mark_Contour(const char color, const int max_color_gap);
@@ -173,11 +206,12 @@ public:
 	void Draw_Text(const int center_y, const int center_x, const char *text);
 	void Draw_Text(const int center_y, const int center_x, const char *text, const char color);
 	void Draw_Text(const int center_y, const int center_x, const char *text, pixel const &color);
+	void Color_Flooring(const char *mode,int const &alter);
+	void Figure_Detection(int const &blob_distance_treshold, int const &color_distance_treshold,int const &Thresholding_level);
+	void Image_Segmentation(int const &k, int const &iterations, int const &alter);
 
-	void Draw_Graph(const int graph_height, const int graph_width, const int Space_Between_Lines);
-
-	void Figure_Detection();
-
+	void Write_Average_Color_Palette(int const &palette_size);
+	void Convert_RGB_To_LAB(int const &alter);
 };
 
 
