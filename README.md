@@ -62,6 +62,24 @@ Example:
 
 
 
+__Image Segmentation__
+
+Use:
+
+` void Image_Segmentation(int const &k, int const &iterations, int const &alter);`
+
+Calling the method will segment the image into the specified amount of colors depending on the average colors of the given image,
+the method uses machine learning in order to find the specified amount of average colors and segment the image.
+detailed use instructions can be find in the wiki tab under the SIPL-Core tab.
+
+Examples:
+
+Original Image: ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Image5.jpg)
+
+Segmentation Using K = {2,3,4,5,8,16} - 
+
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Kmeans%202-16.jpeg)
+
 
 
 
@@ -76,6 +94,28 @@ the image in the project folder will be named "ChannelGraph.jpg"
 
 Example: 
 ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/ChannelGraph.jpg )
+
+
+__Getting Average Color Palette__
+
+Use:
+
+ `void Write_Average_Color_Palette(int const &palette_size);`
+ 
+ The method takes an integer as argument ,depending on the value the method will use machine leraning in order  to find the passed value amount of dominant colors in the image , the method will output a .jpg image representing the average color palette of the image loaded on objects memory, detailed use instructions can be found in the wiki tab.
+ 
+ Examples:
+ 
+ Original Image: ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Image5.jpg)
+ 
+ Palettes of images 4,8 and 16 average colors:
+ 
+4:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Average_4_Color_Palette.jpg)
+8:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Average_8_Color_Palette.jpg)
+16:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Average_16_Color_Palette.jpg)
+
+
+
 
 __Pixel Compressor__
 
