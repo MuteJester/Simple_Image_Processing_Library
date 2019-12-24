@@ -102,7 +102,7 @@ Use:
 
  `void Write_Average_Color_Palette(int const &palette_size);`
  
- The method takes an integer as argument ,depending on the value the method will use machine leraning in order  to find the passed value amount of dominant colors in the image , the method will output a .jpg image representing the average color palette of the image loaded on objects memory, detailed use instructions can be found in the wiki tab.
+ The method takes an integer as argument ,depending on the value the method will use machine learning in order  to find the passed value amount of dominant colors in the image , the method will output a .jpg image representing the average color palette of the image loaded on objects memory, detailed use instructions can be found in the wiki tab.
  
  Examples:
  
