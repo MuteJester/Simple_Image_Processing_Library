@@ -436,4 +436,27 @@ A Regular Graph Illustration:
 
 Detailed instructions on how to use SIPL - Grapher can be found in the wiki tab;
 
+
+
+  ## SIPL-Algiplot
+  
+  Algiplot is another SIPL sub library which allows plotting of 2D and 3D graphs ,
+  currently Algiplot only supports ploting of the graph frame and point creation on the graph plane,
+  Algiplot as any other SIPL library runs using the SIPL-Core library .
+  
+ More information on how to use Algiplot can be found in the wiki tab.
+  
+  Examples of 2D and 3D ploting;
+  
+  * 2D:
+  
+  ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/2d%20plot%20wpoint.jpg)
+
+
+* 3D:  
+
+ ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/3d%20w-points%20example.jpg)
+
+
+
   
