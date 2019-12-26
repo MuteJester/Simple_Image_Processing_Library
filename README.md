@@ -28,7 +28,7 @@ please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor definitions setting
 
 
 
-## Class Functionality:
+## Library Functionality:
 
 __Face Detection (Alpha Version Still Under Development)__:
 
