@@ -298,6 +298,30 @@ Example:
 
 
 
+__Recreate Using Machine Learning And Drawing Lines__
+
+Use:
+
+`void Image::Image_Rebuild_With_Lines(int const &Iterations)`
+
+The method will run a machine learning algorithm which will try to recreate the original image loaded to objects memory by creating
+random lines with random lengths and positions, the machine learning itself will need to select the colors for the randomly appearing lines in order to get closer to the original image , the greater the value of iterations the closer the output image will be to the original .
+
+Here is the logo of Holon institue of technology:
+
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Image7.jpg)
+
+And here is a short gif of the firt few thousand of iterations made and the process of the machine in those few thousand rounds.
+
+![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/hit-ML-gif.gif)
+
+
+And another small example:
+
+Original: ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Image61.jpg)
+
+
+After a few thousand iterations:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/im4_example_gif.gif)
 
 
 ###### Basic Operations
