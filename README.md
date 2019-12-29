@@ -307,7 +307,7 @@ Use:
 The method will run a machine learning algorithm which will try to recreate the original image loaded to objects memory by creating
 random lines with random lengths and positions, the machine learning itself will need to select the colors for the randomly appearing lines in order to get closer to the original image , the greater the value of iterations the closer the output image will be to the original .
 
-Here is the logo of Holon institue of technology:
+Here is the logo of Holon institute  of technology:
 
 ![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Image7.jpg)
 
