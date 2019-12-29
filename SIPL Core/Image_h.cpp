@@ -39,7 +39,7 @@ using namespace std;
 //#define FaceDebug
 
 
-
+//#define Line_StepByStep
 
 
 
@@ -294,17 +294,17 @@ double squared_3Point_distance(Point first, Point second) {
 	return Get_Square(first.x - second.x) + Get_Square(first.y - second.y) + Get_Square(first.z - second.z);
 }
 float GammaX(int const &color_value) {
-	float conditionA = 0.04045, divisorB = 12.92;
-	float Value = color_value;
+	float conditionA = (float)0.04045, divisorB = (float)12.92;
+	float Value =(float)color_value;
 	Value /= 255;
 	float result;
 	if (Value > conditionA) {
-		result = pow(((Value + 0.055) / 1.055), 2.4);
+		result = (float)pow(((Value + 0.055) / 1.055), 2.4);
 		return Value;
 
 	}
 	else {
-		Value /= 12.92;
+		Value =(float)(Value /12.92);
 		return Value;
 	}
 }
@@ -313,10 +313,9 @@ float LAB_Function(float const &value) {
 		return pow(value, 1 / 3);
 	}
 	else {
-		return (1 / 3 * (pow((29 / 6), 2)*value)) + (4 / 29);
+		return (float)(1 / 3 * (pow((29 / 6), 2)*value)) + (4 / 29);
 	}
 }
-
 void RGB_XYZ_Transformation(pixel &value,double const M[3][3]) {
 
 	double result[3][1];
@@ -353,13 +352,60 @@ void RGB_XYZ_Transformation(pixel &value,double const M[3][3]) {
 	//value.b = b;
 
 }
-
 float Pixel_Dataframe_Difference(pixel const &Pix, Point const &DF_point) {
 	float distance;
 	distance = (DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b);
 	return sqrt(distance);
 }
+pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const int target_y, const int target_x) {
+	float dx, sx, dy, sy, err, e2;
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	pixel Dom_Color;
+	vector<pixel> dots;
+	VectorFrame Points;
+	VectorFrame Res;
+	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
+	dx = abs(target_y - start_y);
+	sx = start_y < target_y ? 1 : -1;
+	dy = -abs(target_x - start_x);
+	sy = start_x < target_x ? 1 : -1;
+	err = dx + dy;  //error value
+	while (true) {
+		if (x0 == x1 && y0 == y1) {
+			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+			Points.push_back({ (double)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].r,
+								(double)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].g,
+								(double)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].b
+				});
+			break;
+		}
 
+		//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+		Points.push_back({ (double)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].r,
+							(double)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].g,
+							(double)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].b
+			});
+		e2 = 2 * err;
+		if (e2 >= dy) {
+			err += dy;
+			x0 += sx;
+		}
+		if (e2 <= dx) {
+			err += dx;
+			y0 += sy;
+		}
+
+	}
+
+	Res = K_Means(Points, 1, 100);
+	Dom_Color.r = Res[0].x;
+	Dom_Color.g = Res[0].y;
+	Dom_Color.b = Res[0].z;
+
+	return Dom_Color;
+}
 
 void Image::color_set(char color_choice, int &index) {
 
@@ -521,11 +567,11 @@ bool Blob::Near(int const &x, int const &y) {
 	}
 }
 void Blob::add(int const &px, int const &py) {
-	this->Downright_X = fmin(Downright_X, px);
-	this->Downright_Y = fmin(Downright_Y, py);
+	this->Downright_X = (float)fmin(Downright_X, px);
+	this->Downright_Y = (float)fmin(Downright_Y, py);
 
-	this->Upleft_X = fmax(Upleft_X, px);
-	this->Upleft_Y = fmax(Upleft_Y, py);
+	this->Upleft_X = (float)fmax(Upleft_X, px);
+	this->Upleft_Y = (float)fmax(Upleft_Y, py);
 }
 void Blob::Clear() {
 	this->Downright_X = this->Downright_Y = this->Upleft_X = this->Upleft_Y = -1;
@@ -537,7 +583,7 @@ void Blob::SetProps(int const &x, int const &y) {
 	this->Upleft_Y = y;
 }
 float Blob::Size() {
-	return abs(this->Upleft_X - Downright_X)*(Upleft_Y - Downright_Y);
+	return (float)abs(this->Upleft_X - Downright_X)*(Upleft_Y - Downright_Y);
 }
 
 
@@ -997,18 +1043,27 @@ void Image::init_pixel_matrix(const char *mode) {
 			}
 		}
 		else {
+			//for (int i = 0; i < Height; i++) {
+			//	free(Pixel_Matrix[i]);
+			//}
+			//free(Pixel_Matrix);
 
-			int j = 0, k = 0, clock = 0;
-			for (int i = 0; i < width*Height * 3; i += 3) {
+			//this->Pixel_Matrix = (pixel**)malloc(sizeof(pixel*)*Height);
+			//for (int i = 0; i < Height; i++) {
+			//	Pixel_Matrix[i] = (pixel*)malloc(sizeof(pixel)*width);
+			//}
+
+			int j = 0, k = 0, clock = 0,i=0;
+			for (i = 0; i < width*Height * 3; i += 3) {
 				if (clock == width) {
 					j++;
 					k = 0;
 					clock = 0;
 				}
 				Pixel_Matrix[j][k].index_range = i;
-				Pixel_Matrix[j][k].r = (int)image_data[i];
-				Pixel_Matrix[j][k].g = (int)image_data[i + 1];
-				Pixel_Matrix[j][k].b = (int)image_data[i + 2];
+				Pixel_Matrix[j][k].r = image_data[i];
+				Pixel_Matrix[j][k].g = image_data[i + 1];
+				Pixel_Matrix[j][k].b = image_data[i + 2];
 				k++;
 				clock++;
 			}
@@ -1843,11 +1898,11 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_x, 
 		if (this->Pixel_Matrix == nullptr) {
 			init_pixel_matrix();
 		}
-		float x0 = start_x, x1 = target_x, y0 = start_y, y1 = target_y;
-		dx = abs(target_x - start_x);
-		sx = start_x < target_x ? 1 : -1;
-		dy = -abs(target_y - start_y);
-		sy = start_y < target_y ? 1 : -1;
+		float x0 =(float)start_x, x1 = (float)target_x, y0 = (float)start_y, y1 = (float)target_y;
+		dx = (float)abs(target_x - start_x);
+		sx = (float)start_x < target_x ? 1 : -1;
+		dy = (float)-abs(target_y - start_y);
+		sy = (float)start_y < target_y ? 1 : -1;
 		err = dx + dy;  /* error value e_xy */
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
@@ -2039,7 +2094,7 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 	}
 }
 void Image::BresenhamsLine(const int start_y, const int start_x, const int target_y, const int target_x, pixel const &color) {
-	float dx, sx, dy, sy, err, e2;
+	double dx, sx, dy, sy, err, e2;
 	if (this->Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
@@ -2072,6 +2127,2648 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 }
 
 
+
+void Image::Draw_Graph(const int graph_height, const int graph_width, const int Space_Between_Lines) {
+	if (graph_height > this->Height || graph_width > this->width) {
+		cout << "Selected Graph Size Is Larger Then Canvas Size\n";
+		return;
+	}
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	int cx, cy, index = 0, xy_num = 0;
+	stringstream conv;
+	string catcher;
+	this->Get_Center(cx, cy);
+
+	Draw_Square(cx, cy, graph_width / 2, graph_height / 2, 'B');
+	Draw_Square(cx, cy, (graph_width / 2) - 1, (graph_height / 2) - 1, 'B');
+	Draw_Square(cx, cy, (graph_width / 2) - 2, (graph_height / 2) - 2, 'B');
+
+	xy_num = graph_height / Space_Between_Lines;
+
+	for (int i = (Height - graph_height) / 2; i <= Height - ((Height - graph_height) / 2); i += Space_Between_Lines) {
+		if (i == (Height - graph_height) / 2) {
+			Draw_Line(i, (width - graph_width) / 2, i, (width - graph_width) / 2 + graph_width, 'B');
+			conv << xy_num;
+			catcher = conv.str();
+			Draw_Text(i, (width - graph_width) / 2 - 12, catcher.c_str());
+		}
+		else {
+			Draw_Line(i, (width - graph_width) / 2 - 5, i, (width - graph_width) / 2 + graph_width, 'B');
+			conv << xy_num;
+			catcher = conv.str();
+			Draw_Text(i, (width - graph_width) / 2 - 12, catcher.c_str());
+		}
+		xy_num--;
+		catcher.clear();
+		conv.str(string());
+	}
+	xy_num = 0;
+	for (int i = (width - graph_width) / 2; i <= (width - graph_width) / 2 + graph_width; i += Space_Between_Lines) {
+
+		Draw_Line((Height - graph_height) / 2, i, (Height - graph_height) / 2 + graph_height + 5, i, 'B');
+		conv << xy_num;
+		catcher = conv.str();
+		Draw_Text((Height - graph_height) / 2 + graph_height + 7, i - 4, catcher.c_str());
+		xy_num++;
+		catcher.clear();
+		conv.str(string());
+	}
+
+
+
+
+
+}
+void Image::Draw_Text(const int center_y, const int center_x, const char *text) {
+	int text_length = strlen(text);
+	int start_x, end_x, draw_y, flag = 0, temp, count = 0;
+	LibCharacters Set;
+	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
+		|| center_y + 4 > Height || center_y - 4 < 0) {
+		cout << "Text Longer The Image Frame, Aborting...\n";
+		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
+		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
+		return;
+	}
+
+	start_x = center_x - (9 * (text_length / 2));
+	draw_y = center_y - 4;
+	end_x = center_x + (9 * (text_length / 2));
+
+
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	for (int i = 0; text[i] != '\0'; i++) {
+
+		switch (text[i])
+		{
+
+		case '0':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Zero.Zero[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '1':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_One.One[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '2':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Two.Two[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '3':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Three.Three[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '4':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Four.Four[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '5':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Five.Five[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '6':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Six.Six[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '7':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Seven.Seven[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '8':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Eight.Eight[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '9':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Nine.Nine[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'A':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_A.A[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'B':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_B.B[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'C':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_C.C[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'D':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_D.D[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'E':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_E.E[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'F':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_F.F[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'G':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_G.G[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'H':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_H.H[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'I':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_I.I[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'J':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_J.J[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'K':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_K.K[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'L':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_L.L[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'M':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_M.M[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'N':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_N.N[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'O':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_O.O[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'P':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_P.P[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Q':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Q.Q[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'R':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_R.R[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'S':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_S.S[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'T':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_T.T[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'U':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_U.U[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'V':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_V.V[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'W':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_W.W[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+
+			break;
+
+		case 'X':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_X.X[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Y':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Y.Y[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Z':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Z.Z[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '?':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Quesiton_Mark.question_mark[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '!':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Exclamation_Point.exclamation_point[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '(':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Left_Braket.Left_Braket[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case ')':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Right_Braket.Right_Braket[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '&':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Ampersand.Ampersand[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case ',':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Comma.Comma[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '[':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Squaure_Braket_Left.Square_Braket_Left[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case ']':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Square_Braket_Right.Square_Braket_Right[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case ' ':
+			temp += 9;
+			break;
+
+		case ':':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Colon.Colon[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		default:
+			break;
+		}
+
+		draw_y = center_y - 4;
+		start_x = temp;
+		start_x += 9;
+
+	}
+
+
+}
+void Image::Draw_Text(const int center_y, const int center_x, const char *text, const char color) {
+	int text_length = strlen(text);
+	int start_x, end_x, draw_y, flag = 0, temp, count = 0;
+	LibCharacters Set;
+	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
+		|| center_y + 4 > Height || center_y - 4 < 0) {
+		cout << "Text Longer The Image Frame, Aborting...\n";
+		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
+		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
+		return;
+	}
+
+	start_x = center_x - (9 * (text_length / 2));
+	draw_y = center_y - 4;
+	end_x = center_x + (9 * (text_length / 2));
+
+
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	for (int i = 0; text[i] != '\0'; i++) {
+
+		switch (text[i])
+		{
+
+		case '0':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Zero.Zero[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '1':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_One.One[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '2':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Two.Two[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '3':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Three.Three[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '4':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Four.Four[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '5':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Five.Five[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '6':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Six.Six[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '7':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Seven.Seven[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '8':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Eight.Eight[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '9':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Nine.Nine[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'A':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_A.A[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'B':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_B.B[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'C':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_C.C[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'D':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_D.D[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'E':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_E.E[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'F':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_F.F[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'G':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_G.G[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'H':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_H.H[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'I':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_I.I[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'J':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_J.J[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'K':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_K.K[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'L':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_L.L[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'M':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_M.M[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'N':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_N.N[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'O':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_O.O[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'P':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_P.P[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Q':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Q.Q[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'R':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_R.R[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'S':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_S.S[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'T':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_T.T[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'U':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_U.U[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'V':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_V.V[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'W':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_W.W[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+
+			break;
+
+		case 'X':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_X.X[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Y':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Y.Y[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Z':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Z.Z[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '?':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Quesiton_Mark.question_mark[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '!':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Exclamation_Point.exclamation_point[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '(':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Left_Braket.Left_Braket[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case ')':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Right_Braket.Right_Braket[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '&':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Ampersand.Ampersand[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case ',':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Comma.Comma[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '[':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Squaure_Braket_Left.Square_Braket_Left[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case ']':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Square_Braket_Right.Square_Braket_Right[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case ' ':
+			temp += 9;
+			break;
+
+		case ':':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Colon.Colon[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		default:
+			break;
+		}
+
+		draw_y = center_y - 4;
+		start_x = temp;
+		start_x += 9;
+
+	}
+
+
+}
+void Image::Draw_Text(const int center_y, const int center_x, const char *text, pixel const &color) {
+
+	int text_length = strlen(text);
+	int start_x, end_x, draw_y, flag = 0, temp, count = 0;
+	LibCharacters Set;
+	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
+		|| center_y + 4 > Height || center_y - 4 < 0) {
+		cout << "Text Longer The Image Frame, Aborting...\n";
+		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
+		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
+		return;
+	}
+
+	start_x = center_x - (9 * (text_length / 2));
+	draw_y = center_y - 4;
+	end_x = center_x + (9 * (text_length / 2));
+
+
+	if (Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+
+	for (int i = 0; text[i] != '\0'; i++) {
+
+		switch (text[i])
+		{
+
+		case '0':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Zero.Zero[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '1':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_One.One[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '2':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Two.Two[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '3':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Three.Three[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '4':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Four.Four[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '5':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Five.Five[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '6':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Six.Six[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '7':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Seven.Seven[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '8':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Eight.Eight[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+		case '9':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Number_Nine.Nine[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'A':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_A.A[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'B':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_B.B[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'C':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_C.C[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'D':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_D.D[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'E':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_E.E[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'F':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_F.F[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'G':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_G.G[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'H':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_H.H[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'I':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_I.I[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'J':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_J.J[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'K':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_K.K[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'L':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_L.L[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'M':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_M.M[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'N':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_N.N[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'O':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_O.O[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'P':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_P.P[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Q':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Q.Q[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case 'R':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_R.R[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'S':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_S.S[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'T':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_T.T[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'U':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_U.U[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'V':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_V.V[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'W':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_W.W[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+
+			break;
+
+		case 'X':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_X.X[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Y':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Y.Y[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case 'Z':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Letter_Z.Z[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '?':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Quesiton_Mark.question_mark[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '!':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Exclamation_Point.exclamation_point[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '(':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Left_Braket.Left_Braket[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case ')':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Right_Braket.Right_Braket[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '&':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Ampersand.Ampersand[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case ',':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Comma.Comma[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case '[':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Squaure_Braket_Left.Square_Braket_Left[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+		case ']':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Square_Braket_Right.Square_Braket_Right[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case ' ':
+			temp += 9;
+			break;
+
+		case ':':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Colon.Colon[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		default:
+			break;
+		}
+
+		draw_y = center_y - 4;
+		start_x = temp;
+		start_x += 9;
+
+	}
+
+
+
+}
 
 
 void Image::Get_Center(int &center_x, int &center_y)const {
@@ -2130,12 +4827,58 @@ int Image::Color_Distance(pixel const &a, pixel const &b){
 
 	return recored;
 }
-float Image::Color_DistanceSq(pixel const &a, pixel const &b) {
-	float  recored;
+double Image::Color_DistanceSq(pixel const &a, pixel const &b) {
+	double  recored;
 	recored = (b.r - a.r)*(b.r - a.r) + (b.g - a.g)*(b.g - a.g) + (b.b - a.b)*(b.b - a.b);
 	return sqrt(recored);
 }
+void Image::Update_Pixel_Matrix() {
+	int j = 0, k = 0, clock = 0;
+	for (int i = 0; i < width*Height * 3; i += 3) {
+		if (clock == width) {
+			j++;
+			k = 0;
+			clock = 0;
+		}
+		Pixel_Matrix[j][k].index_range = i;
+		Pixel_Matrix[j][k].r = (int)image_data[i];
+		Pixel_Matrix[j][k].g = (int)image_data[i + 1];
+		Pixel_Matrix[j][k].b = (int)image_data[i + 2];
+		k++;
+		clock++;
+	}
 
+}
+
+
+
+
+
+
+
+
+double Image::Image_Difference_Value(Image &b) {
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	if (b.Pixel_Matrix == nullptr) {
+		b.init_pixel_matrix();
+	}
+
+	double result=0;
+	int index = 0;
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			result = result + Color_DistanceSq(Pixel_Matrix[i][j], b.Pixel_Matrix[i][j]);
+		}
+	}
+	//for (int i = 0; i < this->Height*this->width * 3; i++) {
+	//	result += this->image_data[i] - b.image_data[i];
+	//}
+
+	return result/Height*width;
+
+}
 float Image::Color_Delta(pixel const &A, pixel const &B) {
 	long  R_Gag = ((long)(A.r + (long)(B.r) )/ 2);
 	long  r =  (long)A.r - (long)B.r;
@@ -2264,6 +5007,292 @@ bool Image::Distance_Neighbors(const float max_distance, int i, int j) {
 
 	
 }
+
+double Image::Get_Neighbour_Mean_R(int const &i, int const &j) {
+	double Mean = 0;
+	int Divider = 1;
+	Mean += Pixel_Matrix[i][j].r;
+
+	if (i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j].r;
+		Divider++;
+	}
+	if (i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j].r;
+		Divider++;
+
+	}
+	if (j + 1 <= width) {
+		Mean += Pixel_Matrix[i][j+1].r;
+		Divider++;
+	}
+	if (j - 1 <= 0) {
+		Mean += Pixel_Matrix[i][j-1].r;
+		Divider++;
+	}
+	if (j - 1 >= 0 && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i-1][j-1].r;
+		Divider++;
+	}
+	if(j-1>=0 && i+1 <= Height){
+		Mean += Pixel_Matrix[i+1][j-1].r;
+		Divider++;
+	}
+	if (j + 1 <= width && i + 1 <= Height) {
+		Mean += Pixel_Matrix[i+1][j+1].r;
+		Divider++;
+	}
+	if (j + 1 <= width && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i-1][j+1].r;
+		Divider++;
+	}
+	return Mean / Divider;
+
+}
+double Image::Get_Neighbour_Mean_G(int const &i, int const &j) {
+	double Mean = 0;
+	int Divider = 1;
+	Mean += Pixel_Matrix[i][j].g;
+
+	if (i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j].g;
+		Divider++;
+	}
+	if (i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j].g;
+		Divider++;
+
+	}
+	if (j + 1 <= width) {
+		Mean += Pixel_Matrix[i][j + 1].g;
+		Divider++;
+	}
+	if (j - 1 <= 0) {
+		Mean += Pixel_Matrix[i][j - 1].g;
+		Divider++;
+	}
+	if (j - 1 >= 0 && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j - 1].g;
+		Divider++;
+	}
+	if (j - 1 >= 0 && i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j - 1].g;
+		Divider++;
+	}
+	if (j + 1 <= width && i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j + 1].g;
+		Divider++;
+	}
+	if (j + 1 <= width && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j + 1].g;
+		Divider++;
+	}
+	return Mean / Divider;
+
+}
+double Image::Get_Neighbour_Mean_B(int const &i, int const &j) {
+	double Mean = 0;
+	int Divider = 1;
+	Mean += Pixel_Matrix[i][j].b;
+
+	if (i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j].b;
+		Divider++;
+	}
+	if (i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j].b;
+		Divider++;
+
+	}
+	if (j + 1 <= width) {
+		Mean += Pixel_Matrix[i][j + 1].b;
+		Divider++;
+	}
+	if (j - 1 <= 0) {
+		Mean += Pixel_Matrix[i][j - 1].b;
+		Divider++;
+	}
+	if (j - 1 >= 0 && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j - 1].b;
+		Divider++;
+	}
+	if (j - 1 >= 0 && i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j - 1].b;
+		Divider++;
+	}
+	if (j + 1 <= width && i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j + 1].b;
+		Divider++;
+	}
+	if (j + 1 <= width && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j + 1].b;
+		Divider++;
+	}
+	return Mean / Divider;
+}
+
+double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3]) {
+	double Mean = 0;
+	int Divider = 1;
+	Mean += Pixel_Matrix[i][j].g * Kernel[1][1];
+
+	if (i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j].g * Kernel[2][1];
+		if (Kernel[2][1] != 0) {
+			Divider++;
+		}
+	}
+	if (i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j].g * Kernel[0][1];
+		if (Kernel[0][1] != 0) {
+			Divider++;
+		}
+	}
+	if (j + 1 < width) {
+		Mean += Pixel_Matrix[i][j + 1].g * Kernel[1][2];
+		if (Kernel[1][2] != 0) {
+			Divider++;
+		}
+	}
+	if (j - 1 <= 0) {
+		Mean += Pixel_Matrix[i][j - 1].g * Kernel[1][0];
+		if (Kernel[1][0] != 0) {
+			Divider++;
+		}
+	}
+	if (j - 1 >= 0 && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j - 1].g * Kernel[0][0];
+			Divider++;
+		
+	}
+	if (j - 1 >= 0 && i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j - 1].g * Kernel[2][0];
+		if (Kernel[2][0] != 0) {
+			Divider++;
+		}
+	}
+	if (j + 1 < width && i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j + 1].g * Kernel[2][2];
+			Divider++;
+		
+	}
+	if (j + 1 < width && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j + 1].g * Kernel[0][2];
+			Divider++;
+		
+	}
+	return Mean / Divider;
+
+}
+double Image::Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3]) {
+	double Mean = 0;
+	int Divider = 1;
+	Mean += Pixel_Matrix[i][j].r * Kernel[1][1];
+
+	if (i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j].r * Kernel[2][1];
+		if (Kernel[2][1] != 0) {
+			Divider++;
+		}
+	}
+	if (i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j].r * Kernel[0][1];
+		if (Kernel[0][1] != 0) {
+			Divider++;
+		}
+	}
+	if (j + 1 < width) {
+		Mean += Pixel_Matrix[i][j + 1].r * Kernel[1][2];
+		if (Kernel[1][2] != 0) {
+			Divider++;
+		}
+	}
+	if (j - 1 <= 0) {
+		Mean += Pixel_Matrix[i][j - 1].r * Kernel[1][0];
+		if (Kernel[1][0] != 0) {
+			Divider++;
+		}
+	}
+	if (j - 1 >= 0 && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j - 1].r * Kernel[0][0];
+		if (Kernel[0][0]) {
+			Divider++;
+		}
+	}
+	if (j - 1 >= 0 && i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j - 1].r * Kernel[2][0];
+			Divider++;
+		
+	}
+	if (j + 1 < width && i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j + 1].r * Kernel[2][2];
+			Divider++;
+		
+	}
+	if (j + 1 < width && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j + 1].r * Kernel[0][2];
+			Divider++;
+		
+	}
+	return Mean / Divider;
+
+}
+double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3]) {
+	double Mean = 0;
+	int Divider = 1;
+	Mean += Pixel_Matrix[i][j].b * Kernel[1][1];
+
+	if (i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j].b * Kernel[2][1];
+		if (Kernel[2][1] != 0) {
+			Divider++;
+		}
+	}
+	if (i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j].b * Kernel[0][1];
+		if (Kernel[0][1] != 0) {
+			Divider++;
+		}
+	}
+	if (j + 1 < width) {
+		Mean += Pixel_Matrix[i][j + 1].b * Kernel[1][2];
+		if (Kernel[1][2] != 0) {
+			Divider++;
+		}
+	}
+	if (j - 1 <= 0) {
+		Mean += Pixel_Matrix[i][j - 1].b * Kernel[1][0];
+		if (Kernel[1][0] != 0) {
+			Divider++;
+		}
+	}
+	if (j - 1 >= 0 && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j - 1].b * Kernel[0][0];
+		if (Kernel[0][0]) {
+			Divider++;
+		}
+	}
+	if (j - 1 >= 0 && i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j - 1].b * Kernel[2][0];
+			Divider++;
+		
+	}
+	if (j + 1 < width && i + 1 < Height) {
+		Mean += Pixel_Matrix[i + 1][j + 1].b * Kernel[2][2];
+			Divider++;
+		
+	}
+	if (j + 1 < width && i - 1 >= 0) {
+		Mean += Pixel_Matrix[i - 1][j + 1].b * Kernel[0][2];
+			Divider++;
+		
+	}
+	return Mean / Divider;
+
+}
+
+
+
 
 void Image::Mark_Identical_Pixels(pixel const &Target) {
 	if (this->Pixel_Matrix == nullptr) {
@@ -3525,2648 +6554,6 @@ VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_i
 }
 
 
-void Image::Draw_Graph(const int graph_height, const int graph_width, const int Space_Between_Lines) {
-	if (graph_height > this->Height || graph_width > this->width) {
-		cout << "Selected Graph Size Is Larger Then Canvas Size\n";
-		return;
-	}
-	if (this->Pixel_Matrix == nullptr) {
-		this->init_pixel_matrix();
-	}
-	int cx, cy,index=0,xy_num=0;
-	stringstream conv;
-	string catcher;
-	this->Get_Center(cx, cy);
-
-	Draw_Square(cx, cy, graph_width / 2, graph_height / 2, 'B');
-	Draw_Square(cx, cy, (graph_width / 2)-1, (graph_height / 2)-1, 'B');
-	Draw_Square(cx, cy, (graph_width / 2)-2, (graph_height / 2)-2, 'B');
-
-	xy_num = graph_height / Space_Between_Lines;
-
-	for (int i = (Height - graph_height)/2; i <= Height-((Height - graph_height)/2); i+=Space_Between_Lines) {
-		if (i == (Height - graph_height) / 2) {
-			Draw_Line(i, (width - graph_width) / 2,i, (width - graph_width) / 2 + graph_width, 'B');
-			conv << xy_num;
-			catcher = conv.str();
-			Draw_Text(i , (width - graph_width) / 2 - 12, catcher.c_str());
-		}
-		else {
-			Draw_Line(i, (width - graph_width) / 2 - 5, i, (width - graph_width) / 2 + graph_width , 'B');
-			conv << xy_num;
-			catcher = conv.str();
-			Draw_Text(i, (width - graph_width) / 2 - 12 , catcher.c_str());
-		}
-		xy_num--;
-		catcher.clear();
-		conv.str(string());
-	}
-	xy_num = 0;
-	for (int i = (width - graph_width) / 2; i <= (width - graph_width) / 2 + graph_width; i += Space_Between_Lines) {
-
-			Draw_Line((Height - graph_height) / 2,i,(Height - graph_height) / 2 + graph_height + 5,i, 'B');
-			conv << xy_num;
-			catcher = conv.str();
-			Draw_Text((Height - graph_height) / 2 + graph_height + 7, i - 4 , catcher.c_str());
-			xy_num++;
-			catcher.clear();
-			conv.str(string());
-	}
-
-
-
-
-
-}
-void Image::Draw_Text(const int center_y, const int center_x, const char *text) {
-	int text_length = strlen(text);
-	int start_x, end_x, draw_y,flag=0,temp,count=0;
-	LibCharacters Set;
-	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
-		|| center_y +4 > Height || center_y - 4 < 0) {
-		cout << "Text Longer The Image Frame, Aborting...\n";
-		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
-		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
-		return;
-	}
-	
-	start_x = center_x - (9 * (text_length / 2));
-	draw_y = center_y - 4;
-	end_x = center_x + (9 * (text_length / 2));
-
-
-	if (Pixel_Matrix == nullptr) {
-		init_pixel_matrix();
-	}
-	
-	for (int i = 0; text[i] != '\0'; i++) {
-
-		switch (text[i])
-		{
-
-		case '0':
-			temp = start_x;
-			while(flag != 81){
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Zero.Zero[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '1':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_One.One[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '2':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Two.Two[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '3':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Three.Three[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '4':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Four.Four[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '5':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Five.Five[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '6':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Six.Six[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '7':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Seven.Seven[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '8':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Eight.Eight[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '9':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Nine.Nine[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'A':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_A.A[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'B':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_B.B[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'C':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_C.C[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'D':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_D.D[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'E':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_E.E[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'F':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_F.F[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'G':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_G.G[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'H':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_H.H[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'I':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_I.I[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'J':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_J.J[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'K':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_K.K[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'L':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_L.L[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'M':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_M.M[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'N':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_N.N[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'O':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_O.O[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'P':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_P.P[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'Q':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_Q.Q[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'R':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_R.R[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'S':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_S.S[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'T':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_T.T[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'U':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_U.U[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'V':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_V.V[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'W':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_W.W[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-
-			break;
-
-		case 'X':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_X.X[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'Y':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_Y.Y[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'Z':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_Z.Z[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '?':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Quesiton_Mark.question_mark[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '!':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Exclamation_Point.exclamation_point[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '(':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Left_Braket.Left_Braket[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case ')':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Right_Braket.Right_Braket[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '&':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Ampersand.Ampersand[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case ',':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Comma.Comma[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '[':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Squaure_Braket_Left.Square_Braket_Left[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case ']':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Square_Braket_Right.Square_Braket_Right[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-			
-		case ' ':
-			temp += 9;
-			break;
-
-		case ':':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Colon.Colon[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		default:
-			break;
-		}
-		
-		draw_y = center_y - 4;
-		start_x = temp;
-		start_x += 9;
-
-	}
-
-	
-}
-void Image::Draw_Text(const int center_y, const int center_x, const char *text,const char color) {
-	int text_length = strlen(text);
-	int start_x, end_x, draw_y, flag = 0, temp, count = 0;
-	LibCharacters Set;
-	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
-		|| center_y + 4 > Height || center_y - 4 < 0) {
-		cout << "Text Longer The Image Frame, Aborting...\n";
-		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
-		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
-		return;
-	}
-
-	start_x = center_x - (9 * (text_length / 2));
-	draw_y = center_y - 4;
-	end_x = center_x + (9 * (text_length / 2));
-
-
-	if (Pixel_Matrix == nullptr) {
-		init_pixel_matrix();
-	}
-
-	for (int i = 0; text[i] != '\0'; i++) {
-
-		switch (text[i])
-		{
-
-		case '0':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Zero.Zero[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '1':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_One.One[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '2':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Two.Two[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '3':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Three.Three[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '4':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Four.Four[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '5':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Five.Five[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '6':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Six.Six[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '7':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Seven.Seven[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '8':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Eight.Eight[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-		case '9':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Number_Nine.Nine[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'A':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_A.A[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'B':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_B.B[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'C':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_C.C[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'D':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_D.D[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'E':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_E.E[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'F':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_F.F[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'G':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_G.G[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'H':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_H.H[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'I':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_I.I[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'J':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_J.J[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'K':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_K.K[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'L':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_L.L[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'M':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_M.M[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'N':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_N.N[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'O':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_O.O[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'P':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_P.P[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'Q':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_Q.Q[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case 'R':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_R.R[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'S':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_S.S[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'T':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_T.T[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'U':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_U.U[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'V':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_V.V[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'W':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_W.W[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-
-			break;
-
-		case 'X':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_X.X[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'Y':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_Y.Y[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case 'Z':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Letter_Z.Z[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '?':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Quesiton_Mark.question_mark[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '!':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Exclamation_Point.exclamation_point[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '(':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Left_Braket.Left_Braket[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case ')':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Right_Braket.Right_Braket[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '&':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Ampersand.Ampersand[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case ',':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Comma.Comma[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case '[':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Squaure_Braket_Left.Square_Braket_Left[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-
-		case ']':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Square_Braket_Right.Square_Braket_Right[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		case ' ':
-			temp += 9;
-			break;
-
-		case ':':
-			temp = start_x;
-			while (flag != 81) {
-
-				if ((flag + 1) % 9 == 0) {
-					draw_y++;
-					start_x = temp;
-				}
-				if (Set.Colon.Colon[flag] == 1) {
-					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-				}
-				start_x++;
-				flag++;
-			}
-
-			flag = 0;
-			break;
-
-		default:
-			break;
-		}
-
-		draw_y = center_y - 4;
-		start_x = temp;
-		start_x += 9;
-
-	}
-
-
-}
-void Image::Draw_Text(const int center_y, const int center_x, const char *text, pixel const &color) {
-	
-		int text_length = strlen(text);
-		int start_x, end_x, draw_y, flag = 0, temp, count = 0;
-		LibCharacters Set;
-		if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
-			|| center_y + 4 > Height || center_y - 4 < 0) {
-			cout << "Text Longer The Image Frame, Aborting...\n";
-			cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
-			cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
-			return;
-		}
-
-		start_x = center_x - (9 * (text_length / 2));
-		draw_y = center_y - 4;
-		end_x = center_x + (9 * (text_length / 2));
-
-
-		if (Pixel_Matrix == nullptr) {
-			init_pixel_matrix();
-		}
-
-		for (int i = 0; text[i] != '\0'; i++) {
-
-			switch (text[i])
-			{
-
-			case '0':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Zero.Zero[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '1':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_One.One[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '2':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Two.Two[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '3':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Three.Three[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '4':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Four.Four[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '5':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Five.Five[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '6':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Six.Six[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '7':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Seven.Seven[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '8':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Eight.Eight[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '9':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Number_Nine.Nine[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'A':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_A.A[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'B':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_B.B[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'C':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_C.C[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'D':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_D.D[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'E':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_E.E[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'F':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_F.F[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'G':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_G.G[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'H':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_H.H[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'I':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_I.I[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'J':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_J.J[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'K':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_K.K[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'L':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_L.L[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'M':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_M.M[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'N':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_N.N[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'O':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_O.O[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'P':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_P.P[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'Q':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_Q.Q[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'R':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_R.R[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'S':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_S.S[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'T':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_T.T[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'U':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_U.U[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'V':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_V.V[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'W':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_W.W[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-
-				break;
-
-			case 'X':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_X.X[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'Y':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_Y.Y[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'Z':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Letter_Z.Z[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '?':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Quesiton_Mark.question_mark[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '!':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Exclamation_Point.exclamation_point[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '(':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Left_Braket.Left_Braket[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case ')':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Right_Braket.Right_Braket[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '&':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Ampersand.Ampersand[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case ',':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Comma.Comma[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '[':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Squaure_Braket_Left.Square_Braket_Left[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case ']':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Square_Braket_Right.Square_Braket_Right[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case ' ':
-				temp += 9;
-				break;
-
-			case ':':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (Set.Colon.Colon[flag] == 1) {
-						Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			default:
-				break;
-			}
-
-			draw_y = center_y - 4;
-			start_x = temp;
-			start_x += 9;
-
-		}
-
-
-	
-}
-
 void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color) {
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
@@ -6384,9 +6771,9 @@ void Image::Image_Segmentation(int const &k, int const &iterations,int const &al
 					temp = k;
 				}
 			}
-			Pixel_Matrix[i][j].r = temp.x;
-			Pixel_Matrix[i][j].g = temp.y;
-			Pixel_Matrix[i][j].b = temp.z;
+			Pixel_Matrix[i][j].r = (uint8_t)temp.x;
+			Pixel_Matrix[i][j].g = (uint8_t)temp.y;
+			Pixel_Matrix[i][j].b = (uint8_t)temp.z;
 
 		}
 	}
@@ -6444,7 +6831,403 @@ void Image::Write_Average_Color_Palette(int const &palette_size) {
 	palette_image.Write_Image(via.c_str());
 	
 }
+void Image::Pixel_Griding() {
+	double sigma = 1.0;
+	double r, s = 2.0 * sigma * sigma;
+	double GKernel[5][5];
+	double sum = 0.0;
+	double PI = 3.14159265359;
+	int index = 0;
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
 
+	for (int x = -2; x <= 2; x++) {
+		for (int y = -2; y <= 2; y++) {
+			r = sqrt(x * x + y * y);
+			GKernel[x + 2][y + 2] = (exp(-(r * r) / s)) / (PI * s);
+			sum += GKernel[x + 2][y + 2];
+		}
+	}
+
+	for (int i = 0; i < 5; ++i)
+		for (int j = 0; j < 5; ++j)
+			GKernel[i][j] /= sum;
+
+
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+
+			Pixel_Matrix[i][j].r += (uint8_t)GKernel[i % 5][j % 5] * Pixel_Matrix[i][j].r;
+			Pixel_Matrix[i][j].g += (uint8_t)GKernel[i % 5][j % 5] * Pixel_Matrix[i][j].g;
+			Pixel_Matrix[i][j].b += (uint8_t)GKernel[i % 5][j % 5] * Pixel_Matrix[i][j].b;
+
+		}
+	}
+
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			image_data[index++] = Pixel_Matrix[i][j].r;
+			image_data[index++] = Pixel_Matrix[i][j].g;
+			image_data[index++] = Pixel_Matrix[i][j].b;
+
+		}
+	}
+
+
+	//for (int i = 0; i < 5; i++) {
+	//	for (int j = 0; j < 5; j++) {
+	//		cout << GKernel[i][j] << " ";
+	//	}
+	//	cout << endl;
+	//}
+}
+VectorFrame Image::Get_Average_Color_Palette(int const &palette_size) {
+	pixel palette_sample;
+	VectorFrame imData, Means;
+	for (int i = 0; i < Height*width * 3; i += 3) {
+		imData.push_back({ (float)image_data[i], (float)image_data[i + 1], (float)image_data[i + 2] });
+
+	}
+
+	return this->K_Means(imData,palette_size,200);
+
+}
+void Image::Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors) {
+	int index = 0;
+	float best_dist;
+	Point temp;
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			best_dist = numeric_limits<float>::max();
+			for (auto k : Average_Colors) {
+				if (Pixel_Dataframe_Difference(Pixel_Matrix[i][j], k) < best_dist) {
+					best_dist = Pixel_Dataframe_Difference(Pixel_Matrix[i][j], k);
+					temp = k;
+				}
+			}
+			Pixel_Matrix[i][j].r = temp.x;
+			Pixel_Matrix[i][j].g = temp.y;
+			Pixel_Matrix[i][j].b = temp.z;
+
+		}
+	}
+
+
+
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				image_data[index++] = Pixel_Matrix[i][j].r;
+				image_data[index++] = Pixel_Matrix[i][j].g;
+				image_data[index++] = Pixel_Matrix[i][j].b;
+
+			}
+		}
+	
+
+
+}
+PixelFrame Image::Get_Line_Pixels(const int start_y, const int start_x, const int target_y, const int target_x) {
+	float dx, sx, dy, sy, err, e2;
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	PixelFrame Points;
+	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
+	dx = abs(target_y - start_y);
+	sx = start_y < target_y ? 1 : -1;
+	dy = -abs(target_x - start_x);
+	sy = start_x < target_x ? 1 : -1;
+	err = dx + dy;  //error value
+	while (true) {
+		if (x0 == x1 && y0 == y1) {
+			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+			Points.push_back({ (uint8_t)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].r,
+								(uint8_t)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].g,
+								(uint8_t)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].b,
+								(int)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].index_range,
+								0
+				});
+			break;
+		}
+
+		//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+		Points.push_back({ (uint8_t)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].r,
+										(uint8_t)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].g,
+										(uint8_t)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].b,
+										(int)this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].index_range,
+										0
+			});
+		e2 = 2 * err;
+		if (e2 >= dy) {
+			err += dy;
+			x0 += sx;
+		}
+		if (e2 <= dx) {
+			err += dx;
+			y0 += sy;
+		}
+
+	}
+
+
+
+	return Points;
+}
+void Image::Register_PixelFrame(PixelFrame const &Frame) {
+	pixel color;
+	for (auto k : Frame) {
+		color.r = k.r;
+		color.g = k.g;
+		color.b = k.b;
+		this->Color_Spec(k.index_range, color);
+	}
+}
+void Image::Image_Rebuild_With_Lines(int const &Iterations) {
+	static random_device seed;
+	static mt19937 random_number(seed());
+	uniform_int_distribution<size_t> x0_picks(0, this->width - 1);
+	uniform_int_distribution<size_t> x1_picks(0, this->width - 1);
+	uniform_int_distribution<size_t> y0_picks(0, this->Height - 1);
+	uniform_int_distribution<size_t> y1_picks(0, this->Height - 1);
+	Color_Palette CSET;
+	pixel dominant_color;
+	PixelFrame Line;
+	Image B, C;
+	B.Load_Blank_Canvas(this->width, this->Height, CSET.Black);
+	C.Load_Blank_Canvas(this->width, this->Height, CSET.Black);
+
+#ifdef Line_StepByStep
+
+
+
+	stringstream ss;
+	string via;
+	int counter = 0;
+
+#endif
+
+	int x0, y0, x1, y1;
+	double cur_difference, temp_dif;
+	unsigned char *marker;
+
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	if (B.Pixel_Matrix == nullptr) {
+		B.init_pixel_matrix();
+	}
+	if (C.Pixel_Matrix == nullptr) {
+		C.init_pixel_matrix();
+	}
+
+	cur_difference = this->Image_Difference_Value(B);
+
+	for (int i = 0; i < Iterations; i++) {
+		x0 = x0_picks(random_number);
+		y0 = y0_picks(random_number);
+		x1 = x1_picks(random_number);
+		y1 = y1_picks(random_number);
+
+		dominant_color = this->Dominant_Color_Via_Line(y0, x0, y1, x1);
+		Line = B.Get_Line_Pixels(y0, x0, y1, x1);
+		B.Draw_Line(y0, x0, y1, x1, dominant_color);
+		B.Update_Pixel_Matrix();
+
+
+		temp_dif = this->Image_Difference_Value(B);
+
+		if (temp_dif < cur_difference) {
+			C.Draw_Line(y0, x0, y1, x1, dominant_color);
+#ifdef Line_StepByStep
+			ss << counter;
+			via = ss.str();
+			//if (counter + 1 % 5 == 0) {
+			C.Write_Image(via.c_str());
+
+			ss.str(string());
+			counter++;
+
+
+#endif // Line_StepByStep
+
+			cur_difference = temp_dif;
+			B.Update_Pixel_Matrix();
+
+		}
+		else {
+			B.Register_PixelFrame(Line);
+			Line.clear();
+			B.Update_Pixel_Matrix();
+		}
+
+
+	}
+
+	C.Write_Image("Build_From_Random_Lines");
+
+
+
+}
+void Image::Image_Convolution(int const &iterations, int const &alter, const char *Type) {
+	char m1[5], m2[10];
+	strcpy(m1, "Mean");
+	strcpy(m2, "Gaussian");
+	double Conv_Kernel[3][3];
+	if (strcmp(m1, Type) == 0) {
+		Conv_Kernel[0][0] = 1;
+		Conv_Kernel[0][1] = 1;
+		Conv_Kernel[0][2] = 1;
+		Conv_Kernel[1][0] = 1;
+		Conv_Kernel[1][1] = 1;
+		Conv_Kernel[1][2] = 1;
+		Conv_Kernel[2][0] = 1;
+		Conv_Kernel[2][1] = 1;
+		Conv_Kernel[2][2] = 1;
+	}
+	else if (strcmp(m2, Type) == 0) {
+		Conv_Kernel[0][0] = 0;
+		Conv_Kernel[0][1] = 1;
+		Conv_Kernel[0][2] = 0;
+		Conv_Kernel[1][0] = 1;
+		Conv_Kernel[1][1] = 4;
+		Conv_Kernel[1][2] = 1;
+		Conv_Kernel[2][0] = 0;
+		Conv_Kernel[2][1] = 1;
+		Conv_Kernel[2][2] = 0;
+	}
+
+
+	Image Mid;
+	pixel avg;
+	int index = 0;
+	Mid.Load_Image(this->f_name);
+
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	Mid.init_pixel_matrix();
+
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+
+			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel);
+			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel);
+			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel);
+
+		}
+
+
+	}
+
+	for (int k = 0; k < iterations; k++) {
+
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+
+				if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
+					Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel);
+					Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel);
+					Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel);
+				}
+			}
+
+
+		}
+
+	}
+
+
+
+
+
+	if (alter == 1) {
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				this->image_data[index++] = Mid.Pixel_Matrix[i][j].r;
+				this->image_data[index++] = Mid.Pixel_Matrix[i][j].g;
+				this->image_data[index++] = Mid.Pixel_Matrix[i][j].b;
+				this->Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				this->Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+			}
+		}
+	}
+
+}
+void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, int const &alter) {
+
+	Image Mid;
+	pixel avg;
+	int index = 0;
+	Mid.Load_Image(this->f_name);
+
+	if (this->Pixel_Matrix == nullptr) {
+		this->init_pixel_matrix();
+	}
+	Mid.init_pixel_matrix();
+
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+
+
+			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel);
+			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel);
+			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel);
+
+		}
+
+
+	}
+
+	for (int k = 0; k < 1; k++) {
+
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+
+				if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
+					Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel);
+					Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel);
+					Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel);
+				}
+			}
+
+
+		}
+
+	}
+
+
+
+
+
+	if (alter == 1) {
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				this->image_data[index++] = Mid.Pixel_Matrix[i][j].r;
+				this->image_data[index++] = Mid.Pixel_Matrix[i][j].g;
+				this->image_data[index++] = Mid.Pixel_Matrix[i][j].b;
+				this->Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				this->Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+			}
+		}
+	}
+
+}
 
 
 
@@ -6452,8 +7235,6 @@ void Image::Write_Average_Color_Palette(int const &palette_size) {
 
 
 // Under DEV
-
-
 
 void Image::Convert_RGB_To_LAB(int const &alter) {
 	if (Pixel_Matrix == nullptr) {
