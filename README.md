@@ -249,6 +249,30 @@ example:
 ![Alt text](https://github.com/MuteJester/Cpp-Image-Handle-Class/blob/master/Examples/Tresholding%20trunc.jpg)
 
 
+
+__Image Convolution__
+
+Use:
+  `	void Image_Convolution(int const &iterations, int const &alter,const char *Type);`
+  
+  Or
+  
+  `	void Image_Convolution(double Kernel[3][3],int const &iterations,int const &alter);`
+  
+  The Method will preforme a convolution on the images via a kernel passed by arguemnt or by one of the built in kernels 
+  which can be used by passing there names a aruments ,
+  currently there are 2 built in blur kernels ,"Mean" blur and "Gaussian" Blur .
+  
+  Example of a "Mean" Blur:
+  
+  Original:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Image311.jpg)
+  Blured:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Mean%20Blur.jpg)
+  
+  Example Of A "Gaussian" Blur:
+  Original:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Image511.jpg)
+  Blured:![Alt text](https://github.com/MuteJester/Cpp_Simple_Image_Processing_Library/blob/master/Examples/Gaussian%20Blur.jpg)
+
+
 __Feature Matching__
 
 Use:
