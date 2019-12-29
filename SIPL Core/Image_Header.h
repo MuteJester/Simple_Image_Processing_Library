@@ -21,8 +21,8 @@ typedef struct pixel {
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
-	unsigned index_range;
-	unsigned analysis;
+	int index_range;
+	int analysis;
 }pixel;
 
 struct coordinate {
@@ -32,10 +32,11 @@ struct coordinate {
 
 struct Point {
 	double x{ 0 }, y{ 0 },z{ 0 };
-	//int i, j;
+	//x = r, y = g, z =b
 };
 
 using VectorFrame = vector<Point>;
+using PixelFrame = vector<pixel>;
 
 class Pixel_C {
 private:
@@ -102,7 +103,7 @@ protected:
 	pixel Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols);
 	void Grayscale(int const &alter);
 	int Color_Distance(pixel const &a, pixel const &b);
-	float Color_DistanceSq(pixel const &a, pixel const &b);
+	double Color_DistanceSq(pixel const &a, pixel const &b);
 	float Color_Delta(pixel const &A, pixel const &B);
 	bool Distance_Neighbors(const float max_distance, int i, int j);
 	float Get_Angle_Between_Coordinates(int const start_x, int const start_y, int const target_x, int const target_y,const char *mode);
@@ -124,7 +125,7 @@ public:
 
 	pixel **Pixel_Matrix;
 	void init_pixel_matrix();
-
+	void Update_Pixel_Matrix();
 	int getWidth() const;
 	int getHeight()const;
 	void getPixelCopy(int Height, int Width, pixel &save_pixel);
@@ -190,6 +191,7 @@ public:
 	void Mark_Different_Pixels(Image &Source, const char *mode);
 	void Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int const &Distnace_Treshold, pixel const &frame_color);
 	void Write_ChannelGraph();
+	double Image_Difference_Value(Image &b);
 	void Write_Channel(const char color);
 	void Shutdown_Channel(const char color);
 	void Flip180();
@@ -209,9 +211,26 @@ public:
 	void Color_Flooring(const char *mode,int const &alter);
 	void Figure_Detection(int const &blob_distance_treshold, int const &color_distance_treshold,int const &Thresholding_level);
 	void Image_Segmentation(int const &k, int const &iterations, int const &alter);
-
+	pixel Dominant_Color_Via_Line(const int start_y, const int start_x, const int target_y, const int target_x);
+	PixelFrame Get_Line_Pixels(const int start_y, const int start_x, const int target_y, const int target_x);
 	void Write_Average_Color_Palette(int const &palette_size);
+	VectorFrame Get_Average_Color_Palette(int const &palette_size);
+	void Register_PixelFrame(PixelFrame const &Frame);
+	void Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors);
 	void Convert_RGB_To_LAB(int const &alter);
+	void Pixel_Griding();
+	void Image_Rebuild_With_Lines(int const &Iterations);
+	double Get_Neighbour_Mean_R(int const &i, int const &j);
+	double Get_Neighbour_Mean_G(int const &i, int const &j);
+	double Get_Neighbour_Mean_B(int const &i, int const &j);
+	double Get_Neighbour_Mean_R(int const &i, int const &j,double Kernel[3][3]);
+	double Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3]);
+	double Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3]);
+
+	void Image_Convolution(int const &iterations, int const &alter,const char *Type);
+
+	void Image_Convolution(double Kernel[3][3],int const &iterations,int const &alter);
 };
 
 
+using ImageFrame = vector<Image>;
