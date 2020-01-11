@@ -39,7 +39,7 @@ using namespace std;
 //#define FaceDebug
 
 
-//#define Line_StepByStep
+#define Line_StepByStep
 
 
 
@@ -4849,7 +4849,19 @@ void Image::Update_Pixel_Matrix() {
 	}
 
 }
-
+void Image::Fill_In_Pixel_Frame(PixelFrame &frame) {
+	for (auto k : frame) {
+		Color_Spec(k.index_range, k);
+	}
+	this->Update_Pixel_Matrix();
+}
+void Image::Connect_VectorFrame_Via_Lines(VectorFrame &frame) {
+	VectorFrame::iterator i;
+	Color_Palette CSET;
+	for (i = frame.begin(); i+1 != frame.end(); i++) {
+		this->Draw_Line(i->y, i->x, (i + 1)->y, (i + 1)->x, CSET.Black);
+	}
+}
 
 
 
@@ -5131,7 +5143,7 @@ double Image::Get_Neighbour_Mean_B(int const &i, int const &j) {
 	return Mean / Divider;
 }
 
-double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3]) {
+double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3],double Kernel_Normal) {
 	double Mean = 0;
 	int Divider = 1;
 	Mean += Pixel_Matrix[i][j].g * Kernel[1][1];
@@ -5184,7 +5196,7 @@ double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][
 	return Mean / Divider;
 
 }
-double Image::Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3]) {
+double Image::Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal) {
 	double Mean = 0;
 	int Divider = 1;
 	Mean += Pixel_Matrix[i][j].r * Kernel[1][1];
@@ -5237,7 +5249,7 @@ double Image::Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][
 	return Mean / Divider;
 
 }
-double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3]) {
+double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal) {
 	double Mean = 0;
 	int Divider = 1;
 	Mean += Pixel_Matrix[i][j].b * Kernel[1][1];
@@ -5292,6 +5304,181 @@ double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][
 }
 
 
+
+//double Image::Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal) {
+//	double Mean = 0;
+//	
+//
+//	Mean += Pixel_Matrix[i][j].r * (Kernel[1][1] / Kernel_Normal);
+//
+//	if (i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j].r * (Kernel[2][1] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (i - 1 >= 0) {
+//		Mean += Pixel_Matrix[i - 1][j].r * (Kernel[0][1] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width) {
+//		Mean += Pixel_Matrix[i][j + 1].r *(Kernel[1][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j - 1 <= 0) {
+//		Mean += Pixel_Matrix[i][j - 1].r * (Kernel[1][0] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j - 1 >= 0 && i - 1 >= 0) {
+//		Mean += Pixel_Matrix[i - 1][j - 1].r * (Kernel[0][0] / Kernel_Normal);
+//
+//
+//	}
+//
+//
+//	if (j - 1 >= 0 && i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j - 1].r * (Kernel[2][0] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width && i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j + 1].r * (Kernel[2][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width && i - 1 >= 0) {
+//		Mean += Pixel_Matrix[0][width - 1].r * (Kernel[0][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	return Mean;
+//
+//}
+//double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal) {
+//	double Mean = 0;
+//
+//
+//	Mean += Pixel_Matrix[i][j].g * (Kernel[1][1] / Kernel_Normal);
+//
+//	if (i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j].g * (Kernel[2][1] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (i - 1 >= 0) {
+//		Mean += Pixel_Matrix[i - 1][j].g * (Kernel[0][1] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width) {
+//		Mean += Pixel_Matrix[i][j + 1].g *(Kernel[1][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j - 1 <= 0) {
+//		Mean += Pixel_Matrix[i][j - 1].g * (Kernel[1][0] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j - 1 >= 0 && i - 1 >= 0) {
+//		Mean += Pixel_Matrix[i - 1][j - 1].g * (Kernel[0][0] / Kernel_Normal);
+//
+//
+//	}
+//
+//
+//	if (j - 1 >= 0 && i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j - 1].g * (Kernel[2][0] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width && i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j + 1].g * (Kernel[2][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width && i - 1 >= 0) {
+//		Mean += Pixel_Matrix[0][width - 1].g * (Kernel[0][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	return Mean;
+//
+//}
+//double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal) {
+//	double Mean = 0;
+//
+//
+//	Mean += Pixel_Matrix[i][j].b * (Kernel[1][1] / Kernel_Normal);
+//
+//	if (i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j].b * (Kernel[2][1] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (i - 1 >= 0) {
+//		Mean += Pixel_Matrix[i - 1][j].b * (Kernel[0][1] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width) {
+//		Mean += Pixel_Matrix[i][j + 1].b *(Kernel[1][2] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j - 1 <= 0) {
+//		Mean += Pixel_Matrix[i][j - 1].b * (Kernel[1][0] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j - 1 >= 0 && i - 1 >= 0) {
+//		Mean += Pixel_Matrix[i - 1][j - 1].b * (Kernel[0][0] / Kernel_Normal);
+//
+//
+//	}
+//	
+//
+//	if (j - 1 >= 0 && i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j - 1].b * (Kernel[2][0] / Kernel_Normal);
+//
+//	}
+//
+//
+//	if (j + 1 < width && i + 1 < Height) {
+//		Mean += Pixel_Matrix[i + 1][j + 1].b * (Kernel[2][2] / Kernel_Normal);
+//
+//	}
+//	
+//
+//	if (j + 1 < width && i - 1 >= 0) {
+//		Mean += Pixel_Matrix[0][width - 1].b * (Kernel[0][2] / Kernel_Normal);
+//
+//	}
+//	
+//
+//	return Mean;
+//
+//}
 
 
 void Image::Mark_Identical_Pixels(pixel const &Target) {
@@ -6639,7 +6826,7 @@ void Image::Figure_Detection(int const &blob_distance_treshold, int const &color
 	int **adj_matrix = (int**)malloc(sizeof(int**)*this->Height);
 	int color_treshold = color_distance_treshold;
 	Color_Palette C;
-	for (int i = 0; i < this->width; i++) {
+	for (int i = 0; i < this->Height; i++) {
 		adj_matrix[i] = (int*)calloc(this->width, sizeof(int));
 	}
 
@@ -7045,9 +7232,10 @@ void Image::Image_Rebuild_With_Lines(int const &Iterations) {
 #ifdef Line_StepByStep
 			ss << counter;
 			via = ss.str();
-			//if (counter + 1 % 5 == 0) {
-			C.Write_Image(via.c_str());
+			if ((counter + 1 )% 40 == 0) {
+				C.Write_Image(via.c_str());
 
+			}
 			ss.str(string());
 			counter++;
 
@@ -7077,6 +7265,7 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 	strcpy(m1, "Mean");
 	strcpy(m2, "Gaussian");
 	double Conv_Kernel[3][3];
+	double Kernel_Normal = 0;
 	if (strcmp(m1, Type) == 0) {
 		Conv_Kernel[0][0] = 1;
 		Conv_Kernel[0][1] = 1;
@@ -7100,7 +7289,11 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 		Conv_Kernel[2][2] = 0;
 	}
 
-
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			Kernel_Normal += Conv_Kernel[i][j];
+		}
+	}
 	Image Mid;
 	pixel avg;
 	int index = 0;
@@ -7114,9 +7307,9 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
 
-			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel);
-			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel);
-			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel);
+			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
+			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
+			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
 
 		}
 
@@ -7128,11 +7321,11 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 		for (int i = 0; i < Height; i++) {
 			for (int j = 0; j < width; j++) {
 
-				if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
-					Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel);
-					Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel);
-					Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel);
-				}
+				//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
+					Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
+					Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
+					Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+				//}
 			}
 
 
@@ -7168,39 +7361,58 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 	Image Mid;
 	pixel avg;
 	int index = 0;
+	double Kernel_Normal = 0;
 	Mid.Load_Image(this->f_name);
 
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
 	Mid.init_pixel_matrix();
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			Kernel_Normal += Conv_Kernel[i][j];
+		}
+	}
+
 
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
 
 
-			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel);
-			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel);
-			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel);
+			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
+			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
+			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
 
 		}
 
 
 	}
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			this->Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+		}
+	}
 
-	for (int k = 0; k < 1; k++) {
+	
+	for (int k = 0; k < iterations; k++) {
 
 		for (int i = 0; i < Height; i++) {
 			for (int j = 0; j < width; j++) {
 
-				if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
-					Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel);
-					Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel);
-					Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel);
-				}
+				//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
+				Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+				//}
 			}
 
 
+		}
+
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < width; j++) {
+				this->Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+			}
 		}
 
 	}
@@ -7227,6 +7439,21 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 		}
 	}
 
+}
+void Image::Save_As_PNG(const char *name) {
+	char s_name[50];
+	char type[10];
+	strcpy(type, ".png");
+	strcpy(s_name, name);
+	strcat(s_name, type);
+	if (channel > 3) {
+		channel = 3;
+	}
+	stbi_write_jpg(s_name, width, Height, channel, image_data, 100);
+	//stbi_write_png(s_name, this->width, this->Height, 8, this->image_data, 1);
+	//stbi_write_bmp(s_name, this->width, this->Height, 8, this->image_data);
+	cout << "\nFile Saved Succsfully As: " << s_name << endl;
+	
 }
 
 
