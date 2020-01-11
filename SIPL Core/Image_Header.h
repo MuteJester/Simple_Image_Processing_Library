@@ -145,6 +145,9 @@ public:
 	void Color_Spec(int w, int h, char color);
 	void Color_Spec(int index, char color);
 	void Color_Spec(int index,pixel const &color);
+	void Fill_In_Pixel_Frame(PixelFrame &frame);
+	void Connect_VectorFrame_Via_Lines(VectorFrame &frame);
+
 
 	void operator+(Image const &a);
 	void operator-(Image const &b);
@@ -223,13 +226,15 @@ public:
 	double Get_Neighbour_Mean_R(int const &i, int const &j);
 	double Get_Neighbour_Mean_G(int const &i, int const &j);
 	double Get_Neighbour_Mean_B(int const &i, int const &j);
-	double Get_Neighbour_Mean_R(int const &i, int const &j,double Kernel[3][3]);
-	double Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3]);
-	double Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3]);
+	double Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
+	double Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
+	double Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
 
 	void Image_Convolution(int const &iterations, int const &alter,const char *Type);
 
 	void Image_Convolution(double Kernel[3][3],int const &iterations,int const &alter);
+
+	void Save_As_PNG(const char *name);
 };
 
 
