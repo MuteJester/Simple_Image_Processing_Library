@@ -44,25 +44,25 @@ using namespace std;
 
 
 
-Pixel_C::Pixel_C(){
+Pixel_C::Pixel_C() {
 	this->data.r = 0;
 	this->data.g = 0;
 	this->data.b = 0;
 	this->data.index_range = 0;
 	this->data.analysis = 0;
 }
-Pixel_C::Pixel_C(uint8_t r, uint8_t g, uint8_t b){
+Pixel_C::Pixel_C(uint8_t r, uint8_t g, uint8_t b) {
 	this->data.r = r;
 	this->data.g = g;
 	this->data.b = b;
 	this->data.analysis = 0;
 
 }
-Pixel_C::~Pixel_C(){
+Pixel_C::~Pixel_C() {
 
 }
 
-char Pixel_C::interpret_color() const{
+char Pixel_C::interpret_color() const {
 	if (data.r == 0 && data.b == 0 && data.g > 0) {//green
 		return 'g';
 	}
@@ -78,7 +78,7 @@ char Pixel_C::interpret_color() const{
 	else if (data.r <= 255 && data.r >= 240 && data.b <= 255 && data.b >= 240 && data.g <= 255 && data.g >= 240) {//white
 		return 'W';
 	}
-	else if (data.r== data.g== data.b && data.r <240 && data.b<240 && data.g< 240) {//shades of gray
+	else if (data.r == data.g == data.b && data.r < 240 && data.b < 240 && data.g < 240) {//shades of gray
 		return 'G';
 	}
 	else {
@@ -127,28 +127,28 @@ void Pixel_C::set_color(const uint8_t &r, const uint8_t &g, const uint8_t &b) {
 
 }
 
-void Pixel_C::set_refrence(uint8_t &r, uint8_t &g, uint8_t &b){
+void Pixel_C::set_refrence(uint8_t &r, uint8_t &g, uint8_t &b) {
 	r = this->data.r;
 	g = this->data.g;
 	b = this->data.b;
 }
-uint8_t Pixel_C::get_r() const{
+uint8_t Pixel_C::get_r() const {
 	return this->data.r;
 }
-uint8_t Pixel_C::get_g() const{
+uint8_t Pixel_C::get_g() const {
 	return this->data.g;
 }
-uint8_t Pixel_C::get_b() const{
+uint8_t Pixel_C::get_b() const {
 	return this->data.b;
 }
 
-void Pixel_C::set_r(const uint8_t r){
+void Pixel_C::set_r(const uint8_t r) {
 	this->data.r = r;
 }
-void Pixel_C::set_g(const uint8_t g){
+void Pixel_C::set_g(const uint8_t g) {
 	this->data.g = g;
 }
-void Pixel_C::set_b(const uint8_t b){
+void Pixel_C::set_b(const uint8_t b) {
 	this->data.b = b;
 }
 
@@ -195,8 +195,8 @@ bool operator==(pixel &a, pixel &b) {
 	}
 }
 void partition_pixels(int &rows, int &cols, int number_of_pix) {
-	
-	int sq = (int)sqrt(number_of_pix) +1;
+
+	int sq = (int)sqrt(number_of_pix) + 1;
 	rows = sq;
 	cols = sq;
 }
@@ -212,7 +212,7 @@ void set_pixel_color(pixel &pix, char color) {
 		pix.r = 0;
 		pix.g = 255;
 		pix.b = 0;
-		
+
 		break;
 	case 'b':
 		pix.r = 0;
@@ -221,7 +221,7 @@ void set_pixel_color(pixel &pix, char color) {
 		break;
 	case 'W':
 		pix.r = 255;
-		pix.g= 255;
+		pix.g = 255;
 		pix.b = 255;
 		break;
 	case 'B':
@@ -276,7 +276,7 @@ pixel &operator*(pixel const &a, pixel const &b) {
 	ret.index_range = a.index_range;
 	return ret;
 }
-void operator+=(pixel &a ,pixel &b) {
+void operator+=(pixel &a, pixel &b) {
 	a + b;
 }
 bool operator>(pixel &a, pixel &b) {
@@ -295,7 +295,7 @@ double squared_3Point_distance(Point first, Point second) {
 }
 float GammaX(int const &color_value) {
 	float conditionA = (float)0.04045, divisorB = (float)12.92;
-	float Value =(float)color_value;
+	float Value = (float)color_value;
 	Value /= 255;
 	float result;
 	if (Value > conditionA) {
@@ -304,7 +304,7 @@ float GammaX(int const &color_value) {
 
 	}
 	else {
-		Value =(float)(Value /12.92);
+		Value = (float)(Value / 12.92);
 		return Value;
 	}
 }
@@ -316,7 +316,7 @@ float LAB_Function(float const &value) {
 		return (float)(1 / 3 * (pow((29 / 6), 2)*value)) + (4 / 29);
 	}
 }
-void RGB_XYZ_Transformation(pixel &value,double const M[3][3]) {
+void RGB_XYZ_Transformation(pixel &value, double const M[3][3]) {
 
 	double result[3][1];
 	double XYZ[3][1];
@@ -326,27 +326,27 @@ void RGB_XYZ_Transformation(pixel &value,double const M[3][3]) {
 	result[1][0] = GammaX(value.g);
 	result[2][0] = GammaX(value.b);
 
-	for (int i = 0; i < 3; i++){
-		for (int j = 0; j < 1; j++){
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 1; j++) {
 			XYZ[i][j] = 0;
-				for (int k = 0; k < 3; k++){
+			for (int k = 0; k < 3; k++) {
 
-					XYZ[i][j] += M[i][k] * result[k][j];
+				XYZ[i][j] += M[i][k] * result[k][j];
 
-				}
+			}
 
 		}
 
 	}
 
-		value.r *= XYZ[0][0];
-		value.g *= XYZ[1][0];
-		value.b *= XYZ[2][0];
+	value.r *= XYZ[0][0];
+	value.g *= XYZ[1][0];
+	value.b *= XYZ[2][0];
 
 	L = 116 * (LAB_Function(XYZ[1][0])) - 16;
 	a = 500 * (LAB_Function(XYZ[0][0]) - LAB_Function(result[2][0]));
 	b = 200 * (LAB_Function(XYZ[0][0]) - LAB_Function(result[2][0]));
-	
+
 	//value.r = L;
 	//value.g = a;
 	//value.b = b;
@@ -525,11 +525,11 @@ int Image::getWidth() const {
 int Image::getHeight()const {
 	return this->Height;
 }
-void Image::getPixelCopy(int Height, int Width, pixel &save_pixel){
+void Image::getPixelCopy(int Height, int Width, pixel &save_pixel) {
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
-	save_pixel.r =Pixel_Matrix[Height][Width].r;
+	save_pixel.r = Pixel_Matrix[Height][Width].r;
 	save_pixel.g = Pixel_Matrix[Height][Width].g;
 	save_pixel.b = Pixel_Matrix[Height][Width].b;
 	save_pixel.index_range = Pixel_Matrix[Height][Width].index_range;
@@ -610,13 +610,13 @@ void Image::Load_Blank_Canvas(int width, int height, char set_color) {
 
 		stbi_image_free(image_data);
 	}
-	
+
 	this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
-	for (int i = 0; i < width*height*channel; i+=3) {
+	for (int i = 0; i < width*height*channel; i += 3) {
 		Color_Spec(i, set_color);
 	}
 	return;
-	
+
 }
 void Image::Load_Blank_Canvas(int width, int height, pixel const &background_color) {
 	this->channel = 3;
@@ -630,8 +630,8 @@ void Image::Load_Blank_Canvas(int width, int height, pixel const &background_col
 	this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
 	for (int i = 0; i < width*height*channel; i += 3) {
 		this->image_data[i] = background_color.r;
-		this->image_data[i+1] = background_color.g;
-		this->image_data[i+2] = background_color.b;
+		this->image_data[i + 1] = background_color.g;
+		this->image_data[i + 2] = background_color.b;
 
 	}
 	return;
@@ -878,7 +878,7 @@ void Image::Color_Spec(int index, char color) {
 void Image::Color_Spec(int index, pixel const &color) {
 	color_set(color, index);
 }
-void Image::Set_Pixel_By_Inedx(int index,uint8_t value) {
+void Image::Set_Pixel_By_Inedx(int index, uint8_t value) {
 	this->image_data[index] = value;
 }
 float Image::Get_Angle_Between_Coordinates(int const start_x, int const start_y, int const target_x, int const target_y, const char *mode) {
@@ -894,7 +894,7 @@ float Image::Get_Angle_Between_Coordinates(int const start_x, int const start_y,
 	if (strcmp(m2, mode) == 0) {
 		return acos(Alpha) * (180) / 3.1415926535;
 	}
-	else if (strcmp(m1,mode)==0) {
+	else if (strcmp(m1, mode) == 0) {
 		return acos(Alpha);
 	}
 
@@ -916,7 +916,7 @@ float Image::Get_Angle_Between_Coordinates(int const start_x, int const start_y,
 
 }
 
-void Image::operator+(Image const &a){
+void Image::operator+(Image const &a) {
 	int regulator;
 	if (a.width != this->width || a.Height != this->Height) {
 		cout << "Error image size invalid\n";
@@ -932,10 +932,10 @@ void Image::operator+(Image const &a){
 			this->image_data[i] = regulator;
 		}
 	}
-	
+
 
 }
-void Image::operator-(Image const &b){
+void Image::operator-(Image const &b) {
 	int regulator;
 	if (b.width != this->width || b.Height != this->Height) {
 		cout << "Error image size invalid\n";
@@ -964,11 +964,11 @@ void Image::operator/(Image const &b) {
 	else {
 
 		for (int i = 0; i < b.Height*b.width * 3; i++) {
-			if (b.image_data[i] ==0) {
-				regulator = this->image_data[i] / (b.image_data[i]+1);
+			if (b.image_data[i] == 0) {
+				regulator = this->image_data[i] / (b.image_data[i] + 1);
 			}
 			else if (this->image_data[i] == 0) {
-				regulator =this->image_data[i] / (b.image_data[i]);
+				regulator = this->image_data[i] / (b.image_data[i]);
 			}
 			else {
 				regulator = this->image_data[i] / (b.image_data[i]);
@@ -1053,7 +1053,7 @@ void Image::init_pixel_matrix(const char *mode) {
 			//	Pixel_Matrix[i] = (pixel*)malloc(sizeof(pixel)*width);
 			//}
 
-			int j = 0, k = 0, clock = 0,i=0;
+			int j = 0, k = 0, clock = 0, i = 0;
 			for (i = 0; i < width*Height * 3; i += 3) {
 				if (clock == width) {
 					j++;
@@ -1079,7 +1079,7 @@ pixel Image::Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols) {
 
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j < cols; j++) {
-			
+
 			for (int k = 0; k < analysis.size(); k++) {
 				if (analysis[k] == pix_sigment[i][j]) {
 					analysis[k].analysis++;
@@ -1133,13 +1133,13 @@ pixel Image::Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols) {
 		}
 	}
 
-	
+
 
 	return temp;
 	*/
 
 	//ver3 hard
-	unsigned max_size=0, max_index=0;
+	unsigned max_size = 0, max_index = 0;
 	unsigned *hash_i = (unsigned*)calloc(255 * 3, sizeof(unsigned));
 	unsigned *hash_j = (unsigned*)calloc(255 * 3, sizeof(unsigned));
 	unsigned *hash_count = (unsigned*)calloc(255 * 3, sizeof(unsigned));
@@ -1183,17 +1183,17 @@ void Image::Compress() {
 		}
 		cout << endl;
 		cin >> choice;
-		int j = 0, k = 0,start_row=0,start_col=0,si=0,sj=0,index=0;
+		int j = 0, k = 0, start_row = 0, start_col = 0, si = 0, sj = 0, index = 0;
 		pixel A_color;
 
-		unsigned char *compressed = (unsigned char*)calloc((this->width)*(this->Height )* 3, sizeof(char));
+		unsigned char *compressed = (unsigned char*)calloc((this->width)*(this->Height) * 3, sizeof(char));
 		init_pixel_matrix();
 
 		pixel **pixel_sigment = (pixel**)malloc(sizeof(pixel*)* comp_levels[choice]);
-		for (int i = 0; i <  comp_levels[choice]; i++) {
+		for (int i = 0; i < comp_levels[choice]; i++) {
 			pixel_sigment[i] = (pixel*)malloc(sizeof(pixel)*(comp_levels[choice]));
 		}
-		
+
 		while (true) {
 
 			for (int i = start_row; i < start_row + comp_levels[choice]; i++) {
@@ -1220,17 +1220,17 @@ void Image::Compress() {
 				}
 
 			}
-	
 
-			start_col +=  comp_levels[choice];
+
+			start_col += comp_levels[choice];
 			if (start_col == width && start_row != Height) {
 				start_row += comp_levels[choice];
 				start_col = 0;
-				if ( start_row == Height) {
+				if (start_row == Height) {
 					break;
 				}
 			}
-		
+
 
 
 		}
@@ -1244,17 +1244,17 @@ void Image::Compress() {
 				compressed[index++] = Pixel_Matrix[i][j].b;
 
 			}
-		
+
 		}
 
-		stbi_write_jpg("Compressed.jpg", width , Height , 3, compressed, 100);
+		stbi_write_jpg("Compressed.jpg", width, Height, 3, compressed, 100);
 
-	}	
+	}
 
 
 
-	
-	
+
+
 }
 
 void Image::Text_To_Image(const char *file_name)
@@ -1262,7 +1262,7 @@ void Image::Text_To_Image(const char *file_name)
 	fstream file;
 	char cur_char;
 	unsigned short mode;
-	int number_of_chars = 0,pixel_num=0,index=0,width=0,height=0;
+	int number_of_chars = 0, pixel_num = 0, index = 0, width = 0, height = 0;
 	unsigned char *new_image;
 	file.open(file_name);
 
@@ -1313,7 +1313,7 @@ void Image::Text_To_Image(const char *file_name)
 
 		while (!file.eof()) {
 			file.get(cur_char);
-			new_image[index++] = (int)cur_char + rand()%64;
+			new_image[index++] = (int)cur_char + rand() % 64;
 		}
 	}
 	stbi_write_jpg("ImageFromText.jpg", width, height, 3, new_image, 100);
@@ -1330,7 +1330,7 @@ void Image::Insert_Text_Into_Image(const char *file_name, const char *Image_Name
 	this->Load_Image(Image_Name);
 	fstream file;
 	char cur_char;
-    int index = 0,number_of_chars= 0;
+	int index = 0, number_of_chars = 0;
 	file.open(file_name);
 
 	if (!file.is_open()) {
@@ -1399,7 +1399,7 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 		cout << endl;
 		return;
 	}
-	for (int i = center_x - s_width; i <= center_x+s_width; i++) {
+	for (int i = center_x - s_width; i <= center_x + s_width; i++) {
 		//set_pixel_color(Pixel_Matrix[center_y + s_width][i], color);
 		Color_Spec(Pixel_Matrix[center_y + s_height][i].index_range, color);
 	}
@@ -1420,7 +1420,7 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 void Image::Draw_Square(const int center_x, const int center_y,
 	const int s_width, const int s_height, const unsigned char color, const char *mode)
 {
-	char mode_f[5],mode_c[10];
+	char mode_f[5], mode_c[10];
 	strcpy(mode_f, "Fill");
 	strcpy(mode_c, "Checkered");
 	if (strcmp(mode_f, mode) == 0) {
@@ -1454,7 +1454,7 @@ void Image::Draw_Square(const int center_x, const int center_y,
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
-			for (int i = center_x - s_width; i <= center_x + s_width; i+=2) {
+			for (int i = center_x - s_width; i <= center_x + s_width; i += 2) {
 				Color_Spec(Pixel_Matrix[j][i].index_range, color);
 			}
 		}
@@ -1564,19 +1564,19 @@ void Image::Draw_Square(const int center_x, const int center_y,
 			}
 		}
 
-		if (center_x  >= width || center_y  >= Height || s_width  >=width || s_height  >= Height || center_x <=0 || center_y <=0 || s_width <= 0 || s_height <= 0
-			|| center_x >= Height || center_y >= width || s_width >= Height || s_height >= width ) {
+		if (center_x >= width || center_y >= Height || s_width >= width || s_height >= Height || center_x <= 0 || center_y <= 0 || s_width <= 0 || s_height <= 0
+			|| center_x >= Height || center_y >= width || s_width >= Height || s_height >= width) {
 
 			cout << "There Was A drawing Error\n";
 			return;
 		}
-		this->Draw_Line(center_x, center_y, s_width, center_y,color);
+		this->Draw_Line(center_x, center_y, s_width, center_y, color);
 		this->Draw_Line(center_x, center_y, center_x, s_height, color);
 		this->Draw_Line(center_x, s_height, s_width, s_height, color);
 		this->Draw_Line(s_width, center_y, s_width, s_height, color);
 
 
-		
+
 	}
 }
 void Image::Draw_Square(const int center_x, const int center_y, const int s_width,
@@ -1621,7 +1621,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	r2 = c_radius * c_radius;
 	//ver1
 
-	
+
 	for (x = -c_radius; x <= c_radius; x++) {
 		y = (int)(sqrt(r2 - x * x) + 0.5);
 		Color_Spec(Pixel_Matrix[center_y + y][center_x + x].index_range, color);
@@ -1699,7 +1699,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const unsigned char color, const char *mode) {
 	char mode_f[5];
 	strcpy(mode_f, "Fill");
-	if (strcmp(mode_f, mode)==0) {
+	if (strcmp(mode_f, mode) == 0) {
 		if (this->Pixel_Matrix == nullptr) {
 			init_pixel_matrix();
 		}
@@ -1715,7 +1715,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 		for (y = -c_radius; y <= c_radius; y++)
 			for (x = -c_radius; x <= c_radius; x++)
 				if ((x * x) + (y * y) <= (c_radius * c_radius))
-					Color_Spec(Pixel_Matrix[center_y+y][center_x +x].index_range, color);
+					Color_Spec(Pixel_Matrix[center_y + y][center_x + x].index_range, color);
 	}
 }
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const pixel color, const char *mode) {
@@ -1763,8 +1763,8 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_y, 
 	}
 
 }
-void Image:: Draw_Line(const int start_y, const int start_x, const int target_y, const int target_x, const unsigned char color) {
-	this->BresenhamsLine(start_y, start_x, target_y, target_x,color);
+void Image::Draw_Line(const int start_y, const int start_x, const int target_y, const int target_x, const unsigned char color) {
+	this->BresenhamsLine(start_y, start_x, target_y, target_x, color);
 	/*
 	if (this->Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
@@ -1898,7 +1898,7 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_x, 
 		if (this->Pixel_Matrix == nullptr) {
 			init_pixel_matrix();
 		}
-		float x0 =(float)start_x, x1 = (float)target_x, y0 = (float)start_y, y1 = (float)target_y;
+		float x0 = (float)start_x, x1 = (float)target_x, y0 = (float)start_y, y1 = (float)target_y;
 		dx = (float)abs(target_x - start_x);
 		sx = (float)start_x < target_x ? 1 : -1;
 		dy = (float)-abs(target_y - start_y);
@@ -2107,15 +2107,16 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 	sy = start_x < target_x ? 1 : -1;
 	err = dx + dy;  //error value
 	while (true) {
-		if (x0 == x1 && y0 == y1) { 
+		if (x0 == x1 && y0 == y1) {
 			this->Color_Spec(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].index_range, color);
-			break; }
+			break;
+		}
 
 		this->Color_Spec(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)].index_range, color);
 
 		e2 = 2 * err;
 		if (e2 >= dy) {
-			err += dy; 
+			err += dy;
 			x0 += sx;
 		}
 		if (e2 <= dx) {
@@ -4818,7 +4819,7 @@ void Image::Convert_Grayscale() {
 	this->Grayscale(1);
 }
 
-int Image::Color_Distance(pixel const &a, pixel const &b){
+int Image::Color_Distance(pixel const &a, pixel const &b) {
 	int recored;
 	recored = (a.b - b.b) + (a.r - b.r) + (a.g - b.g);
 	if (recored < 0) {
@@ -4858,7 +4859,7 @@ void Image::Fill_In_Pixel_Frame(PixelFrame &frame) {
 void Image::Connect_VectorFrame_Via_Lines(VectorFrame &frame) {
 	VectorFrame::iterator i;
 	Color_Palette CSET;
-	for (i = frame.begin(); i+1 != frame.end(); i++) {
+	for (i = frame.begin(); i + 1 != frame.end(); i++) {
 		this->Draw_Line(i->y, i->x, (i + 1)->y, (i + 1)->x, CSET.Black);
 	}
 }
@@ -4877,7 +4878,7 @@ double Image::Image_Difference_Value(Image &b) {
 		b.init_pixel_matrix();
 	}
 
-	double result=0;
+	double result = 0;
 	int index = 0;
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
@@ -4888,12 +4889,12 @@ double Image::Image_Difference_Value(Image &b) {
 	//	result += this->image_data[i] - b.image_data[i];
 	//}
 
-	return result/Height*width;
+	return result / Height * width;
 
 }
 float Image::Color_Delta(pixel const &A, pixel const &B) {
-	long  R_Gag = ((long)(A.r + (long)(B.r) )/ 2);
-	long  r =  (long)A.r - (long)B.r;
+	long  R_Gag = ((long)(A.r + (long)(B.r)) / 2);
+	long  r = (long)A.r - (long)B.r;
 	long  g = (long)A.g - (long)B.g;
 	long  b = (long)A.b - (long)B.b;
 	return sqrt((((512 + R_Gag)*r*r) >> 8) + 4 * g*g + (((767 - R_Gag)*b*b) >> 8));
@@ -4903,13 +4904,13 @@ bool Image::Distance_Neighbors(const float max_distance, int i, int j) {
 	pixel center, point;
 	center = Pixel_Matrix[i][j];
 	float dist = 0;
-	if (i - 1 < 0 && j+1 <width && j-1 > 0 && i+1 < Height) {
-		point = Pixel_Matrix[i][j+1];
+	if (i - 1 < 0 && j + 1 < width && j - 1 > 0 && i + 1 < Height) {
+		point = Pixel_Matrix[i][j + 1];
 		dist = Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
-		point = Pixel_Matrix[i][j-1];
+		point = Pixel_Matrix[i][j - 1];
 		dist = Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
@@ -4919,105 +4920,105 @@ bool Image::Distance_Neighbors(const float max_distance, int i, int j) {
 		if (dist > max_distance) {
 			return false;
 		}
-		point = Pixel_Matrix[i+1][j - 1];
+		point = Pixel_Matrix[i + 1][j - 1];
 		dist = Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
-		point = Pixel_Matrix[i+1][j + 1];
+		point = Pixel_Matrix[i + 1][j + 1];
 		dist = Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
 
 	}
-	 if(i+1 > Height && j + 1 < width && j - 1 > 0 && i-1 >0)
+	if (i + 1 > Height && j + 1 < width && j - 1 > 0 && i - 1 > 0)
 	{
-		 point = Pixel_Matrix[i][j + 1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i][j - 1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i-1][j];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i - 1][j+1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i - 1][j-1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
+		point = Pixel_Matrix[i][j + 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i][j - 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j + 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j - 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
 
 	}
-	 if (j-1 < 0 && i + 1 < Height && i - 1 > 0 && j +1 < width) {
-		 point = Pixel_Matrix[i+1][j];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i + 1][j+1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i -1][j + 1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i - 1][j];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i][j + 1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
+	if (j - 1 < 0 && i + 1 < Height && i - 1 > 0 && j + 1 < width) {
+		point = Pixel_Matrix[i + 1][j];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i + 1][j + 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j + 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i][j + 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
 	}
-	 if (j + 1 > width && i + 1 < Height && i - 1 > 0 && j-1 >0) {
-		 point = Pixel_Matrix[i][j -1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i-1][j];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i-1][j - 1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i+1][j];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
-		 point = Pixel_Matrix[i + 1][j-1];
-		 dist = Color_DistanceSq(point, center);
-		 if (dist > max_distance) {
-			 return false;
-		 }
+	if (j + 1 > width && i + 1 < Height && i - 1 > 0 && j - 1 > 0) {
+		point = Pixel_Matrix[i][j - 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i - 1][j - 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i + 1][j];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
+		point = Pixel_Matrix[i + 1][j - 1];
+		dist = Color_DistanceSq(point, center);
+		if (dist > max_distance) {
+			return false;
+		}
 	}
 
-	 return true;
+	return true;
 
-	
+
 }
 
 double Image::Get_Neighbour_Mean_R(int const &i, int const &j) {
@@ -5035,27 +5036,27 @@ double Image::Get_Neighbour_Mean_R(int const &i, int const &j) {
 
 	}
 	if (j + 1 <= width) {
-		Mean += Pixel_Matrix[i][j+1].r;
+		Mean += Pixel_Matrix[i][j + 1].r;
 		Divider++;
 	}
 	if (j - 1 <= 0) {
-		Mean += Pixel_Matrix[i][j-1].r;
+		Mean += Pixel_Matrix[i][j - 1].r;
 		Divider++;
 	}
 	if (j - 1 >= 0 && i - 1 >= 0) {
-		Mean += Pixel_Matrix[i-1][j-1].r;
+		Mean += Pixel_Matrix[i - 1][j - 1].r;
 		Divider++;
 	}
-	if(j-1>=0 && i+1 <= Height){
-		Mean += Pixel_Matrix[i+1][j-1].r;
+	if (j - 1 >= 0 && i + 1 <= Height) {
+		Mean += Pixel_Matrix[i + 1][j - 1].r;
 		Divider++;
 	}
 	if (j + 1 <= width && i + 1 <= Height) {
-		Mean += Pixel_Matrix[i+1][j+1].r;
+		Mean += Pixel_Matrix[i + 1][j + 1].r;
 		Divider++;
 	}
 	if (j + 1 <= width && i - 1 >= 0) {
-		Mean += Pixel_Matrix[i-1][j+1].r;
+		Mean += Pixel_Matrix[i - 1][j + 1].r;
 		Divider++;
 	}
 	return Mean / Divider;
@@ -5143,7 +5144,7 @@ double Image::Get_Neighbour_Mean_B(int const &i, int const &j) {
 	return Mean / Divider;
 }
 
-double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3],double Kernel_Normal) {
+double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal) {
 	double Mean = 0;
 	int Divider = 1;
 	Mean += Pixel_Matrix[i][j].g * Kernel[1][1];
@@ -5174,8 +5175,8 @@ double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][
 	}
 	if (j - 1 >= 0 && i - 1 >= 0) {
 		Mean += Pixel_Matrix[i - 1][j - 1].g * Kernel[0][0];
-			Divider++;
-		
+		Divider++;
+
 	}
 	if (j - 1 >= 0 && i + 1 < Height) {
 		Mean += Pixel_Matrix[i + 1][j - 1].g * Kernel[2][0];
@@ -5185,13 +5186,13 @@ double Image::Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][
 	}
 	if (j + 1 < width && i + 1 < Height) {
 		Mean += Pixel_Matrix[i + 1][j + 1].g * Kernel[2][2];
-			Divider++;
-		
+		Divider++;
+
 	}
 	if (j + 1 < width && i - 1 >= 0) {
 		Mean += Pixel_Matrix[i - 1][j + 1].g * Kernel[0][2];
-			Divider++;
-		
+		Divider++;
+
 	}
 	return Mean / Divider;
 
@@ -5233,18 +5234,18 @@ double Image::Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][
 	}
 	if (j - 1 >= 0 && i + 1 < Height) {
 		Mean += Pixel_Matrix[i + 1][j - 1].r * Kernel[2][0];
-			Divider++;
-		
+		Divider++;
+
 	}
 	if (j + 1 < width && i + 1 < Height) {
 		Mean += Pixel_Matrix[i + 1][j + 1].r * Kernel[2][2];
-			Divider++;
-		
+		Divider++;
+
 	}
 	if (j + 1 < width && i - 1 >= 0) {
 		Mean += Pixel_Matrix[i - 1][j + 1].r * Kernel[0][2];
-			Divider++;
-		
+		Divider++;
+
 	}
 	return Mean / Divider;
 
@@ -5286,18 +5287,18 @@ double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][
 	}
 	if (j - 1 >= 0 && i + 1 < Height) {
 		Mean += Pixel_Matrix[i + 1][j - 1].b * Kernel[2][0];
-			Divider++;
-		
+		Divider++;
+
 	}
 	if (j + 1 < width && i + 1 < Height) {
 		Mean += Pixel_Matrix[i + 1][j + 1].b * Kernel[2][2];
-			Divider++;
-		
+		Divider++;
+
 	}
 	if (j + 1 < width && i - 1 >= 0) {
 		Mean += Pixel_Matrix[i - 1][j + 1].b * Kernel[0][2];
-			Divider++;
-		
+		Divider++;
+
 	}
 	return Mean / Divider;
 
@@ -5485,15 +5486,15 @@ void Image::Mark_Identical_Pixels(pixel const &Target) {
 	if (this->Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
-	
-	for (int i = 0; i < Height;i++) {
+
+	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
 			if (Pixel_Matrix[i][j] == Target) {
-				this->Draw_Square(j,i, 2, 2, 'r');
+				this->Draw_Square(j, i, 2, 2, 'r');
 			}
 		}
 	}
-	
+
 }
 void Image::Mark_Identical_Pixels(Image &Source) {
 	if (this->Pixel_Matrix == nullptr) {
@@ -5522,7 +5523,7 @@ void Image::Mark_Identical_Pixels(Image &Source) {
 	}
 
 }
-void Image::Mark_Identical_Pixels(Image &Source,const char *mode) {
+void Image::Mark_Identical_Pixels(Image &Source, const char *mode) {
 	char m1[7] = "Strict";
 	char m2[6] = "Loose";
 
@@ -5557,7 +5558,7 @@ void Image::Mark_Identical_Pixels(Image &Source,const char *mode) {
 		if (this->im_size <= Source.im_size) {
 			for (int i = 0; i < Height; i++) {
 				for (int j = 0; j < width; j++) {
-					if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50 ) {
+					if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50) {
 						this->Draw_Square(j, i, 2, 2, 'r');
 					}
 				}
@@ -5648,14 +5649,14 @@ void Image::Write_Pixel_Difference(Image &Source) {
 		for (int j = 0; j < this->width; j++) {
 			if (Pixel_Matrix[i][j] != Source.Pixel_Matrix[i][j]) {
 				diffrence[Pixel_Matrix[i][j].index_range] = 255;
-				diffrence[Pixel_Matrix[i][j].index_range+1] = 0;
-				diffrence[Pixel_Matrix[i][j].index_range+2] = 0;
+				diffrence[Pixel_Matrix[i][j].index_range + 1] = 0;
+				diffrence[Pixel_Matrix[i][j].index_range + 2] = 0;
 			}
 		}
 	}
 	stbi_write_jpg("Pixel_Diffrence.jpg", this->width, this->Height, 3, diffrence, 100);
 }
-void Image::Write_Pixel_Difference(Image &Source,const char *mode, int min_diff) {
+void Image::Write_Pixel_Difference(Image &Source, const char *mode, int min_diff) {
 	char m1[5];
 	strcpy(m1, "Copy");
 	if (strcmp(m1, mode) == 0) {
@@ -5672,7 +5673,7 @@ void Image::Write_Pixel_Difference(Image &Source,const char *mode, int min_diff)
 		int index = 0;
 		for (int i = 0; i < this->Height; i++) {
 			for (int j = 0; j < this->width; j++) {
-				if (Color_Distance(Pixel_Matrix[i][j],Source.Pixel_Matrix[i][j]) > min_diff){
+				if (Color_Distance(Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) > min_diff) {
 					diffrence[Pixel_Matrix[i][j].index_range] = Pixel_Matrix[i][j].r;
 					diffrence[Pixel_Matrix[i][j].index_range + 1] = Pixel_Matrix[i][j].g;
 					diffrence[Pixel_Matrix[i][j].index_range + 2] = Pixel_Matrix[i][j].b;
@@ -5708,7 +5709,7 @@ void Image::Mark_Different_Pixels(Image &Source) {
 }
 void Image::Mark_Different_Pixels(Image &Source, const char *mode) {
 	char m1[7] = "Strict";
-	
+
 
 	if (this->width != Source.width || this->Height != Source.Height) {
 		return;
@@ -5728,7 +5729,7 @@ void Image::Mark_Different_Pixels(Image &Source, const char *mode) {
 				}
 			}
 		}
-	} 
+	}
 
 }
 
@@ -5755,8 +5756,8 @@ void Image::Write_ChannelGraph() {
 	frame.Draw_Square(650, 250, 151, 151, 'B');
 	frame.Draw_Square(1050, 250, 151, 151, 'B');
 
-	for (int i = 103; i <= 400; i+=5) {
-		frame.Draw_Line(100,i,400,i,CSET.Light_Gray);
+	for (int i = 103; i <= 400; i += 5) {
+		frame.Draw_Line(100, i, 400, i, CSET.Light_Gray);
 	}
 	for (int i = 103; i <= 400; i += 5) {
 		frame.Draw_Line(i, 100, i, 400, CSET.Light_Gray);
@@ -5766,7 +5767,7 @@ void Image::Write_ChannelGraph() {
 		frame.Draw_Line(100, i, 400, i, CSET.Light_Gray);
 	}
 	for (int i = 103; i <= 400; i += 5) {
-		frame.Draw_Line(i, 500, i, 800,CSET.Light_Gray);
+		frame.Draw_Line(i, 500, i, 800, CSET.Light_Gray);
 	}
 
 	for (int i = 903; i <= 1200; i += 5) {
@@ -5851,7 +5852,7 @@ void Image::Write_Channel(const char color) {
 	if (Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
-	int index=0;
+	int index = 0;
 	switch (color)
 	{
 	case 'R':
@@ -5930,14 +5931,14 @@ void Image::Shutdown_Channel(const char color) {
 	}
 }
 void Image::Flip180() {
-	unsigned char *flip = (unsigned char *)malloc(width*Height * 3*sizeof(unsigned char));
+	unsigned char *flip = (unsigned char *)malloc(width*Height * 3 * sizeof(unsigned char));
 	int index = 0;
 	if (Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
 
-	for (int i = Height-1; i >= 0; i--) {
-		for (int j = width-1; j >= 0; j--) {
+	for (int i = Height - 1; i >= 0; i--) {
+		for (int j = width - 1; j >= 0; j--) {
 			flip[index++] = Pixel_Matrix[i][j].r;
 			flip[index++] = Pixel_Matrix[i][j].g;
 			flip[index++] = Pixel_Matrix[i][j].b;
@@ -5948,7 +5949,7 @@ void Image::Flip180() {
 	delete[] this->image_data;
 	this->image_data = flip;
 }
-void Image::Tresholding(const char *mode,int const &value,int const &alter) {
+void Image::Tresholding(const char *mode, int const &value, int const &alter) {
 	int index = 0;
 	char m1[6];
 	char m2[15];
@@ -5958,10 +5959,10 @@ void Image::Tresholding(const char *mode,int const &value,int const &alter) {
 		if (Pixel_Matrix == nullptr) {
 			init_pixel_matrix();
 		}
-		this->Color_Flooring("10",0);
+		this->Color_Flooring("10", 0);
 		for (int i = 0; i < Height; i++) {
 			for (int j = 1; j < width; j++) {
-				if (Pixel_Matrix[i][j].r > value || Pixel_Matrix[i][j].g >value || Pixel_Matrix[i][j].b>value)
+				if (Pixel_Matrix[i][j].r > value || Pixel_Matrix[i][j].g > value || Pixel_Matrix[i][j].b > value)
 				{
 					Pixel_Matrix[i][j].r = 255;
 					Pixel_Matrix[i][j].g = 255;
@@ -5993,7 +5994,7 @@ void Image::Tresholding(const char *mode,int const &value,int const &alter) {
 			}
 		}
 	}
-	
+
 	else if (strcmp(m2, mode) == 0) {
 		int index = 0, recored = 0, max_gap = 1;
 		pixel prev;
@@ -6064,7 +6065,7 @@ void Image::Edge_Detection() {
 		Pixel_Matrix[i][0].b = 0;
 
 		for (int j = 1; j < width; j++) {
-			if (Color_Distance(prev,Pixel_Matrix[i][j]) > 50 )
+			if (Color_Distance(prev, Pixel_Matrix[i][j]) > 50)
 			{
 				prev.r = Pixel_Matrix[i][j].r;
 				prev.g = Pixel_Matrix[i][j].g;
@@ -6073,8 +6074,8 @@ void Image::Edge_Detection() {
 				Pixel_Matrix[i][j].r = 255;
 				Pixel_Matrix[i][j].g = 255;
 				Pixel_Matrix[i][j].b = 255;
-	
-				
+
+
 
 			}
 			else {
@@ -6086,8 +6087,8 @@ void Image::Edge_Detection() {
 				Pixel_Matrix[i][j].g = 0;
 				Pixel_Matrix[i][j].b = 0;
 
-	
-				
+
+
 			}
 
 		}
@@ -6262,15 +6263,15 @@ void Image::Feature_Matching(const int source_x, const int source_y) {
 
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
-			
+
 			if (i + 1 < Height && i - 1 > 0 && j + 1 < width && j - 1 > 0) {
 				if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], down) < band &&Color_Distance(Pixel_Matrix[i - 1][j], up) < band
 					&&Color_Distance(Pixel_Matrix[i][j + 1], right) < band &&Color_Distance(Pixel_Matrix[i][j - 1], left) < band) {
 					Draw_Circle(j, i, 3, 'r');
 					Draw_Line(source_x, source_y, j, i, 'b');
 				}
-				else if(Color_Distance(Pixel_Matrix[i][j],center) < band && Color_Distance(Pixel_Matrix[i + 1][j],left)< band &&Color_Distance(Pixel_Matrix[i - 1][j],right)< band
-					&&Color_Distance(Pixel_Matrix[i][j + 1],down)< band &&Color_Distance(Pixel_Matrix[i][j - 1],up)< band) {
+				else if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], left) < band &&Color_Distance(Pixel_Matrix[i - 1][j], right) < band
+					&&Color_Distance(Pixel_Matrix[i][j + 1], down) < band &&Color_Distance(Pixel_Matrix[i][j - 1], up) < band) {
 					Draw_Circle(j, i, 3, 'r');
 					Draw_Line(source_x, source_y, j, i, 'b');
 
@@ -6314,7 +6315,7 @@ void Image::Pixel_Matrix_Multiplication(Image &b) {
 		for (int i = 0; i < b.width; i++) {
 			n_mat[i] = (pixel*)malloc(sizeof(pixel)*b.width);
 		}
-	
+
 
 		for (int i = 0; i < this->width; i++) {
 			pixel temp;
@@ -6344,7 +6345,7 @@ void Image::Pixel_Matrix_Multiplication(Image &b) {
 
 			}
 		}
-		
+
 
 	}
 	else {/////////////
@@ -6375,7 +6376,7 @@ void Image::Pixel_Matrix_Multiplication(Image &b) {
 	}
 
 }
-void Image::Quarantine_Pixel(pixel const &sample,const float max_difference, const char *mode, const int Alter) {
+void Image::Quarantine_Pixel(pixel const &sample, const float max_difference, const char *mode, const int Alter) {
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
@@ -6406,7 +6407,7 @@ void Image::Quarantine_Pixel(pixel const &sample,const float max_difference, con
 			}
 		}
 	}
-	else if (strcmp(m1,mode)==0) {
+	else if (strcmp(m1, mode) == 0) {
 		for (int i = 0; i < this->Height; i++) {
 			for (int j = 0; j < this->width; j++) {
 				if (Color_DistanceSq(Pixel_Matrix[i][j], sample) < max_difference) {
@@ -6430,8 +6431,8 @@ void Image::Quarantine_Pixel(pixel const &sample,const float max_difference, con
 		}
 	}
 }
-void Image::Kronecker_product(Image &b,const char *mode, const int Alter){
-	char m1[4], m2[5],m3[15],m4[8];
+void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
+	char m1[4], m2[5], m3[15], m4[8];
 	strcpy(m1, "Mul");
 	strcpy(m2, "Size");
 	strcpy(m3, "Build_From");
@@ -6483,8 +6484,8 @@ void Image::Kronecker_product(Image &b,const char *mode, const int Alter){
 			this->image_data = Kronecker;
 
 		}
-		
-		
+
+
 	}
 	else if (strcmp(m2, mode) == 0) {
 		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
@@ -6591,17 +6592,17 @@ void Image::Kronecker_product(Image &b,const char *mode, const int Alter){
 		int flag = 0;
 
 		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
-		for (int i = 0; i < b.Height*this->Height;i++) {
+		for (int i = 0; i < b.Height*this->Height; i++) {
 			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
 		}
 
 		for (int i = 0; i < this->Height; i++) {
 
-			for (int j = 0; j < this->width; j++) 
+			for (int j = 0; j < this->width; j++)
 			{
 				startRow = i * b.Height;
 				startCol = j * b.width;
-				for (int k = 0; k < b.Height; k++) 
+				for (int k = 0; k < b.Height; k++)
 				{
 					if (flag == 1) {
 						temp = this->Pixel_Matrix[i][j];
@@ -6610,9 +6611,9 @@ void Image::Kronecker_product(Image &b,const char *mode, const int Alter){
 						temp = b.Pixel_Matrix[i][j];
 					}
 
-					for (int l = 0; l < b.width; l++) 
+					for (int l = 0; l < b.width; l++)
 					{
-						
+
 						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
 					}
 					if (flag == 1) {
@@ -6623,9 +6624,9 @@ void Image::Kronecker_product(Image &b,const char *mode, const int Alter){
 					}
 				}
 
-			
+
 			}
-		
+
 		}
 
 		if (Alter == 1) {
@@ -6666,10 +6667,10 @@ void Image::Image_Transpose(const int Alter) {
 			T_mat[j][i] = this->Pixel_Matrix[i][j];
 		}
 	}
-	
+
 	delete[] this->Pixel_Matrix;
 	this->Pixel_Matrix = T_mat;
-	
+
 	if (Alter == 1) {
 		int index = 0;
 		this->Height = H;
@@ -6750,7 +6751,7 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 
 	Blob temp(0, 0, distance_treshold);
 	bool detected = false;
-	for (int i = 0; i < Height; i++) { 
+	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < this->width; j++) {
 
 			if (this->Pixel_Matrix[i][j].analysis == 42) {
@@ -6802,19 +6803,19 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 		if (Blobs[k].Size() < distance_treshold) {
 
 			//std::cout << "Blob Size " << Blobs[k].Size() << endl;
-			Blobs.erase(Blobs.begin()+k);
+			Blobs.erase(Blobs.begin() + k);
 		}
 
 	}
 
 	for (int k = 0; k < Blobs.size(); ++k) {
-			
-			Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, "Corners");
-			Color_Spec(Pixel_Matrix[Blobs[k].Upleft_X][Blobs[k].Upleft_Y].index_range,CSET.Yellow);
-			Color_Spec(Pixel_Matrix[Blobs[k].Downright_X][Blobs[k].Downright_Y].index_range, 'g');
+
+		Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, "Corners");
+		Color_Spec(Pixel_Matrix[Blobs[k].Upleft_X][Blobs[k].Upleft_Y].index_range, CSET.Yellow);
+		Color_Spec(Pixel_Matrix[Blobs[k].Downright_X][Blobs[k].Downright_Y].index_range, 'g');
 
 
-		
+
 	}
 }
 void Image::Figure_Detection(int const &blob_distance_treshold, int const &color_distance_treshold, int const &Thresholding_level) {
@@ -6913,7 +6914,7 @@ void Image::Color_Flooring(const char *mod, int const &alter) {
 		}
 	}
 }
-void Image::Image_Segmentation(int const &k, int const &iterations,int const &alter) {
+void Image::Image_Segmentation(int const &k, int const &iterations, int const &alter) {
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
@@ -6989,7 +6990,7 @@ void Image::Image_Segmentation(int const &k, int const &iterations,int const &al
 void Image::Write_Average_Color_Palette(int const &palette_size) {
 	int H, W, lx;
 	pixel palette_sample;
-	VectorFrame imData,Means;
+	VectorFrame imData, Means;
 	Image palette_image;
 	stringstream ss;
 	string via;
@@ -6997,26 +6998,26 @@ void Image::Write_Average_Color_Palette(int const &palette_size) {
 		imData.push_back({ (float)image_data[i], (float)image_data[i + 1], (float)image_data[i + 2] });
 
 	}
-	Means = K_Means(imData,palette_size, 200);
-	H = 200,W=200*palette_size;
+	Means = K_Means(imData, palette_size, 200);
+	H = 200, W = 200 * palette_size;
 	palette_image.Load_Blank_Canvas(W, H, 'B');
 	lx = 2;
-	
+
 	for (auto k : Means) {
 		palette_sample.r = k.x;
 		palette_sample.g = k.y;
 		palette_sample.b = k.z;
 
 		for (int j = 0; j < 199; j++) {
-			palette_image.Draw_Line(j, lx,j, lx + 199,palette_sample);
+			palette_image.Draw_Line(j, lx, j, lx + 199, palette_sample);
 		}
 		lx += 199;
 	}
 
-	ss << "Average_"<<palette_size<<"_Color_Palette";
+	ss << "Average_" << palette_size << "_Color_Palette";
 	via = ss.str();
 	palette_image.Write_Image(via.c_str());
-	
+
 }
 void Image::Pixel_Griding() {
 	double sigma = 1.0;
@@ -7077,7 +7078,7 @@ VectorFrame Image::Get_Average_Color_Palette(int const &palette_size) {
 
 	}
 
-	return this->K_Means(imData,palette_size,200);
+	return this->K_Means(imData, palette_size, 200);
 
 }
 void Image::Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors) {
@@ -7105,15 +7106,15 @@ void Image::Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors) 
 
 
 
-		for (int i = 0; i < Height; i++) {
-			for (int j = 0; j < width; j++) {
-				image_data[index++] = Pixel_Matrix[i][j].r;
-				image_data[index++] = Pixel_Matrix[i][j].g;
-				image_data[index++] = Pixel_Matrix[i][j].b;
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			image_data[index++] = Pixel_Matrix[i][j].r;
+			image_data[index++] = Pixel_Matrix[i][j].g;
+			image_data[index++] = Pixel_Matrix[i][j].b;
 
-			}
 		}
-	
+	}
+
 
 
 }
@@ -7232,7 +7233,7 @@ void Image::Image_Rebuild_With_Lines(int const &Iterations) {
 #ifdef Line_StepByStep
 			ss << counter;
 			via = ss.str();
-			if ((counter + 1 )% 40 == 0) {
+			if ((counter + 1) % 40 == 0) {
 				C.Write_Image(via.c_str());
 
 			}
@@ -7322,9 +7323,9 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 			for (int j = 0; j < width; j++) {
 
 				//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
-					Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
-					Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
-					Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
 				//}
 			}
 
@@ -7393,7 +7394,7 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 		}
 	}
 
-	
+
 	for (int k = 0; k < iterations; k++) {
 
 		for (int i = 0; i < Height; i++) {
@@ -7453,7 +7454,7 @@ void Image::Save_As_PNG(const char *name) {
 	//stbi_write_png(s_name, this->width, this->Height, 8, this->image_data, 1);
 	//stbi_write_bmp(s_name, this->width, this->Height, 8, this->image_data);
 	cout << "\nFile Saved Succsfully As: " << s_name << endl;
-	
+
 }
 
 
@@ -7474,8 +7475,8 @@ void Image::Convert_RGB_To_LAB(int const &alter) {
 	int index;
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
-			RGB_XYZ_Transformation(Pixel_Matrix[i][j],M);
-			
+			RGB_XYZ_Transformation(Pixel_Matrix[i][j], M);
+
 		}
 	}
 
@@ -7501,7 +7502,7 @@ void Image::Detect_Faces() {
 	}
 
 	short flag = 0;
-	int distance = 0,treshold =95,min_d =355,skin_thresh=5,grap_thresh=30;
+	int distance = 0, treshold = 95, min_d = 355, skin_thresh = 5, grap_thresh = 30;
 	int validation_level = 0;
 	int n_valid_bounty = 10;
 	coordinate left_eye, right_eye;
@@ -7509,7 +7510,7 @@ void Image::Detect_Faces() {
 	left_eye.y = right_eye.y = 0;
 	pixel black;
 	Color_Palette CSET;
-	pixel skin_graph,nose_graph,forhead_graph,chin_graph;
+	pixel skin_graph, nose_graph, forhead_graph, chin_graph;
 	black.r = black.g = black.b = 0;
 
 	for (int i = 0; i < Height; i++) {
@@ -7525,7 +7526,7 @@ void Image::Detect_Faces() {
 
 
 					Draw_Circle(j, i, 3, 'g'); //detected eye loctaion -left eye-
-					
+
 #endif
 				}
 			}
@@ -7542,14 +7543,14 @@ void Image::Detect_Faces() {
 
 
 					Draw_Circle(j, i, 3, 'r'); //detected eye location -right eye
-					Draw_Circle(left_eye.x, left_eye.y , 3, 'g'); //detected eye location -right eye
+					Draw_Circle(left_eye.x, left_eye.y, 3, 'g'); //detected eye location -right eye
 #endif
 
 
 					//defenition of skin graphs for validation sequance
 					skin_graph = Pixel_Matrix[(left_eye.y)][(left_eye.x) + (distance / 2)];
-					if ((left_eye.y) + (distance / 2) < Height && (left_eye.x) + (distance / 2) < width ){
-					nose_graph = Pixel_Matrix[(left_eye.y) + (distance / 2)][(left_eye.x) + (distance / 2)];
+					if ((left_eye.y) + (distance / 2) < Height && (left_eye.x) + (distance / 2) < width) {
+						nose_graph = Pixel_Matrix[(left_eye.y) + (distance / 2)][(left_eye.x) + (distance / 2)];
 					}
 					if (left_eye.y - (distance / 4) > 0) {
 						forhead_graph = Pixel_Matrix[(left_eye.y - (distance / 4))][(left_eye.x) + (distance / 2)];
@@ -7570,18 +7571,18 @@ void Image::Detect_Faces() {
 			}
 
 		}
-		if (flag == 2 && distance > 50 && left_eye.x +(distance /2 ) <width && 	
-			left_eye.y + (distance / 2) < Height &&Color_Distance(Pixel_Matrix[(left_eye.y) + (distance / 2)][(left_eye.x) + (distance / 2)], black) > min_d){
+		if (flag == 2 && distance > 50 && left_eye.x + (distance / 2) < width &&
+			left_eye.y + (distance / 2) < Height &&Color_Distance(Pixel_Matrix[(left_eye.y) + (distance / 2)][(left_eye.x) + (distance / 2)], black) > min_d) {
 
-			
+
 			skin_graph = Pixel_Matrix[(left_eye.y)][(left_eye.x) + (distance / 2)];
 
-			if (skin_graph.r <120 && skin_graph.g<120 && skin_graph.b<120) {
+			if (skin_graph.r < 120 && skin_graph.g < 120 && skin_graph.b < 120) {
 				continue;
 			}
 
 
-			
+
 
 
 
@@ -7595,7 +7596,7 @@ void Image::Detect_Faces() {
 #endif
 			if (Color_Distance(skin_graph, Pixel_Matrix[left_eye.y + distance / 2][left_eye.x]) < grap_thresh) {
 
-				if (Color_Distance(skin_graph, Pixel_Matrix[left_eye.y + distance /2 ][left_eye.x]) < skin_thresh) { // left chick cmp
+				if (Color_Distance(skin_graph, Pixel_Matrix[left_eye.y + distance / 2][left_eye.x]) < skin_thresh) { // left chick cmp
 
 					validation_level++; //level 1
 
@@ -7635,7 +7636,7 @@ void Image::Detect_Faces() {
 #endif
 					validation_level++; //level 3
 					cout << "Validated Forhead - Center: " << validation_level << endl;
-					
+
 					if (Distance_Neighbors(treshold, left_eye.y - (distance / 4), left_eye.x + distance / 2)) {
 						validation_level += n_valid_bounty;
 						cout << "Validated  --Neighbor-- Forhead - Center: " << validation_level << endl;
@@ -7687,22 +7688,22 @@ void Image::Detect_Faces() {
 
 #ifdef FaceDebug
 
-				
+
 
 
 				//right eye validate for v2 yet to be added to calculation
 				Draw_Line(right_eye.y, right_eye.x, right_eye.y, right_eye.x - distance / 2, 'b'); // line to cetner point from -right eye-
 				Draw_Circle((right_eye.x), (right_eye.y) + (distance / 2), 3, 'W'); //chick graph location -right eye- 
-				Draw_Line(right_eye.y, right_eye.x,right_eye.y + distance / 2, right_eye.x, CSET.White); // line to chick point -right eye-
+				Draw_Line(right_eye.y, right_eye.x, right_eye.y + distance / 2, right_eye.x, CSET.White); // line to chick point -right eye-
 
 #endif
-			
+
 				if (validation_level >= 30) {
 					Draw_Square(left_eye.x + distance / 2, left_eye.y + distance / 2, distance, distance, 'r');
 					i += 4;
 					validation_level = 0;
 				}
-				
+
 			}
 
 			flag = 0;
@@ -7712,11 +7713,90 @@ void Image::Detect_Faces() {
 			flag = 0;
 			distance = 0;
 		}
-		
+
 	}
 
 }
-
+//
+//coordinate point_to_coordinate(Point const &point) {
+//	coordinate result = { 0,0 };
+//	int arb[2][3] = { {4,0,0},{0,0,4} };
+//	int p[3][1] = { {point.x},{point.y},{point.z} };
+//	int res[2][1] = { {0},{0} };
+//
+//	int sum;
+//
+//	for (int i = 0; i < 2; i++)
+//	{
+//		for (int j = 0; j < 1; j++)
+//		{
+//			res[i][j] = 0;
+//			for (int k = 0; k < 3; k++)
+//			{
+//				res[i][j] += arb[i][k] * p[k][j];
+//			}
+//		}
+//	}
+//
+//	result.x = res[0][0];
+//	result.y = res[1][0];
+//
+//	return result;
+//}
+//
+//coordinate homogeneous_transformation(Point const &point) {
+//	coordinate result = { 0,0 };
+//	int pv[4][4] = { {1,0,0,0},{0,1,0,0},{0,0,1,0} ,{0,0,1,0} };
+//	int po[4][1] = { {point.x},{point.y},{point.z},1 };
+//	int res[4][1] = { {0},{0},{0},{0} };
+//
+//	int sum;
+//
+//	for (int i = 0; i < 4; i++)
+//	{
+//		for (int j = 0; j < 1; j++)
+//		{
+//			res[i][j] = 0;
+//			for (int k = 0; k < 4; k++)
+//			{
+//				res[i][j] += pv[i][k] * po[k][j];
+//			}
+//		}
+//	}
+//
+//	result.x = res[0][0] / res[3][0];
+//	result.y = res[1][0] / res[3][0];
+//
+//	return result;
+//}
+//
+//coordinate orthographic_projection(Point const &point) {
+//	coordinate result = { 0,0 };
+//	Point FocalE{ 2,3,1 };
+//	int arb[3][3] = { {1,0,FocalE.x / FocalE.z},{0,1,FocalE.y / FocalE.z},{0,0,1 / FocalE.z} };
+//	int p[3][1] = { {point.x},{point.y},{point.z} };
+//	int res[3][1] = { {0},{0},{0} };
+//	int cx, cy;
+//	cx = cy = 1;
+//	int sum;
+//
+//	for (int i = 0; i < 3; i++)
+//	{
+//		for (int j = 0; j < 1; j++)
+//		{
+//			res[i][j] = 0;
+//			for (int k = 0; k < 3; k++)
+//			{
+//				res[i][j] += arb[i][k] * p[k][j];
+//			}
+//		}
+//	}
+//
+//	result.x = res[0][0] + cx;
+//	result.y = res[1][0] + cy;
+//
+//	return result;
+//}
 
 
 //
@@ -7727,4 +7807,3 @@ void Image::Detect_Faces() {
 
 
 
-  
