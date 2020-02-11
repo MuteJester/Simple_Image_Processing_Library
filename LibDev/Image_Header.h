@@ -233,7 +233,7 @@ public:
 	double Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
 	double Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
 	double Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
-
+	CoordinateFrame GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x);
 	void Image_Convolution(int const &iterations, int const &alter, const char *Type);
 
 	void Image_Convolution(double Kernel[3][3], int const &iterations, int const &alter);

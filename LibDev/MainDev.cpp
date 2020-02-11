@@ -5,13 +5,10 @@
 
 void main() {
 
-	CoordinateFrame A, B;
-	Image D;
-	A.push_back(coordinate{1, 2});
-	B.push_back(coordinate{ 1, 3 });
-	bool a = A ^ B;
-	cout << a;
-	
-
-	system("pause");
+	Image A;
+	Color_Palette CSET;
+	A.Load_Blank_Canvas(100, 100, CSET.White);
+	A.Draw_Text(50, 50, "1+1");
+	A.Write_Image("Test");
+	system("Test.jpg");
 }
