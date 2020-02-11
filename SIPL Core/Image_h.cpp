@@ -37,7 +37,7 @@ using namespace std;
 #define KEY_RIGHT 77
 
 //#define FaceDebug
-
+//def
 
 #define Line_StepByStep
 
