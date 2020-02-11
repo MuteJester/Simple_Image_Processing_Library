@@ -26,8 +26,8 @@
 #include <limits>
 #include <algorithm>
 
-#include "Color_Catalog.h";
-#include "Characters.h";
+#include "Color_Catalog.h"
+#include "Characters.h"
 
 using namespace std;
 //using DataFrame = std::vector<Point>;
@@ -247,12 +247,19 @@ void operator+(pixel &a, pixel  &b) {
 		a.g = a.g % 255;
 	}
 }
+bool operator==(pixel const &a, pixel const &b) {
+	if (a.r == b.r && a.g == b.g && a.b == b.b) {
+		return true;
+	}
+	else { return false; }
+}
 bool operator==(pixel&a, pixel const &b) {
 	if (a.r == b.r && a.g == b.g && a.b == b.b) {
 		return true;
 	}
 	else { return false; }
 }
+
 bool operator!=(pixel&a, pixel const &b) {
 	if (a.b != b.b || a.r != b.r || a.g != b.g) {
 		return true;
@@ -406,7 +413,27 @@ pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const
 
 	return Dom_Color;
 }
-
+bool operator^(PixelFrame A, PixelFrame B) {
+	if (A.size() >= B.size()) {
+		for (int i = 0; i < B.size(); i++) {
+			if (A[i] == B[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
+	else {
+		for (int i = 0; i < A.size(); i++) {
+			if (A[i] == B[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+bool Image::is_PathCross(PixelFrame A, PixelFrame B) {
+	return A ^ B;
+}
 void Image::color_set(char color_choice, int &index) {
 
 
@@ -7024,8 +7051,7 @@ void Image::Pixel_Griding() {
 	double r, s = 2.0 * sigma * sigma;
 	double GKernel[5][5];
 	double sum = 0.0;
-	double PI = 3.14159265359;
-	int index = 0;
+ 	int index = 0;
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}

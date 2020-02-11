@@ -7024,7 +7024,6 @@ void Image::Pixel_Griding() {
 	double r, s = 2.0 * sigma * sigma;
 	double GKernel[5][5];
 	double sum = 0.0;
-	double PI = 3.14159265359;
 	int index = 0;
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
