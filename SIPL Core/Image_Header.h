@@ -40,7 +40,7 @@ struct Point {
 
 using VectorFrame = vector<Point>;
 using PixelFrame = vector<pixel>;
-using PixelPath = vector<pixel>;
+using CoordinateFrame = vector<coordinate>;
 
 class Pixel_C {
 private:
@@ -233,7 +233,7 @@ public:
 	double Get_Neighbour_Mean_R(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
 	double Get_Neighbour_Mean_G(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
 	double Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][3], double Kernel_Normal);
-	bool is_PathCross(PixelFrame A, PixelFrame B);
+	CoordinateFrame GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x);
 	void Image_Convolution(int const &iterations, int const &alter, const char *Type);
 
 	void Image_Convolution(double Kernel[3][3], int const &iterations, int const &alter);
@@ -244,4 +244,4 @@ public:
 
 using ImageFrame = vector<Image>;
 
-bool operator^(PixelFrame A, PixelFrame B);
+bool operator^(CoordinateFrame A, CoordinateFrame B);

@@ -26,8 +26,8 @@
 #include <limits>
 #include <algorithm>
 
-#include "Color_Catalog.h"
-#include "Characters.h"
+#include "Color_Catalog.h";
+#include "Characters.h";
 
 using namespace std;
 //using DataFrame = std::vector<Point>;
@@ -37,7 +37,7 @@ using namespace std;
 #define KEY_RIGHT 77
 
 //#define FaceDebug
-//def
+
 
 #define Line_StepByStep
 
@@ -247,19 +247,12 @@ void operator+(pixel &a, pixel  &b) {
 		a.g = a.g % 255;
 	}
 }
-bool operator==(pixel const &a, pixel const &b) {
-	if (a.r == b.r && a.g == b.g && a.b == b.b) {
-		return true;
-	}
-	else { return false; }
-}
 bool operator==(pixel&a, pixel const &b) {
 	if (a.r == b.r && a.g == b.g && a.b == b.b) {
 		return true;
 	}
 	else { return false; }
 }
-
 bool operator!=(pixel&a, pixel const &b) {
 	if (a.b != b.b || a.r != b.r || a.g != b.g) {
 		return true;
@@ -413,7 +406,15 @@ pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const
 
 	return Dom_Color;
 }
-bool operator^(PixelFrame A, PixelFrame B) {
+bool operator==(coordinate A, coordinate B) {
+	if (A.x == B.x && A.y == B.y) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+bool operator^(CoordinateFrame A, CoordinateFrame B) {
 	if (A.size() >= B.size()) {
 		for (int i = 0; i < B.size(); i++) {
 			if (A[i] == B[i]) {
@@ -423,6 +424,7 @@ bool operator^(PixelFrame A, PixelFrame B) {
 		return false;
 	}
 	else {
+
 		for (int i = 0; i < A.size(); i++) {
 			if (A[i] == B[i]) {
 				return true;
@@ -430,9 +432,6 @@ bool operator^(PixelFrame A, PixelFrame B) {
 		}
 		return false;
 	}
-}
-bool Image::is_PathCross(PixelFrame A, PixelFrame B) {
-	return A ^ B;
 }
 void Image::color_set(char color_choice, int &index) {
 
@@ -3059,6 +3058,45 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text) 
 			flag = 0;
 			break;
 
+
+		case '=':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.EqualSign.ES[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+
+
+		case '+':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.PlusSign.PLS[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
 		default:
 			break;
 		}
@@ -3912,6 +3950,42 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 					start_x = temp;
 				}
 				if (Set.Colon.Colon[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '=':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.EqualSign.ES[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '+':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.PlusSign.PLS[flag] == 1) {
 					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, 'B');
 				}
 				start_x++;
@@ -4783,6 +4857,44 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 
 			flag = 0;
 			break;
+
+		case '=':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.EqualSign.ES[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '+':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.PlusSign.PLS[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+	
 
 		default:
 			break;
@@ -7051,7 +7163,7 @@ void Image::Pixel_Griding() {
 	double r, s = 2.0 * sigma * sigma;
 	double GKernel[5][5];
 	double sum = 0.0;
- 	int index = 0;
+	int index = 0;
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
@@ -7481,6 +7593,44 @@ void Image::Save_As_PNG(const char *name) {
 	//stbi_write_bmp(s_name, this->width, this->Height, 8, this->image_data);
 	cout << "\nFile Saved Succsfully As: " << s_name << endl;
 
+}
+CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x) {
+	float dx, sx, dy, sy, err, e2;
+	if (this->Pixel_Matrix == nullptr) {
+		init_pixel_matrix();
+	}
+	CoordinateFrame Points;
+	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
+	dx = abs(target_y - start_y);
+	sx = start_y < target_y ? 1 : -1;
+	dy = -abs(target_x - start_x);
+	sy = start_x < target_x ? 1 : -1;
+	err = dx + dy;  //error value
+	while (true) {
+		if (x0 == x1 && y0 == y1) {
+			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+			Points.push_back({ (int)x0,(int)y0 });
+			break;
+		}
+
+		//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+		Points.push_back({ (int)x0,(int)y0 });
+
+		e2 = 2 * err;
+		if (e2 >= dy) {
+			err += dy;
+			x0 += sx;
+		}
+		if (e2 <= dx) {
+			err += dx;
+			y0 += sy;
+		}
+
+	}
+
+
+
+	return Points;
 }
 
 
