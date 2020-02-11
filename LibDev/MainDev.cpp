@@ -5,11 +5,12 @@
 
 void main() {
 
-	PixelFrame A, B;
+	CoordinateFrame A, B;
 	Image D;
-	A.push_back(pixel{ 1, 2, 3, 4, 5 });
-	B.push_back(pixel{ 1, 2, 3, 4, 5 });
-
+	A.push_back(coordinate{1, 2});
+	B.push_back(coordinate{ 1, 3 });
+	bool a = A ^ B;
+	cout << a;
 	
 
 	system("pause");

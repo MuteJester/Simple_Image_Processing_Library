@@ -40,6 +40,7 @@ struct Point {
 
 using VectorFrame = vector<Point>;
 using PixelFrame = vector<pixel>;
+using CoordinateFrame = vector<coordinate>;
 
 class Pixel_C {
 private:
@@ -243,3 +244,4 @@ public:
 
 using ImageFrame = vector<Image>;
 
+bool operator^(CoordinateFrame A, CoordinateFrame B);

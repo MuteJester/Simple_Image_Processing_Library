@@ -406,7 +406,33 @@ pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const
 
 	return Dom_Color;
 }
+bool operator==(coordinate A, coordinate B) {
+	if (A.x == B.x && A.y == B.y) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+bool operator^(CoordinateFrame A, CoordinateFrame B) {
+	if (A.size() >= B.size()) {
+		for (int i = 0; i < B.size(); i++) {
+			if (A[i] == B[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
+	else {
 
+		for (int i = 0; i < A.size(); i++) {
+			if (A[i] == B[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
 void Image::color_set(char color_choice, int &index) {
 
 
