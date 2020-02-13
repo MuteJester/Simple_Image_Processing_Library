@@ -12,7 +12,6 @@
 #include <list>
 
 
-using namespace std;
 #define ALTER 1
 #define PI 3.14159265
 
@@ -38,9 +37,9 @@ struct Point {
 	//x = r, y = g, z =b
 };
 
-using VectorFrame = vector<Point>;
-using PixelFrame = vector<pixel>;
-using CoordinateFrame = vector<coordinate>;
+using VectorFrame = std::vector<Point>;
+using PixelFrame = std::vector<pixel>;
+using CoordinateFrame = std::vector<coordinate>;
 
 class Pixel_C {
 private:
@@ -242,6 +241,6 @@ public:
 };
 
 
-using ImageFrame = vector<Image>;
+using ImageFrame = std::vector<Image>;
 
 bool operator^(CoordinateFrame A, CoordinateFrame B);
