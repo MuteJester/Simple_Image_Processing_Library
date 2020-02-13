@@ -9,6 +9,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include "Image_Header.h"
+#include "Color_Catalog.h"
+#include "Characters.h"
+
 #endif
 
 #include <iostream>
@@ -26,11 +29,8 @@
 #include <limits>
 #include <algorithm>
 
-#include "Color_Catalog.h";
-#include "Characters.h";
 
 using namespace std;
-//using DataFrame = std::vector<Point>;
 #define KEY_UP 72
 #define KEY_DOWN 80
 #define KEY_LEFT 75

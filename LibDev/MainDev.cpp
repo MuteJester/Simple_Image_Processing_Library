@@ -3,12 +3,13 @@
 
 
 
-void main() {
+int main() {
 
 	Image A;
 	Color_Palette CSET;
-	A.Load_Blank_Canvas(100, 100, CSET.White);
-	A.Draw_Text(50, 50, "1+1");
+	A.Load_Blank_Canvas(100, 100, CSET.Azure);
+	A.Draw_Text(50, 50, "1+1*");
 	A.Write_Image("Test");
 	system("Test.jpg");
+	return 0;
 }
