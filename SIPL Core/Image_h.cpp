@@ -9,6 +9,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include "Image_Header.h"
+#include "Color_Catalog.h"
+#include "Characters.h"
+
 #endif
 
 #include <iostream>
@@ -26,11 +29,8 @@
 #include <limits>
 #include <algorithm>
 
-#include "Color_Catalog.h";
-#include "Characters.h";
 
-using namespace std;
-//using DataFrame = std::vector<Point>;
+//using namespace std;
 #define KEY_UP 72
 #define KEY_DOWN 80
 #define KEY_LEFT 75
@@ -160,7 +160,7 @@ void Pixel_C::set_b(const uint8_t b) {
 
 
 
-void gcd_list(int w, int h, vector<int> &list) {
+void gcd_list(int w, int h, std::vector<int> &list) {
 	if (w > h) {
 		for (int i = 1; i <= w; i++) {
 			if (h % i == 0 && w % i == 0) {
@@ -177,7 +177,7 @@ void gcd_list(int w, int h, vector<int> &list) {
 		}
 	}
 }
-ostream &operator<<(ostream &out, pixel &in) {
+std::ostream &operator<<(std::ostream &out, pixel &in) {
 	out << "Pixel Index: " << in.index_range;
 	out << "\nR: " << (int)in.r;
 	out << "\nG: " << (int)in.g;
@@ -259,7 +259,7 @@ bool operator!=(pixel&a, pixel const &b) {
 	}
 	else { return false; }
 }
-pixel &operator*(pixel const &a, pixel const &b) {
+pixel operator*(pixel const &a, pixel const &b) {
 	pixel ret;
 	ret.r = a.r*b.r;
 	if (ret.r > 255) {
@@ -308,12 +308,12 @@ float GammaX(int const &color_value) {
 		return Value;
 	}
 }
-float LAB_Function(float const &value) {
+double LAB_Function(double &value) {
 	if (value > pow((6 / 29), 3)) {
 		return pow(value, 1 / 3);
 	}
 	else {
-		return (float)(1 / 3 * (pow((29 / 6), 2)*value)) + (4 / 29);
+		return (double)(1 / 3 * (pow((29 / 6), 2)*value)) + (4 / 29);
 	}
 }
 void RGB_XYZ_Transformation(pixel &value, double const M[3][3]) {
@@ -321,7 +321,7 @@ void RGB_XYZ_Transformation(pixel &value, double const M[3][3]) {
 	double result[3][1];
 	double XYZ[3][1];
 	double sum = 0;
-	float L, a, b;
+	double L, a, b;
 	result[0][0] = GammaX(value.r);
 	result[1][0] = GammaX(value.g);
 	result[2][0] = GammaX(value.b);
@@ -339,13 +339,13 @@ void RGB_XYZ_Transformation(pixel &value, double const M[3][3]) {
 
 	}
 
-	value.r *= XYZ[0][0];
-	value.g *= XYZ[1][0];
-	value.b *= XYZ[2][0];
+	value.r *= (uint8_t)XYZ[0][0];
+	value.g *= (uint8_t)XYZ[1][0];
+	value.b *= (uint8_t)XYZ[2][0];
 
-	L = 116 * (LAB_Function(XYZ[1][0])) - 16;
-	a = 500 * (LAB_Function(XYZ[0][0]) - LAB_Function(result[2][0]));
-	b = 200 * (LAB_Function(XYZ[0][0]) - LAB_Function(result[2][0]));
+	L = (116 * (LAB_Function(XYZ[1][0])) - 16);
+	a = (500 * (LAB_Function(XYZ[0][0]) - LAB_Function(result[2][0])));
+	b = (200 * (LAB_Function(XYZ[0][0]) - LAB_Function(result[2][0])));
 
 	//value.r = L;
 	//value.g = a;
@@ -354,7 +354,7 @@ void RGB_XYZ_Transformation(pixel &value, double const M[3][3]) {
 }
 float Pixel_Dataframe_Difference(pixel const &Pix, Point const &DF_point) {
 	float distance;
-	distance = (DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b);
+	distance = (float)((DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b));
 	return sqrt(distance);
 }
 pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const int target_y, const int target_x) {
@@ -363,14 +363,14 @@ pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const
 		init_pixel_matrix();
 	}
 	pixel Dom_Color;
-	vector<pixel> dots;
+	std::vector<pixel> dots;
 	VectorFrame Points;
 	VectorFrame Res;
-	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
-	dx = abs(target_y - start_y);
-	sx = start_y < target_y ? 1 : -1;
-	dy = -abs(target_x - start_x);
-	sy = start_x < target_x ? 1 : -1;
+	float x0 = (float)start_y, x1 = (float)target_y, y0 = (float)start_x, y1 = (float)target_x;
+	dx = (float)abs(target_y - start_y);
+	sx = (float)(start_y < target_y ? 1 : -1);
+	dy = (float)(-abs(target_x - start_x));
+	sy = (float)(start_x < target_x ? 1 : -1);
 	err = dx + dy;  //error value
 	while (true) {
 		if (x0 == x1 && y0 == y1) {
@@ -400,9 +400,9 @@ pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const
 	}
 
 	Res = K_Means(Points, 1, 100);
-	Dom_Color.r = Res[0].x;
-	Dom_Color.g = Res[0].y;
-	Dom_Color.b = Res[0].z;
+	Dom_Color.r = (uint8_t)Res[0].x;
+	Dom_Color.g = (uint8_t)Res[0].y;
+	Dom_Color.b = (uint8_t)Res[0].z;
 
 	return Dom_Color;
 }
@@ -416,7 +416,7 @@ bool operator==(coordinate A, coordinate B) {
 }
 bool operator^(CoordinateFrame A, CoordinateFrame B) {
 	if (A.size() >= B.size()) {
-		for (int i = 0; i < B.size(); i++) {
+		for (unsigned i = 0; i < B.size(); i++) {
 			if (A[i] == B[i]) {
 				return true;
 			}
@@ -425,7 +425,7 @@ bool operator^(CoordinateFrame A, CoordinateFrame B) {
 	}
 	else {
 
-		for (int i = 0; i < A.size(); i++) {
+		for (unsigned i = 0; i < A.size(); i++) {
 			if (A[i] == B[i]) {
 				return true;
 			}
@@ -563,7 +563,7 @@ void Image::getPixelCopy(int Height, int Width, pixel &save_pixel) {
 
 }
 float Cordinate_Distance(int const &x0, int const &y0, int const &x1, int const &y1) {
-	float Distance = (x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0);
+	float Distance = (float)((x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0));
 	return Distance;
 }
 
@@ -576,13 +576,13 @@ Blob::Blob(int const &x, int const &y, int const &Distnace_Treshold) {
 }
 
 bool Blob::Near(int const &x, int const &y) {
-	float CentetX, CenterY, Dist;
+	double CentetX, CenterY, Dist;
 	/*CentetX = (Upleft_X + Downright_X) / 2;
 	CenterY = (Upleft_Y + Downright_Y) / 2;*/
 
 	CentetX = fmax(fmin(x, Upleft_X), Downright_X);
 	CenterY = fmax(fmin(y, Upleft_Y), Downright_Y);
-	Dist = Cordinate_Distance(CentetX, CenterY, x, y);
+	Dist = (double)(Cordinate_Distance((int)CentetX, (int)CenterY, (int)(x), (int)(y)));
 
 	if (Dist < this->Distnace_Treshold*Distnace_Treshold) {
 		return true;
@@ -593,11 +593,11 @@ bool Blob::Near(int const &x, int const &y) {
 	}
 }
 void Blob::add(int const &px, int const &py) {
-	this->Downright_X = (float)fmin(Downright_X, px);
-	this->Downright_Y = (float)fmin(Downright_Y, py);
+	this->Downright_X = (int)fmin(Downright_X, px);
+	this->Downright_Y = (int)fmin(Downright_Y, py);
 
-	this->Upleft_X = (float)fmax(Upleft_X, px);
-	this->Upleft_Y = (float)fmax(Upleft_Y, py);
+	this->Upleft_X = (int)fmax(Upleft_X, px);
+	this->Upleft_Y = (int)fmax(Upleft_Y, py);
 }
 void Blob::Clear() {
 	this->Downright_X = this->Downright_Y = this->Upleft_X = this->Upleft_Y = -1;
@@ -614,12 +614,12 @@ float Blob::Size() {
 
 
 void Image::Load_Blank_Canvas() {
-	cout << "\nPlease Enter Height Of Image: ";
-	cin >> Height;
-	cout << "\nPlease Enter Width Of Image: ";
-	cin >> width;
-	cout << "\nPlease Enter Number Of Color Channels: ";
-	cin >> channel;
+	std::cout << "\nPlease Enter Height Of Image: ";
+	std::cin >> Height;
+	std::cout << "\nPlease Enter Width Of Image: ";
+	std::cin >> width;
+	std::cout << "\nPlease Enter Number Of Color Channels: ";
+	std::cin >> channel;
 	if (image_data != NULL) {
 
 		stbi_image_free(image_data);
@@ -668,20 +668,20 @@ void Image::printImdata() {
 	for (int i = 0; i < width*Height * 3; i += 3) {
 
 		if (i % (width * 3) == 0) {
-			cout << "\n";
+			std::cout << "\n";
 		}
 
 		if (i == (width * 3)*(pos_Y)+3 * (pos_X + 1) && MODE == 1) {
-			cout << "[]";
+			std::cout << "[]";
 			index += 3;
 		}
 		if (i == (width * 3)*(pos_Y)+3 * (pos_X + 1) && MODE == 2) {
-			cout << "_" << " ";
+			std::cout << "_" << " ";
 			index += 3;
 		}
 		else {
 
-			cout << decode_color(image_data[index], image_data[index + 1], image_data[index + 2]) << " ";
+			std::cout << decode_color(image_data[index], image_data[index + 1], image_data[index + 2]) << " ";
 			index += 3;
 		}
 
@@ -693,17 +693,17 @@ void Image::printImdata(char color) {
 	for (int i = 0; i < width*Height * 3; i += 3) {
 
 		if (i % (width * 3) == 0) {
-			cout << "\n";
+			std::cout << "\n";
 		}
 
 		if (i == (width * 3)*(pos_Y)+3 * (pos_X + 1) && MODE == 1) {
-			cout << "[" << color << "] ";
+			std::cout << "[" << color << "] ";
 			index += 3;
 		}
 
 		else {
 
-			cout << decode_color(image_data[index], image_data[index + 1], image_data[index + 2]) << " ";
+			std::cout << decode_color(image_data[index], image_data[index + 1], image_data[index + 2]) << " ";
 			index += 3;
 		}
 
@@ -832,16 +832,16 @@ void Image::Manual_Draw() {
 	MODE = 0;
 }
 void Image::Load_Image() {
-	cout << "Please Enter Image Name Including .'Type': ";
-	cin >> f_name;
+	std::cout << "Please Enter Image Name Including .'Type': ";
+	std::cin >> f_name;
 	strcpy(this->f_name, f_name);
 	this->image_data = stbi_load(f_name, &width, &Height, &channel, 3);
 	this->im_size = width * Height;
 	if (this->image_data == NULL) {
-		cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+		std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
 	}
 	else {
-		cout << "\nFile Loaded Succsesfully\n";
+		std::cout << "\nFile Loaded Succsesfully\n";
 	}
 }
 void Image::Load_Image(const char *f_name) {
@@ -849,10 +849,10 @@ void Image::Load_Image(const char *f_name) {
 	this->image_data = stbi_load((char*)f_name, &width, &Height, &channel, 3);
 	this->im_size = width * Height;
 	if (this->image_data == NULL) {
-		cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+		std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
 	}
 	else {
-		cout << "\nFile Loaded Succsesfully\n";
+		std::cout << "\nFile Loaded Succsesfully\n";
 	}
 }
 void Image::Write_Image() {
@@ -869,12 +869,12 @@ void Image::Write_Image() {
 		char s_name[50];
 		char type[10];
 		strcpy(type, ".jpg");
-		cout << "Save As?: ";
-		cin >> s_name;
+		std::cout << "Save As?: ";
+		std::cin >> s_name;
 		strcat(s_name, type);
 		stbi_write_jpg(s_name, width, Height, channel, image_data, 100);
 
-		cout << "\nFile Saved Succsfully As: " << s_name << endl;
+		std::cout << "\nFile Saved Succsfully As: " << s_name << std::endl;
 	}
 }
 void Image::Write_Image(const char *f_name) {
@@ -889,7 +889,7 @@ void Image::Write_Image(const char *f_name) {
 	}
 	stbi_write_jpg(s_name, width, Height, channel, image_data, 100);
 
-	cout << "\nFile Saved Succsfully As: " << s_name << endl;
+	std::cout << "\nFile Saved Succsfully As: " << s_name << std::endl;
 
 }
 void Image::Color_Spec(int w, int h, char color) {
@@ -913,15 +913,18 @@ float Image::Get_Angle_Between_Coordinates(int const start_x, int const start_y,
 	strcpy(m2, "Degrees");
 
 	int product = start_x * target_x + start_y * target_y;
-	float magnitde_start, magnitude_target, Alpha;
+	double magnitde_start, magnitude_target, Alpha;
 	magnitde_start = sqrt(pow(start_x, 2) + pow(start_y, 2));
 	magnitude_target = sqrt(pow(target_x, 2) + pow(target_y, 2));
 	Alpha = (product) / (magnitde_start*magnitude_target);
 	if (strcmp(m2, mode) == 0) {
-		return acos(Alpha) * (180) / 3.1415926535;
+		return (float)(acos(Alpha) * (180) / PI);
 	}
 	else if (strcmp(m1, mode) == 0) {
-		return acos(Alpha);
+		return (float)(acos(Alpha));
+	}
+	else {
+		return NULL;
 	}
 
 
@@ -945,7 +948,7 @@ float Image::Get_Angle_Between_Coordinates(int const start_x, int const start_y,
 void Image::operator+(Image const &a) {
 	int regulator;
 	if (a.width != this->width || a.Height != this->Height) {
-		cout << "Error image size invalid\n";
+		std::cout << "Error image size invalid\n";
 		return;
 	}
 	else {
@@ -964,7 +967,7 @@ void Image::operator+(Image const &a) {
 void Image::operator-(Image const &b) {
 	int regulator;
 	if (b.width != this->width || b.Height != this->Height) {
-		cout << "Error image size invalid\n";
+		std::cout << "Error image size invalid\n";
 		return;
 	}
 	else {
@@ -984,7 +987,7 @@ void Image::operator-(Image const &b) {
 void Image::operator/(Image const &b) {
 	int regulator;
 	if (b.width != this->width || b.Height != this->Height) {
-		cout << "Error image size invalid\n";
+		std::cout << "Error image size invalid\n";
 		return;
 	}
 	else {
@@ -1194,21 +1197,21 @@ pixel Image::Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols) {
 	return temp;
 }
 void Image::Compress() {
-	vector<int> comp_levels;
+	std::vector<int> comp_levels;
 	int choice;
 	gcd_list(this->width, this->Height, comp_levels);
 	if (comp_levels.size() == 1) {
-		cout << "No Possible Compression Option Found" << endl;
+		std::cout << "No Possible Compression Option Found" << std::endl;
 		return;
 	}
 	else {
 		system("cls");
-		cout << "Choose Compression Level:\n";
+		std::cout << "Choose Compression Level:\n";
 		for (unsigned i = 1; i < comp_levels.size(); i++) {
-			cout << i << ") " << comp_levels[i] << endl;
+			std::cout << i << ") " << comp_levels[i] << std::endl;
 		}
-		cout << endl;
-		cin >> choice;
+		std::cout << std::endl;
+		std::cin >> choice;
 		int j = 0, k = 0, start_row = 0, start_col = 0, si = 0, sj = 0, index = 0;
 		pixel A_color;
 
@@ -1285,7 +1288,7 @@ void Image::Compress() {
 
 void Image::Text_To_Image(const char *file_name)
 {
-	fstream file;
+	std::fstream file;
 	char cur_char;
 	unsigned short mode;
 	int number_of_chars = 0, pixel_num = 0, index = 0, width = 0, height = 0;
@@ -1296,8 +1299,8 @@ void Image::Text_To_Image(const char *file_name)
 		return;
 	}
 
-	cout << "Please Input Decode Mode:\n.)Press 1 For Raw\n.)Press 2 For Enhanced\nInput: ";
-	cin >> mode;
+	std::cout << "Please Input Decode Mode:\n.)Press 1 For Raw\n.)Press 2 For Enhanced\nInput: ";
+	std::cin >> mode;
 	if (mode == 1) {
 		while (!file.eof()) {
 			file.get(cur_char);
@@ -1305,7 +1308,7 @@ void Image::Text_To_Image(const char *file_name)
 		}
 
 		file.clear();
-		file.seekg(0, ios::beg);
+		file.seekg(0, std::ios::beg);
 		if (number_of_chars % 3 == 0) {
 			pixel_num = number_of_chars / 3;
 		}
@@ -1327,7 +1330,7 @@ void Image::Text_To_Image(const char *file_name)
 		}
 
 		file.clear();
-		file.seekg(0, ios::beg);
+		file.seekg(0, std::ios::beg);
 		if (number_of_chars % 3 == 0) {
 			pixel_num = number_of_chars / 3;
 		}
@@ -1349,12 +1352,12 @@ void Image::Text_To_Image(const char *file_name)
 void Image::Image_To_Text(const char *Image_name) {
 	this->Load_Image(Image_name);
 	for (int i = 0; i < Height*width * 3; i++) {
-		cout << (char)image_data[i];
+		std::cout << (char)image_data[i];
 	}
 }
 void Image::Insert_Text_Into_Image(const char *file_name, const char *Image_Name) {
 	this->Load_Image(Image_Name);
-	fstream file;
+	std::fstream file;
 	char cur_char;
 	int index = 0, number_of_chars = 0;
 	file.open(file_name);
@@ -1369,7 +1372,7 @@ void Image::Insert_Text_Into_Image(const char *file_name, const char *Image_Name
 	}
 
 	file.clear();
-	file.seekg(0, ios::beg);
+	file.seekg(0, std::ios::beg);
 
 	if (number_of_chars < (this->Height*this->width * 3)) {
 		while (!file.eof()) {
@@ -1379,7 +1382,7 @@ void Image::Insert_Text_Into_Image(const char *file_name, const char *Image_Name
 			}
 			if (file.eof()) {
 				file.clear();
-				file.seekg(0, ios::beg);
+				file.seekg(0, std::ios::beg);
 			}
 			if ((int)image_data[index] + (int)cur_char > 255) {
 				image_data[index] = ((int)image_data[index] + (int)cur_char) % 255;
@@ -1419,10 +1422,10 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 		init_pixel_matrix();
 	}
 	if (center_x + s_width > width || center_y + s_height >= Height || center_x - s_width < 0 || center_y - s_height < 0) {
-		cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-		cout << "Height Of Image: " << Height << endl;
-		cout << "Width Of Image: " << width << endl;
-		cout << endl;
+		std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+		std::cout << "Height Of Image: " << Height << std::endl;
+		std::cout << "Width Of Image: " << width << std::endl;
+		std::cout << std::endl;
 		return;
 	}
 	for (int i = center_x - s_width; i <= center_x + s_width; i++) {
@@ -1454,10 +1457,10 @@ void Image::Draw_Square(const int center_x, const int center_y,
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
-			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
@@ -1473,10 +1476,10 @@ void Image::Draw_Square(const int center_x, const int center_y,
 			}
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
-			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
@@ -1496,10 +1499,10 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
-			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
@@ -1515,10 +1518,10 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 		init_pixel_matrix();
 	}
 	if (center_x + s_width > width || center_y + s_height >= Height || center_x - s_width < 0 || center_y - s_height < 0) {
-		cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-		cout << "Height Of Image: " << Height << endl;
-		cout << "Width Of Image: " << width << endl;
-		cout << endl;
+		std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+		std::cout << "Height Of Image: " << Height << std::endl;
+		std::cout << "Width Of Image: " << width << std::endl;
+		std::cout << std::endl;
 		return;
 	}
 	for (int i = center_x - s_width; i <= center_x + s_width; i++) {
@@ -1552,10 +1555,10 @@ void Image::Draw_Square(const int center_x, const int center_y,
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
-			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
@@ -1571,10 +1574,10 @@ void Image::Draw_Square(const int center_x, const int center_y,
 			}
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
-			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
@@ -1593,7 +1596,7 @@ void Image::Draw_Square(const int center_x, const int center_y,
 		if (center_x >= width || center_y >= Height || s_width >= width || s_height >= Height || center_x <= 0 || center_y <= 0 || s_width <= 0 || s_height <= 0
 			|| center_x >= Height || center_y >= width || s_width >= Height || s_height >= width) {
 
-			cout << "There Was A drawing Error\n";
+			std::cout << "There Was A drawing Error\n";
 			return;
 		}
 		this->Draw_Line(center_x, center_y, s_width, center_y, color);
@@ -1615,10 +1618,10 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
-			cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << "\n";
 			return;
 		}
 		for (int j = center_y - s_height; j <= center_y + s_height; j++) {
@@ -1638,10 +1641,10 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	int x, y, r2;
 	unsigned i = 0;
 	if (center_x + c_radius >= width || center_x - c_radius <= 0 || center_y + c_radius >= Height || center_y - c_radius <= 0) {
-		cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-		cout << "Height Of Image: " << Height << endl;
-		cout << "Width Of Image: " << width << endl;
-		cout << endl;
+		std::cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+		std::cout << "Height Of Image: " << Height << std::endl;
+		std::cout << "Width Of Image: " << width << std::endl;
+		std::cout << std::endl;
 		return;
 	}
 	r2 = c_radius * c_radius;
@@ -1683,10 +1686,10 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	int x, y, r2;
 	unsigned i = 0;
 	if (center_x + c_radius >= width || center_x - c_radius <= 0 || center_y + c_radius >= Height || center_y - c_radius <= 0) {
-		cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-		cout << "Height Of Image: " << Height << endl;
-		cout << "Width Of Image: " << width << endl;
-		cout << endl;
+		std::cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+		std::cout << "Height Of Image: " << Height << std::endl;
+		std::cout << "Width Of Image: " << width << std::endl;
+		std::cout << std::endl;
 		return;
 	}
 	r2 = c_radius * c_radius;
@@ -1732,10 +1735,10 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 		int x, y;
 		unsigned i = 0;
 		if (center_x + c_radius > width || center_x - c_radius <0 || center_y + c_radius > Height || center_y - c_radius < 0) {
-			cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (y = -c_radius; y <= c_radius; y++)
@@ -1754,10 +1757,10 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 		int x, y;
 		unsigned i = 0;
 		if (center_x + c_radius > width || center_x - c_radius <0 || center_y + c_radius > Height || center_y - c_radius < 0) {
-			cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			cout << "Height Of Image: " << Height << endl;
-			cout << "Width Of Image: " << width << endl;
-			cout << endl;
+			std::cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
 			return;
 		}
 		for (y = -c_radius; y <= c_radius; y++)
@@ -1773,7 +1776,7 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_y, 
 	}
 
 	if (target_y > this->Height || start_y > this->Height || start_y < 0 || start_x > width || start_x < 0) {
-		cout << "Line Out Of Image Range\nDraw Action Aborted\n";
+		std::cout << "Line Out Of Image Range\nDraw Action Aborted\n";
 		return;
 	}
 
@@ -1926,9 +1929,9 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_x, 
 		}
 		float x0 = (float)start_x, x1 = (float)target_x, y0 = (float)start_y, y1 = (float)target_y;
 		dx = (float)abs(target_x - start_x);
-		sx = (float)start_x < target_x ? 1 : -1;
-		dy = (float)-abs(target_y - start_y);
-		sy = (float)start_y < target_y ? 1 : -1;
+		sx = (float)(start_x < target_x ? 1 : -1);
+		dy = (float)(-abs(target_y - start_y));
+		sy = (float)(start_y < target_y ? 1 : -1);
 		err = dx + dy;  /* error value e_xy */
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
@@ -2034,7 +2037,7 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_x, 
 }
 
 void Image::LineHigh(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color) {
-	float DeltaX, DeltaY, xi, D, X;
+	double DeltaX, DeltaY, xi, D, X;
 	if (this->Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
@@ -2062,7 +2065,7 @@ void Image::LineHigh(const int start_x, const int start_y, const int target_x, c
 
 }
 void Image::LineLow(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color) {
-	float DeltaX, DeltaY, yi, D, Y;
+	double DeltaX, DeltaY, yi, D, Y;
 	if (this->Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
@@ -2093,11 +2096,11 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 	}
 	///
 
-	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
-	dx = abs(target_y - start_y);
-	sx = start_y < target_y ? 1 : -1;
-	dy = -abs(target_x - start_x);
-	sy = start_x < target_x ? 1 : -1;
+	float x0 = (float)start_y, x1 = (float)target_y, y0 = (float)start_x, y1 = (float)target_x;
+	dx = (float)(abs(target_y - start_y));
+	sx = (float)(start_y < target_y ? 1 : -1);
+	dy = (float)(-abs(target_x - start_x));
+	sy = (float)(start_x < target_x ? 1 : -1);
 	err = dx + dy;  //error value
 	while (true) {
 		if (x0 == x1 && y0 == y1) {
@@ -2126,7 +2129,7 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 	}
 	///
 
-	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
+	double x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
 	dx = abs(target_y - start_y);
 	sx = start_y < target_y ? 1 : -1;
 	dy = -abs(target_x - start_x);
@@ -2157,15 +2160,15 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 
 void Image::Draw_Graph(const int graph_height, const int graph_width, const int Space_Between_Lines) {
 	if (graph_height > this->Height || graph_width > this->width) {
-		cout << "Selected Graph Size Is Larger Then Canvas Size\n";
+		std::cout << "Selected Graph Size Is Larger Then Canvas Size\n";
 		return;
 	}
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
 	int cx, cy, index = 0, xy_num = 0;
-	stringstream conv;
-	string catcher;
+	std::stringstream conv;
+	std::string catcher;
 	this->Get_Center(cx, cy);
 
 	Draw_Square(cx, cy, graph_width / 2, graph_height / 2, 'B');
@@ -2189,7 +2192,7 @@ void Image::Draw_Graph(const int graph_height, const int graph_width, const int 
 		}
 		xy_num--;
 		catcher.clear();
-		conv.str(string());
+		conv.str(std::string());
 	}
 	xy_num = 0;
 	for (int i = (width - graph_width) / 2; i <= (width - graph_width) / 2 + graph_width; i += Space_Between_Lines) {
@@ -2200,7 +2203,7 @@ void Image::Draw_Graph(const int graph_height, const int graph_width, const int 
 		Draw_Text((Height - graph_height) / 2 + graph_height + 7, i - 4, catcher.c_str());
 		xy_num++;
 		catcher.clear();
-		conv.str(string());
+		conv.str(std::string());
 	}
 
 
@@ -2214,9 +2217,9 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text) 
 	LibCharacters Set;
 	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
 		|| center_y + 4 > Height || center_y - 4 < 0) {
-		cout << "Text Longer The Image Frame, Aborting...\n";
-		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
-		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
+		std::cout << "Text Longer The Image Frame, Aborting...\n";
+		std::cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
+		std::cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
 		return;
 	}
 
@@ -3115,9 +3118,9 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 	LibCharacters Set;
 	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
 		|| center_y + 4 > Height || center_y - 4 < 0) {
-		cout << "Text Longer The Image Frame, Aborting...\n";
-		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
-		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
+		std::cout << "Text Longer The Image Frame, Aborting...\n";
+		std::cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
+		std::cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
 		return;
 	}
 
@@ -4014,9 +4017,9 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 	LibCharacters Set;
 	if (center_x + (9 * (text_length / 2)) > width || center_x - (9 * (text_length / 2)) < 0
 		|| center_y + 4 > Height || center_y - 4 < 0) {
-		cout << "Text Longer The Image Frame, Aborting...\n";
-		cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
-		cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
+		std::cout << "Text Longer The Image Frame, Aborting...\n";
+		std::cout << "X selected + Text Length= " << center_x + (9 * (text_length / 2)) << "\n";
+		std::cout << "X selected - Text Length= " << center_x - (9 * (text_length / 2)) << "\n";
 		return;
 	}
 
@@ -4999,7 +5002,7 @@ void Image::Connect_VectorFrame_Via_Lines(VectorFrame &frame) {
 	VectorFrame::iterator i;
 	Color_Palette CSET;
 	for (i = frame.begin(); i + 1 != frame.end(); i++) {
-		this->Draw_Line(i->y, i->x, (i + 1)->y, (i + 1)->x, CSET.Black);
+		this->Draw_Line((int)i->y, (int)i->x, (int)(i + 1)->y, (int)(i + 1)->x, CSET.Black);
 	}
 }
 
@@ -5036,36 +5039,36 @@ float Image::Color_Delta(pixel const &A, pixel const &B) {
 	long  r = (long)A.r - (long)B.r;
 	long  g = (long)A.g - (long)B.g;
 	long  b = (long)A.b - (long)B.b;
-	return sqrt((((512 + R_Gag)*r*r) >> 8) + 4 * g*g + (((767 - R_Gag)*b*b) >> 8));
+	return (float)(sqrt((((512 + R_Gag)*r*r) >> 8) + 4 * g*g + (((767 - R_Gag)*b*b) >> 8)));
 }
 
 bool Image::Distance_Neighbors(const float max_distance, int i, int j) {
 	pixel center, point;
 	center = Pixel_Matrix[i][j];
-	float dist = 0;
+	double dist = 0;
 	if (i - 1 < 0 && j + 1 < width && j - 1 > 0 && i + 1 < Height) {
 		point = Pixel_Matrix[i][j + 1];
-		dist = Color_DistanceSq(point, center);
+		dist = (double)(Color_DistanceSq(point, center));
 		if (dist > max_distance) {
 			return false;
 		}
 		point = Pixel_Matrix[i][j - 1];
-		dist = Color_DistanceSq(point, center);
+		dist = (double)Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
 		point = Pixel_Matrix[i + 1][j];
-		dist = Color_DistanceSq(point, center);
+		dist = (double)Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
 		point = Pixel_Matrix[i + 1][j - 1];
-		dist = Color_DistanceSq(point, center);
+		dist = (double)Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
 		point = Pixel_Matrix[i + 1][j + 1];
-		dist = Color_DistanceSq(point, center);
+		dist = (double)Color_DistanceSq(point, center);
 		if (dist > max_distance) {
 			return false;
 		}
@@ -5736,7 +5739,7 @@ void Image::Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int 
 	//	}
 	//}
 
-	list<Blob> Blobs;
+	std::list<Blob> Blobs;
 	Blob temp(0, 0, Distnace_Treshold);
 	bool detected = false;
 
@@ -5744,7 +5747,7 @@ void Image::Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int 
 		for (int j = 0; j < Height; j++) {
 
 			if (Color_Delta(this->Pixel_Matrix[j][i], Source.Pixel_Matrix[j][i]) > Color_Treshold) {
-				for (list<Blob>::iterator k = Blobs.begin(); k != Blobs.end(); ++k) {
+				for (std::list<Blob>::iterator k = Blobs.begin(); k != Blobs.end(); ++k) {
 					if (k->Near(i, j)) {
 						k->add(i, j);
 						detected = true;
@@ -5763,7 +5766,7 @@ void Image::Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int 
 		}
 	}
 
-	for (list<Blob>::iterator k = Blobs.begin(); k != Blobs.end(); ++k) {
+	for (std::list<Blob>::iterator k = Blobs.begin(); k != Blobs.end(); ++k) {
 		Draw_Square(k->Upleft_X, k->Upleft_Y, k->Downright_X, k->Downright_Y, frame_color, "Corners");
 	}
 
@@ -6370,7 +6373,7 @@ void Image::Feature_Matching(const int source_x, const int source_y) {
 	if (Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
 	}
-	if (source_x + 1 > width | source_x - 1 < 0 || source_y + 1 > Height || source_y - 1 < 0) {
+	if ((source_x + 1 > width) || (source_x - 1 < 0) || (source_y + 1 > Height) || (source_y - 1 < 0)) {
 		//out of image border;
 		return;
 	}
@@ -6437,7 +6440,7 @@ void Image::Feature_Matching(const int source_x, const int source_y) {
 void Image::Pixel_Matrix_Multiplication(Image &b) {
 
 	if (this->width != b.Height) {
-		cout << "Cannot Multiply Pixel Please Make Sure Image A's Width = Image B's Height\n";
+		std::cout << "Cannot Multiply Pixel Please Make Sure Image A's Width = Image B's Height\n";
 		return;
 	}
 	if (this->Pixel_Matrix == nullptr) {
@@ -6825,9 +6828,9 @@ void Image::Image_Transpose(const int Alter) {
 	}
 }
 VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_iterations) {
-	static random_device seed; //seed for psudo random engine 
-	static mt19937 random_number_generator(seed()); //merssene twisster using the PR seed
-	uniform_int_distribution<size_t> indices(0, data.size() - 1);
+	static std::random_device seed; //seed for psudo random engine 
+	static std::mt19937 random_number_generator(seed()); //merssene twisster using the PR seed
+	std::uniform_int_distribution<size_t> indices(0, data.size() - 1);
 
 	VectorFrame means(k);
 
@@ -6835,12 +6838,12 @@ VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_i
 		cluster = data[indices(random_number_generator)];
 	}
 
-	vector<size_t> assignments(data.size());
+	std::vector<size_t> assignments(data.size());
 
 	for (size_t iteration = 0; iteration < number_of_iterations; ++iteration) {
 		// Find assignments.
 		for (size_t point = 0; point < data.size(); ++point) {
-			double best_distance = numeric_limits<double>::max();
+			double best_distance = std::numeric_limits<double>::max();
 			size_t best_cluster = 0;
 			for (size_t cluster = 0; cluster < k; ++cluster) {
 				const double distance =
@@ -6855,7 +6858,7 @@ VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_i
 
 		// Sum up and count points for each cluster.
 		VectorFrame new_means(k);
-		vector<size_t> counts(k, 0);
+		std::vector<size_t> counts(k, 0);
 
 		for (size_t point = 0; point < data.size(); ++point) {
 			const auto cluster = assignments[point];
@@ -6868,7 +6871,7 @@ VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_i
 		// Divide sums by counts to get new centroids.
 		for (size_t cluster = 0; cluster < k; ++cluster) {
 			// Turn 0/0 into 0/1 to avoid zero division.
-			const auto count = max<size_t>(1, counts[cluster]);
+			const auto count = std::max<size_t>(1, counts[cluster]);
 			means[cluster].x = new_means[cluster].x / count;
 			means[cluster].y = new_means[cluster].y / count;
 			means[cluster].z = new_means[cluster].z / count;
@@ -6886,7 +6889,7 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 		this->init_pixel_matrix();
 	}
 	Color_Palette CSET;
-	vector<Blob> Blobs;
+	std::vector<Blob> Blobs;
 
 	Blob temp(0, 0, distance_treshold);
 	bool detected = false;
@@ -6905,7 +6908,7 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 					}
 
 				}*/
-				for (int k = 0; k < Blobs.size(); ++k) {
+				for (int k = 0; k < (signed)Blobs.size(); ++k) {
 					if (Blobs[k].Near(i, j)) {
 						Blobs[k].add(i, j);
 						detected = true;
@@ -6938,7 +6941,7 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 	//}
 
 
-	for (int k = 0; k < Blobs.size(); k++) {
+	for (int k = 0; k < (signed)Blobs.size(); k++) {
 		if (Blobs[k].Size() < distance_treshold) {
 
 			//std::cout << "Blob Size " << Blobs[k].Size() << endl;
@@ -6947,7 +6950,7 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 
 	}
 
-	for (int k = 0; k < Blobs.size(); ++k) {
+	for (int k = 0; k < (signed)Blobs.size(); ++k) {
 
 		Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, "Corners");
 		Color_Spec(Pixel_Matrix[Blobs[k].Upleft_X][Blobs[k].Upleft_Y].index_range, CSET.Yellow);
@@ -7063,7 +7066,6 @@ void Image::Image_Segmentation(int const &k, int const &iterations, int const &a
 	}
 
 	VectorFrame image_ThreeD_Mat, Result;
-	float r, g, b;
 	int index = 0;
 	//for (int i = 0; i < Height; i++) {
 	//	for (int j = 0; j < width; j++) {
@@ -7091,7 +7093,7 @@ void Image::Image_Segmentation(int const &k, int const &iterations, int const &a
 
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
-			best_dist = numeric_limits<float>::max();
+			best_dist = std::numeric_limits<float>::max();
 			for (auto k : Result) {
 				if (Pixel_Dataframe_Difference(Pixel_Matrix[i][j], k) < best_dist) {
 					best_dist = Pixel_Dataframe_Difference(Pixel_Matrix[i][j], k);
@@ -7131,8 +7133,8 @@ void Image::Write_Average_Color_Palette(int const &palette_size) {
 	pixel palette_sample;
 	VectorFrame imData, Means;
 	Image palette_image;
-	stringstream ss;
-	string via;
+	std::stringstream ss;
+	std::string via;
 	for (int i = 0; i < Height*width * 3; i += 3) {
 		imData.push_back({ (float)image_data[i], (float)image_data[i + 1], (float)image_data[i + 2] });
 
@@ -7143,9 +7145,9 @@ void Image::Write_Average_Color_Palette(int const &palette_size) {
 	lx = 2;
 
 	for (auto k : Means) {
-		palette_sample.r = k.x;
-		palette_sample.g = k.y;
-		palette_sample.b = k.z;
+		palette_sample.r = (uint8_t)k.x;
+		palette_sample.g = (uint8_t)k.y;
+		palette_sample.b = (uint8_t)k.z;
 
 		for (int j = 0; j < 199; j++) {
 			palette_image.Draw_Line(j, lx, j, lx + 199, palette_sample);
@@ -7209,7 +7211,6 @@ void Image::Pixel_Griding() {
 	//}
 }
 VectorFrame Image::Get_Average_Color_Palette(int const &palette_size) {
-	pixel palette_sample;
 	VectorFrame imData, Means;
 	for (int i = 0; i < Height*width * 3; i += 3) {
 		imData.push_back({ (float)image_data[i], (float)image_data[i + 1], (float)image_data[i + 2] });
@@ -7228,16 +7229,16 @@ void Image::Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors) 
 	}
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
-			best_dist = numeric_limits<float>::max();
+			best_dist = std::numeric_limits<float>::max();
 			for (auto k : Average_Colors) {
 				if (Pixel_Dataframe_Difference(Pixel_Matrix[i][j], k) < best_dist) {
 					best_dist = Pixel_Dataframe_Difference(Pixel_Matrix[i][j], k);
 					temp = k;
 				}
 			}
-			Pixel_Matrix[i][j].r = temp.x;
-			Pixel_Matrix[i][j].g = temp.y;
-			Pixel_Matrix[i][j].b = temp.z;
+			Pixel_Matrix[i][j].r = (uint8_t)temp.x;
+			Pixel_Matrix[i][j].g = (uint8_t)temp.y;
+			Pixel_Matrix[i][j].b = (uint8_t)temp.z;
 
 		}
 	}
@@ -7262,11 +7263,11 @@ PixelFrame Image::Get_Line_Pixels(const int start_y, const int start_x, const in
 		init_pixel_matrix();
 	}
 	PixelFrame Points;
-	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
-	dx = abs(target_y - start_y);
-	sx = start_y < target_y ? 1 : -1;
-	dy = -abs(target_x - start_x);
-	sy = start_x < target_x ? 1 : -1;
+	float x0 = (float)start_y, x1 = (float)target_y, y0 = (float)start_x, y1 = (float)target_x;
+	dx = (float)(abs(target_y - start_y));
+	sx = (float)(start_y < target_y ? 1 : -1);
+	dy = (float)(-abs(target_x - start_x));
+	sy = (float)(start_x < target_x ? 1 : -1);
 	err = dx + dy;  //error value
 	while (true) {
 		if (x0 == x1 && y0 == y1) {
@@ -7313,12 +7314,12 @@ void Image::Register_PixelFrame(PixelFrame const &Frame) {
 	}
 }
 void Image::Image_Rebuild_With_Lines(int const &Iterations) {
-	static random_device seed;
-	static mt19937 random_number(seed());
-	uniform_int_distribution<size_t> x0_picks(0, this->width - 1);
-	uniform_int_distribution<size_t> x1_picks(0, this->width - 1);
-	uniform_int_distribution<size_t> y0_picks(0, this->Height - 1);
-	uniform_int_distribution<size_t> y1_picks(0, this->Height - 1);
+	static std::random_device seed;
+	static std::mt19937 random_number(seed());
+	std::uniform_int_distribution<size_t> x0_picks(0, this->width - 1);
+	std::uniform_int_distribution<size_t> x1_picks(0, this->width - 1);
+	std::uniform_int_distribution<size_t> y0_picks(0, this->Height - 1);
+	std::uniform_int_distribution<size_t> y1_picks(0, this->Height - 1);
 	Color_Palette CSET;
 	pixel dominant_color;
 	PixelFrame Line;
@@ -7330,15 +7331,14 @@ void Image::Image_Rebuild_With_Lines(int const &Iterations) {
 
 
 
-	stringstream ss;
-	string via;
+	std::stringstream ss;
+	std::string via;
 	int counter = 0;
 
 #endif
 
 	int x0, y0, x1, y1;
 	double cur_difference, temp_dif;
-	unsigned char *marker;
 
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
@@ -7375,7 +7375,7 @@ void Image::Image_Rebuild_With_Lines(int const &Iterations) {
 				C.Write_Image(via.c_str());
 
 			}
-			ss.str(string());
+			ss.str(std::string());
 			counter++;
 
 
@@ -7434,7 +7434,6 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 		}
 	}
 	Image Mid;
-	pixel avg;
 	int index = 0;
 	Mid.Load_Image(this->f_name);
 
@@ -7446,9 +7445,9 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 	for (int i = 0; i < Height; i++) {
 		for (int j = 0; j < width; j++) {
 
-			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
-			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
-			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+			Mid.Pixel_Matrix[i][j].r = (uint8_t)(this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+			Mid.Pixel_Matrix[i][j].g = (uint8_t)(this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+			Mid.Pixel_Matrix[i][j].b = (uint8_t)(this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
 
 		}
 
@@ -7461,9 +7460,9 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 			for (int j = 0; j < width; j++) {
 
 				//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
-				Mid.Pixel_Matrix[i][j].r = Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
-				Mid.Pixel_Matrix[i][j].g = Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
-				Mid.Pixel_Matrix[i][j].b = Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].r = (uint8_t)(Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+				Mid.Pixel_Matrix[i][j].g = (uint8_t)(Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+				Mid.Pixel_Matrix[i][j].b = (uint8_t)(Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
 				//}
 			}
 
@@ -7498,7 +7497,6 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, int const &alter) {
 
 	Image Mid;
-	pixel avg;
 	int index = 0;
 	double Kernel_Normal = 0;
 	Mid.Load_Image(this->f_name);
@@ -7518,9 +7516,9 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 		for (int j = 0; j < width; j++) {
 
 
-			Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
-			Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
-			Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+			Mid.Pixel_Matrix[i][j].r = (uint8_t)(this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+			Mid.Pixel_Matrix[i][j].g = (uint8_t)(this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+			Mid.Pixel_Matrix[i][j].b = (uint8_t)(this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
 
 		}
 
@@ -7539,9 +7537,9 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 			for (int j = 0; j < width; j++) {
 
 				//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
-				Mid.Pixel_Matrix[i][j].r = this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal);
-				Mid.Pixel_Matrix[i][j].g = this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
-				Mid.Pixel_Matrix[i][j].b = this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].r = (uint8_t)(this->Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+				Mid.Pixel_Matrix[i][j].g = (uint8_t)this->Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal);
+				Mid.Pixel_Matrix[i][j].b = (uint8_t)this->Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal);
 				//}
 			}
 
@@ -7591,7 +7589,7 @@ void Image::Save_As_PNG(const char *name) {
 	stbi_write_jpg(s_name, width, Height, channel, image_data, 100);
 	//stbi_write_png(s_name, this->width, this->Height, 8, this->image_data, 1);
 	//stbi_write_bmp(s_name, this->width, this->Height, 8, this->image_data);
-	cout << "\nFile Saved Succsfully As: " << s_name << endl;
+	std::cout << "\nFile Saved Succsfully As: " << s_name << std::endl;
 
 }
 CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x) {
@@ -7600,11 +7598,11 @@ CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, 
 		init_pixel_matrix();
 	}
 	CoordinateFrame Points;
-	float x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
-	dx = abs(target_y - start_y);
-	sx = start_y < target_y ? 1 : -1;
-	dy = -abs(target_x - start_x);
-	sy = start_x < target_x ? 1 : -1;
+	float x0 = (float)start_y, x1 = (float)target_y, y0 = (float)start_x, y1 = (float)target_x;
+	dx = (float)(abs(target_y - start_y));
+	sx = (float)(start_y < target_y ? 1 : -1);
+	dy = (float)(-abs(target_x - start_x));
+	sy = (float)(start_x < target_x ? 1 : -1);
 	err = dx + dy;  //error value
 	while (true) {
 		if (x0 == x1 && y0 == y1) {
@@ -7678,7 +7676,8 @@ void Image::Detect_Faces() {
 	}
 
 	short flag = 0;
-	int distance = 0, treshold = 95, min_d = 355, skin_thresh = 5, grap_thresh = 30;
+	int distance = 0 ,min_d = 355, skin_thresh = 5, grap_thresh = 30;
+	float treshold = 95;
 	int validation_level = 0;
 	int n_valid_bounty = 10;
 	coordinate left_eye, right_eye;
@@ -7732,7 +7731,7 @@ void Image::Detect_Faces() {
 						forhead_graph = Pixel_Matrix[(left_eye.y - (distance / 4))][(left_eye.x) + (distance / 2)];
 					}
 					if (left_eye.y + 1.3*distance < Height) {
-						int temp = 1.3*distance;
+						int temp = (int)1.3*distance;
 						chin_graph = Pixel_Matrix[(left_eye.y + (temp))][(left_eye.x) + (distance / 2)];
 					}
 					//
@@ -7778,7 +7777,7 @@ void Image::Detect_Faces() {
 
 					if (Distance_Neighbors(treshold, left_eye.y + distance / 2, left_eye.x)) {
 						validation_level += n_valid_bounty;
-						cout << "Validated --Neighbor-- left chick: " << validation_level << endl;
+						std::cout << "Validated --Neighbor-- left chick: " << validation_level << std::endl;
 
 					}
 #ifdef FaceDebug
@@ -7792,11 +7791,11 @@ void Image::Detect_Faces() {
 
 				if (Color_Distance(skin_graph, Pixel_Matrix[right_eye.y + distance / 2][right_eye.x]) < skin_thresh) {//right chick
 					validation_level++; //level 2
-					cout << "Validated Right chick: " << validation_level << endl;
+					std::cout << "Validated Right chick: " << validation_level << std::endl;
 
 					if (Distance_Neighbors(treshold, right_eye.y + distance / 2, right_eye.x)) {
 						validation_level += n_valid_bounty;
-						cout << "Validated  --Neighbor-- right chick: " << validation_level << endl;
+						std::cout << "Validated  --Neighbor-- right chick: " << validation_level << std::endl;
 
 					}
 
@@ -7811,11 +7810,11 @@ void Image::Detect_Faces() {
 
 #endif
 					validation_level++; //level 3
-					cout << "Validated Forhead - Center: " << validation_level << endl;
+					std::cout << "Validated Forhead - Center: " << validation_level << std::endl;
 
 					if (Distance_Neighbors(treshold, left_eye.y - (distance / 4), left_eye.x + distance / 2)) {
 						validation_level += n_valid_bounty;
-						cout << "Validated  --Neighbor-- Forhead - Center: " << validation_level << endl;
+						std::cout << "Validated  --Neighbor-- Forhead - Center: " << validation_level << std::endl;
 
 					}
 
@@ -7832,11 +7831,11 @@ void Image::Detect_Faces() {
 
 #endif
 					validation_level++; //level 4
-					cout << "Validated Nose - Center: " << validation_level << endl;
+					std::cout << "Validated Nose - Center: " << validation_level << std::endl;
 
 					if (Distance_Neighbors(treshold, left_eye.y + distance / 2, left_eye.x + distance / 2)) {
 						validation_level += n_valid_bounty;
-						cout << "Validated  --Neighbor-- Nose - Center: " << validation_level << endl;
+						std::cout << "Validated  --Neighbor-- Nose - Center: " << validation_level << std::endl;
 
 					}
 				}
@@ -7849,11 +7848,11 @@ void Image::Detect_Faces() {
 
 #endif
 					validation_level++; //level 5
-					cout << "Validated Chin - Center: " << validation_level << endl;
+					std::cout << "Validated Chin - Center: " << validation_level << std::endl;
 
-					if (Distance_Neighbors(treshold, left_eye.y + 1.3*distance, left_eye.x + distance / 2)) {
+					if (Distance_Neighbors(treshold, left_eye.y + (int)(1.3*distance), left_eye.x + distance / 2)) {
 						validation_level += n_valid_bounty;
-						cout << "Validated  --Neighbor-- Chin - Center: " << validation_level << endl;
+						std::cout << "Validated  --Neighbor-- Chin - Center: " << validation_level << std::endl;
 
 					}
 				}
