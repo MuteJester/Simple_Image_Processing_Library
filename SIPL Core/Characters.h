@@ -714,6 +714,37 @@ typedef struct cfCO {
 
 }cfCO;
 
+
+typedef struct cfEQS {
+	int ES[81] =
+	{ 0,0,0,0,0,0,0,0,0,
+	  0,0,0,0,0,0,0,0,0,
+	  0,1,1,1,1,1,1,1,0,
+	  0,1,1,1,1,1,1,1,0,
+	  0,0,0,0,0,0,0,0,0,
+	  0,1,1,1,1,1,1,1,0,
+	  0,1,1,1,1,1,1,1,0,
+	  0,0,0,0,0,0,0,0,0,
+	  0,0,0,0,0,0,0,0,0
+	};
+
+}cfEQS;
+
+typedef struct cfEPLS {
+	int PLS[81] =
+	{ 0,0,0,0,0,0,0,0,0,
+	  0,0,0,1,1,0,0,0,0,
+	  0,0,0,1,1,0,0,0,0,
+	  0,1,1,1,1,1,1,0,0,
+	  0,1,1,1,1,1,1,0,0,
+	  0,0,0,1,1,0,0,0,0,
+	  0,0,0,1,1,0,0,0,0,
+	  0,0,0,0,0,0,0,0,0,
+	  0,0,0,0,0,0,0,0,0
+	};
+
+}cfPLS;
+
 typedef struct LibCharacters {
 
 
@@ -767,7 +798,8 @@ typedef struct LibCharacters {
 	cfSBL Squaure_Braket_Left;
 	cfSBR Square_Braket_Right;
 	cfCO Colon;
-
+	cfEQS EqualSign;
+	cfPLS PlusSign;
 
 
 }LibCharacters;
