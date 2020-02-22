@@ -188,6 +188,7 @@ public:
 
 	void Convert_Grayscale();
 	void Compress();
+	void Free_Pixel_Matrix();
 	void Mark_Identical_Pixels(pixel const &Target);
 	void Mark_Identical_Pixels(Image &Source);
 	void Mark_Identical_Pixels(Image &Source, const char *mode);
@@ -225,6 +226,7 @@ public:
 	void Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors);
 	void Convert_RGB_To_LAB(int const &alter);
 	void Pixel_Griding();
+	void Update_Image_Data();
 	void Image_Rebuild_With_Lines(int const &Iterations);
 	double Get_Neighbour_Mean_R(int const &i, int const &j);
 	double Get_Neighbour_Mean_G(int const &i, int const &j);
@@ -238,6 +240,9 @@ public:
 	void Image_Convolution(double Kernel[3][3], int const &iterations, int const &alter);
 
 	void Save_As_PNG(const char *name);
+
+	void Up_Scale(int const &Height, int const &Width);
+	void Up_Scale();
 };
 
 

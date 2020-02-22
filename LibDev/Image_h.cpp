@@ -539,8 +539,12 @@ Image::Image(int Height, int width, int channel) {
 
 }
 Image::~Image() {
-	free(image_data);
+	//free(image_data);
+	stbi_image_free(image_data);
 	if (Pixel_Matrix != nullptr) {
+		/*for (int i = 0; i < this->Height; i++) {
+			delete[] Pixel_Matrix[i];
+		}*/
 		delete[] Pixel_Matrix;
 	}
 
@@ -625,7 +629,8 @@ void Image::Load_Blank_Canvas() {
 		stbi_image_free(image_data);
 	}
 	else {
-		image_data = (unsigned char*)calloc(width*Height*channel, sizeof(unsigned char));
+		//image_data = (unsigned char*)calloc(width*Height*channel, sizeof(unsigned char));
+		image_data = new unsigned char[width*Height*channel];
 	}
 }
 void Image::Load_Blank_Canvas(int width, int height, char set_color) {
@@ -637,7 +642,7 @@ void Image::Load_Blank_Canvas(int width, int height, char set_color) {
 		stbi_image_free(image_data);
 	}
 
-	this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
+	image_data = new unsigned char[width*Height*channel];
 	for (int i = 0; i < width*height*channel; i += 3) {
 		Color_Spec(i, set_color);
 	}
@@ -653,7 +658,7 @@ void Image::Load_Blank_Canvas(int width, int height, pixel const &background_col
 		stbi_image_free(image_data);
 	}
 
-	this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
+	image_data = new unsigned char[width*Height*channel];
 	for (int i = 0; i < width*height*channel; i += 3) {
 		this->image_data[i] = background_color.r;
 		this->image_data[i + 1] = background_color.g;
@@ -1042,11 +1047,11 @@ bool Image::operator!=(Image const &b) {
 
 void Image::init_pixel_matrix() {
 	int j = 0, k = 0, clock = 0;
-	this->Pixel_Matrix = (pixel**)malloc(sizeof(pixel*)*Height);
+	Pixel_Matrix = new pixel*[Height];
 	for (int i = 0; i < Height; i++) {
-		Pixel_Matrix[i] = (pixel*)malloc(sizeof(pixel)*width);
+		Pixel_Matrix[i] = new pixel[width];
 	}
-
+	
 	for (int i = 0; i < width*Height * 3; i += 3) {
 		if (clock == width) {
 			j++;
@@ -1066,10 +1071,11 @@ void Image::init_pixel_matrix(const char *mode) {
 	strcpy(m1, "Rewrite");
 	if (strcmp(mode, m1) == 0) {
 		if (Pixel_Matrix = nullptr) {
-			this->Pixel_Matrix = (pixel**)malloc(sizeof(pixel*)*Height);
+			this->Pixel_Matrix = new pixel*[Height];
 			for (int i = 0; i < Height; i++) {
-				Pixel_Matrix[i] = (pixel*)malloc(sizeof(pixel)*width);
+				Pixel_Matrix[i] = new pixel[width];
 			}
+
 		}
 		else {
 			//for (int i = 0; i < Height; i++) {
@@ -5006,12 +5012,6 @@ void Image::Connect_VectorFrame_Via_Lines(VectorFrame &frame) {
 	}
 }
 
-
-
-
-
-
-
 double Image::Image_Difference_Value(Image &b) {
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
@@ -6073,7 +6073,8 @@ void Image::Shutdown_Channel(const char color) {
 	}
 }
 void Image::Flip180() {
-	unsigned char *flip = (unsigned char *)malloc(width*Height * 3 * sizeof(unsigned char));
+	unsigned char *flip = new unsigned char[(width*Height * 3)];
+
 	int index = 0;
 	if (Pixel_Matrix == nullptr) {
 		init_pixel_matrix();
@@ -6453,9 +6454,9 @@ void Image::Pixel_Matrix_Multiplication(Image &b) {
 	pixel sum;
 
 	if (this->Height != b.width) {
-		pixel **n_mat = (pixel**)malloc(sizeof(pixel*)*this->Height);
+		pixel **n_mat = new pixel*[this->Height];
 		for (int i = 0; i < b.width; i++) {
-			n_mat[i] = (pixel*)malloc(sizeof(pixel)*b.width);
+			n_mat[i] = new pixel[b.width];
 		}
 
 
@@ -6475,7 +6476,8 @@ void Image::Pixel_Matrix_Multiplication(Image &b) {
 
 		delete[] this->Pixel_Matrix;
 		delete[] this->image_data;
-		unsigned char *updated = (unsigned char*)malloc(this->Height *b.width * 3 * sizeof(unsigned char));
+		unsigned char *updated = new unsigned char[this->Height *b.width * 3];
+
 		int index = 0;
 		this->Pixel_Matrix = n_mat;
 		this->width = b.width;
@@ -7440,6 +7442,10 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 	if (this->Pixel_Matrix == nullptr) {
 		this->init_pixel_matrix();
 	}
+	if (Mid.getHeight() != this->Height) {
+		Mid.width = this->width;
+		Mid.Height = this->Height;
+	}
 	Mid.init_pixel_matrix();
 
 	for (int i = 0; i < Height; i++) {
@@ -7630,13 +7636,119 @@ CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, 
 
 	return Points;
 }
+void Image::Update_Image_Data() {
+	int index = 0;
+	for (int i = 0; i < Height; i++) {
+		for (int j = 0; j < width; j++) {
+			image_data[index++] = Pixel_Matrix[i][j].r;
+			image_data[index++] = Pixel_Matrix[i][j].g;
+			image_data[index++] = Pixel_Matrix[i][j].b;
+
+		}
+	}
+}
+void Image::Free_Pixel_Matrix() {
+	if (Pixel_Matrix != nullptr) {
+		for (int i = 0; i < this->Height;i++) {
+			delete[] Pixel_Matrix[i];
+		}
+		//delete[] Pixel_Matrix;
+	}
+}
+void Image::Up_Scale() {
+	std::vector<unsigned char> temp;
+	for (int i = 0; i < this->width*this->Height * 3; i++) {
+		temp.push_back(this->image_data[i]);
+	}
+	this->image_data = (unsigned char*)realloc(this->image_data, this->width*this->Height * 3 * 9);
+	this->width *= 3;
+	this->Height *= 3;
+	int z = 0;
+	this->init_pixel_matrix();
+
+	for (int i = 0; i < this->Height; i += 3) {
+		for (int j = 0; j < this->width; j += 3) {
+			for (int k = 0; k < 3; k++) {
+				for (int m = 0; m < 3; m++) {
+					Pixel_Matrix[i + k][j + m].r = temp[z];
+					Pixel_Matrix[i + k][j + m].g = temp[z + 1];
+					Pixel_Matrix[i + k][j + m].b = temp[z + 2];
+
+				}
+			}
+
+			z += 3;
+		}
+	}
 
 
 
+	//quality enchancment
+
+
+	for (int i = 0; i < this->Height - 3; i += 3) {
+		for (int j = 0; j < this->width - 3; j += 3) {
+
+			if (j < 3) {
+				for (int k = 0; k < 3; k++) {
+					Pixel_Matrix[i + k][j + 2].r = (Pixel_Matrix[i + k][j + 2].r + Pixel_Matrix[i + k][j + 3].r) / 2;
+					Pixel_Matrix[i + k][j + 2].g = (Pixel_Matrix[i + k][j + 2].g + Pixel_Matrix[i + k][j + 3].g) / 2;
+					Pixel_Matrix[i + k][j + 2].b = (Pixel_Matrix[i + k][j + 2].b + Pixel_Matrix[i + k][j + 3].b) / 2;
+				}
+
+				for (int k = 0; k < 3; k++) {
+					Pixel_Matrix[i + 2][j + k].r = (Pixel_Matrix[i + 2][j + k].r + Pixel_Matrix[i + 3][j + k].r) / 2;
+					Pixel_Matrix[i + 2][j + k].g = (Pixel_Matrix[i + 2][j + k].g + Pixel_Matrix[i + 3][j + k].g) / 2;
+					Pixel_Matrix[i + 2][j + k].b = (Pixel_Matrix[i + 2][j + k].b + Pixel_Matrix[i + 3][j + k].b) / 2;
+
+				}
+			}
+
+			else {
+
+				for (int k = 0; k < 3; k++) {
+					Pixel_Matrix[i + k][j + 2].r = (Pixel_Matrix[i + k][j + 2].r + Pixel_Matrix[i + k][j + 3].r) / 2;
+					Pixel_Matrix[i + k][j + 2].g = (Pixel_Matrix[i + k][j + 2].g + Pixel_Matrix[i + k][j + 3].g) / 2;
+					Pixel_Matrix[i + k][j + 2].b = (Pixel_Matrix[i + k][j + 2].b + Pixel_Matrix[i + k][j + 3].b) / 2;
+
+					Pixel_Matrix[i + k][j + 3].r = (Pixel_Matrix[i + k][j + 3].r + Pixel_Matrix[i + k][j + 2].r) / 2;
+					Pixel_Matrix[i + k][j + 3].g = (Pixel_Matrix[i + k][j + 3].g + Pixel_Matrix[i + k][j + 2].g) / 2;
+					Pixel_Matrix[i + k][j + 3].b = (Pixel_Matrix[i + k][j + 3].b + Pixel_Matrix[i + k][j + 2].b) / 2;
+
+				}
+
+
+				for (int k = 0; k < 3; k++) {
+					Pixel_Matrix[i + 2][j + k].r = (Pixel_Matrix[i + 2][j + k].r + Pixel_Matrix[i + 3][j + k].r) / 2;
+					Pixel_Matrix[i + 2][j + k].g = (Pixel_Matrix[i + 2][j + k].g + Pixel_Matrix[i + 3][j + k].g) / 2;
+					Pixel_Matrix[i + 2][j + k].b = (Pixel_Matrix[i + 2][j + k].b + Pixel_Matrix[i + 3][j + k].b) / 2;
+
+
+					Pixel_Matrix[i + 3][j + k].r = (Pixel_Matrix[i + 3][j + k].r + Pixel_Matrix[i + 2][j + k].r) / 2;
+					Pixel_Matrix[i + 3][j + k].g = (Pixel_Matrix[i + 3][j + k].g + Pixel_Matrix[i + 2][j + k].g) / 2;
+					Pixel_Matrix[i + 3][j + k].b = (Pixel_Matrix[i + 3][j + k].b + Pixel_Matrix[i + 2][j + k].b) / 2;
+				}
+
+			}
+
+
+		}
+	}
+
+	Update_Image_Data();
+	Free_Pixel_Matrix();
+
+
+}
 
 
 
 // Under DEV
+
+
+
+
+
 
 void Image::Convert_RGB_To_LAB(int const &alter) {
 	if (Pixel_Matrix == nullptr) {
