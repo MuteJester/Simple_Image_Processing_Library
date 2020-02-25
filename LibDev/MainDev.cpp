@@ -8,6 +8,7 @@ int main() {
 	Color_Palette CSET;
 	A.Load_Image("Image1.jpg");
 	B.Load_Image("Coin1.jpg");
+	A.Up_Scale(150, 90);
 
 	A.Write_Image("Test");
 	system("Test.jpg");
