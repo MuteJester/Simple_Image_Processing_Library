@@ -39,7 +39,7 @@
 //#define FaceDebug
 
 
-#define Line_StepByStep
+//#define Line_StepByStep
 
 
 
@@ -359,7 +359,7 @@ float Pixel_Dataframe_Difference(pixel const &Pix, Point const &DF_point) {
 }
 pixel Image::Dominant_Color_Via_Line(const int start_y, const int start_x, const int target_y, const int target_x) {
 	float dx, sx, dy, sy, err, e2;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_init == false) {
 		init_pixel_matrix();
 	}
 	pixel Dom_Color;
@@ -509,7 +509,7 @@ Image::Image() {
 	this->image_data = nullptr;
 	this->Height = 0;
 	this->width = 0;
-	this->Pixel_Matrix = nullptr;
+	this->is_Matrix_init = false;
 	this->channel = 0;
 	this->im_size = 0;
 	this->pos_X = 0;
@@ -524,7 +524,7 @@ Image::Image(unsigned char *image_data, int Height, int width, int channel) {
 	this->im_size = width * Height*channel;
 	this->pos_X = 0;
 	this->pos_Y = 0;
-	this->Pixel_Matrix = nullptr;
+	this->is_Matrix_init = false;
 
 
 
@@ -535,18 +535,13 @@ Image::Image(int Height, int width, int channel) {
 	this->channel = channel;
 	this->pos_X = 0;
 	this->pos_Y = 0;
-	this->Pixel_Matrix = nullptr;
+	this->is_Matrix_init = false;
 
 }
 Image::~Image() {
 	//free(image_data);
 	stbi_image_free(image_data);
-	if (Pixel_Matrix != nullptr) {
-		/*for (int i = 0; i < this->Height; i++) {
-			delete[] Pixel_Matrix[i];
-		}*/
-		delete[] Pixel_Matrix;
-	}
+	
 
 }
 int Image::getWidth() const {
@@ -556,7 +551,7 @@ int Image::getHeight()const {
 	return this->Height;
 }
 void Image::getPixelCopy(int Height, int Width, pixel &save_pixel) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	save_pixel.r = Pixel_Matrix[Height][Width].r;
@@ -1046,12 +1041,9 @@ bool Image::operator!=(Image const &b) {
 }
 
 void Image::init_pixel_matrix() {
-	int j = 0, k = 0, clock = 0;
-	Pixel_Matrix = new pixel*[Height];
-	for (int i = 0; i < Height; i++) {
-		Pixel_Matrix[i] = new pixel[width];
-	}
 	
+	this->Pixel_Matrix = Matrix<pixel>(this->Height, this->width);
+	int j = 0, k = 0, clock = 0;
 	for (int i = 0; i < width*Height * 3; i += 3) {
 		if (clock == width) {
 			j++;
@@ -1065,45 +1057,7 @@ void Image::init_pixel_matrix() {
 		k++;
 		clock++;
 	}
-}
-void Image::init_pixel_matrix(const char *mode) {
-	char m1[9];
-	strcpy(m1, "Rewrite");
-	if (strcmp(mode, m1) == 0) {
-		if (Pixel_Matrix = nullptr) {
-			this->Pixel_Matrix = new pixel*[Height];
-			for (int i = 0; i < Height; i++) {
-				Pixel_Matrix[i] = new pixel[width];
-			}
-
-		}
-		else {
-			//for (int i = 0; i < Height; i++) {
-			//	free(Pixel_Matrix[i]);
-			//}
-			//free(Pixel_Matrix);
-
-			//this->Pixel_Matrix = (pixel**)malloc(sizeof(pixel*)*Height);
-			//for (int i = 0; i < Height; i++) {
-			//	Pixel_Matrix[i] = (pixel*)malloc(sizeof(pixel)*width);
-			//}
-
-			int j = 0, k = 0, clock = 0, i = 0;
-			for (i = 0; i < width*Height * 3; i += 3) {
-				if (clock == width) {
-					j++;
-					k = 0;
-					clock = 0;
-				}
-				Pixel_Matrix[j][k].index_range = i;
-				Pixel_Matrix[j][k].r = image_data[i];
-				Pixel_Matrix[j][k].g = image_data[i + 1];
-				Pixel_Matrix[j][k].b = image_data[i + 2];
-				k++;
-				clock++;
-			}
-		}
-	}
+	this->is_Matrix_init = true;
 }
 pixel Image::Avrage_Sigment_Color(pixel **pix_sigment, int rows, int cols) {
 
@@ -1424,7 +1378,7 @@ void Image::Insert_Text_Into_Image(const char *file_name, const char *Image_Name
 
 
 void Image::Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, const unsigned char color) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	if (center_x + s_width > width || center_y + s_height >= Height || center_x - s_width < 0 || center_y - s_height < 0) {
@@ -1459,7 +1413,7 @@ void Image::Draw_Square(const int center_x, const int center_y,
 	strcpy(mode_f, "Fill");
 	strcpy(mode_c, "Checkered");
 	if (strcmp(mode_f, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
@@ -1476,8 +1430,8 @@ void Image::Draw_Square(const int center_x, const int center_y,
 		}
 	}
 	if (strcmp(mode_c, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
-			if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
+			if (this->is_Matrix_Initiated() == false) {
 				init_pixel_matrix();
 			}
 		}
@@ -1501,7 +1455,7 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 	char mode_c[10];
 	strcpy(mode_c, "Checkered");
 	if (strcmp(mode_c, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
@@ -1520,7 +1474,7 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 }
 
 void Image::Draw_Square(const int center_x, const int center_y, const int s_width, const int s_height, pixel const &color) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	if (center_x + s_width > width || center_y + s_height >= Height || center_x - s_width < 0 || center_y - s_height < 0) {
@@ -1557,7 +1511,7 @@ void Image::Draw_Square(const int center_x, const int center_y,
 	strcpy(mode_C, "Corners");
 
 	if (strcmp(mode_f, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
@@ -1574,8 +1528,8 @@ void Image::Draw_Square(const int center_x, const int center_y,
 		}
 	}
 	else if (strcmp(mode_c, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
-			if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
+			if (this->is_Matrix_Initiated() == false) {
 				init_pixel_matrix();
 			}
 		}
@@ -1593,8 +1547,8 @@ void Image::Draw_Square(const int center_x, const int center_y,
 		}
 	}
 	else if (strcmp(mode_C, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
-			if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
+			if (this->is_Matrix_Initiated() == false) {
 				init_pixel_matrix();
 			}
 		}
@@ -1620,7 +1574,7 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 	char mode_c[10];
 	strcpy(mode_c, "Checkered");
 	if (strcmp(mode_c, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		if (center_x + s_width > width || center_y + s_height > Height || center_x - s_width < 0 || center_y - s_height < 0) {
@@ -1641,7 +1595,7 @@ void Image::Draw_Square(const int center_x, const int center_y, const int s_widt
 
 
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const unsigned char color) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	int x, y, r2;
@@ -1686,7 +1640,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 
 }
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, pixel const &color) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	int x, y, r2;
@@ -1735,7 +1689,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	char mode_f[5];
 	strcpy(mode_f, "Fill");
 	if (strcmp(mode_f, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		int x, y;
@@ -1757,7 +1711,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	char mode_f[5];
 	strcpy(mode_f, "Fill");
 	if (strcmp(mode_f, mode) == 0) {
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		int x, y;
@@ -1777,7 +1731,7 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 }
 
 void Image::Draw_Line(const int start_x, const int start_y, const int target_y, const unsigned char color) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -1930,7 +1884,7 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_x, 
 	if (line_width > 0) {
 		float dx, sx, dy, sy, err, e2;
 		int flag = line_width;
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		float x0 = (float)start_x, x1 = (float)target_x, y0 = (float)start_y, y1 = (float)target_y;
@@ -2044,7 +1998,7 @@ void Image::Draw_Line(const int start_x, const int start_y, const int target_x, 
 
 void Image::LineHigh(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color) {
 	double DeltaX, DeltaY, xi, D, X;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -2072,7 +2026,7 @@ void Image::LineHigh(const int start_x, const int start_y, const int target_x, c
 }
 void Image::LineLow(const int start_x, const int start_y, const int target_x, const int target_y, pixel const &color) {
 	double DeltaX, DeltaY, yi, D, Y;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -2097,7 +2051,7 @@ void Image::LineLow(const int start_x, const int start_y, const int target_x, co
 }
 void Image::BresenhamsLine(const int start_y, const int start_x, const int target_y, const int target_x, const unsigned char color) {
 	float dx, sx, dy, sy, err, e2;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	///
@@ -2130,7 +2084,7 @@ void Image::BresenhamsLine(const int start_y, const int start_x, const int targe
 }
 void Image::BresenhamsLine(const int start_y, const int start_x, const int target_y, const int target_x, pixel const &color) {
 	double dx, sx, dy, sy, err, e2;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	///
@@ -2169,7 +2123,7 @@ void Image::Draw_Graph(const int graph_height, const int graph_width, const int 
 		std::cout << "Selected Graph Size Is Larger Then Canvas Size\n";
 		return;
 	}
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	int cx, cy, index = 0, xy_num = 0;
@@ -2234,7 +2188,7 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text) 
 	end_x = center_x + (9 * (text_length / 2));
 
 
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -3135,7 +3089,7 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 	end_x = center_x + (9 * (text_length / 2));
 
 
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -4034,7 +3988,7 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 	end_x = center_x + (9 * (text_length / 2));
 
 
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -4925,7 +4879,7 @@ void Image::Get_Center(int &center_x, int &center_y)const {
 	center_y = Height / 2;
 }
 void Image::Grayscale(int const &alter) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	int index = 0;
@@ -5013,10 +4967,10 @@ void Image::Connect_VectorFrame_Via_Lines(VectorFrame &frame) {
 }
 
 double Image::Image_Difference_Value(Image &b) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
-	if (b.Pixel_Matrix == nullptr) {
+	if (b.is_Matrix_Initiated() == false) {
 		b.init_pixel_matrix();
 	}
 
@@ -5625,7 +5579,7 @@ double Image::Get_Neighbour_Mean_B(int const &i, int const &j, double Kernel[3][
 
 
 void Image::Mark_Identical_Pixels(pixel const &Target) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -5639,10 +5593,10 @@ void Image::Mark_Identical_Pixels(pixel const &Target) {
 
 }
 void Image::Mark_Identical_Pixels(Image &Source) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
-	if (Source.Pixel_Matrix == nullptr) {
+	if (Source.is_Matrix_Initiated() == false) {
 		Source.init_pixel_matrix();
 	}
 	if (this->im_size <= Source.im_size) {
@@ -5669,10 +5623,10 @@ void Image::Mark_Identical_Pixels(Image &Source, const char *mode) {
 	char m1[7] = "Strict";
 	char m2[6] = "Loose";
 
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
-	if (Source.Pixel_Matrix == nullptr) {
+	if (Source.is_Matrix_Initiated() == false) {
 		Source.init_pixel_matrix();
 	}
 	if (strcmp(m1, mode) == 0) {//strict
@@ -5723,10 +5677,10 @@ void Image::Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int 
 	if (this->width != Source.width || this->Height != Source.Height) {
 		return;
 	}
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
-	if (Source.Pixel_Matrix == nullptr) {
+	if (Source.is_Matrix_Initiated() == false) {
 		Source.init_pixel_matrix();
 	}
 
@@ -5779,10 +5733,10 @@ void Image::Write_Pixel_Difference(Image &Source) {
 	if (this->width != Source.width || this->Height != Source.Height) {
 		return;
 	}
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
-	if (Source.Pixel_Matrix == nullptr) {
+	if (Source.is_Matrix_Initiated() == false) {
 		Source.init_pixel_matrix();
 	}
 	unsigned char *diffrence = (unsigned char*)calloc(this->width*this->Height * 3, sizeof(unsigned char));
@@ -5805,10 +5759,10 @@ void Image::Write_Pixel_Difference(Image &Source, const char *mode, int min_diff
 		if (this->width != Source.width || this->Height != Source.Height) {
 			return;
 		}
-		if (this->Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
-		if (Source.Pixel_Matrix == nullptr) {
+		if (Source.is_Matrix_Initiated() == false) {
 			Source.init_pixel_matrix();
 		}
 		unsigned char *diffrence = (unsigned char*)calloc(this->width*this->Height * 3, sizeof(unsigned char));
@@ -5833,10 +5787,10 @@ void Image::Mark_Different_Pixels(Image &Source) {
 	if (this->width != Source.width || this->Height != Source.Height) {
 		return;
 	}
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
-	if (Source.Pixel_Matrix == nullptr) {
+	if (Source.is_Matrix_Initiated() == false) {
 		Source.init_pixel_matrix();
 	}
 	for (int i = 0; i < Height; i++) {
@@ -5856,10 +5810,10 @@ void Image::Mark_Different_Pixels(Image &Source, const char *mode) {
 	if (this->width != Source.width || this->Height != Source.Height) {
 		return;
 	}
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
-	if (Source.Pixel_Matrix == nullptr) {
+	if (Source.is_Matrix_Initiated() == false) {
 		Source.init_pixel_matrix();
 	}
 
@@ -5878,7 +5832,7 @@ void Image::Mark_Different_Pixels(Image &Source, const char *mode) {
 
 void Image::Write_ChannelGraph() {
 
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -5991,7 +5945,7 @@ void Image::Write_ChannelGraph() {
 }
 
 void Image::Write_Channel(const char color) {
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	int index = 0;
@@ -6031,7 +5985,7 @@ void Image::Write_Channel(const char color) {
 
 }
 void Image::Shutdown_Channel(const char color) {
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	int index = 0;
@@ -6076,7 +6030,7 @@ void Image::Flip180() {
 	unsigned char *flip = new unsigned char[(width*Height * 3)];
 
 	int index = 0;
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -6099,7 +6053,7 @@ void Image::Tresholding(const char *mode, int const &value, int const &alter) {
 	strcpy(m1, "Trunc");
 	strcpy(m2, "EdgeTriggerd");
 	if (strcmp(m1, mode) == 0) {
-		if (Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 		this->Color_Flooring("10", 0);
@@ -6141,7 +6095,7 @@ void Image::Tresholding(const char *mode, int const &value, int const &alter) {
 	else if (strcmp(m2, mode) == 0) {
 		int index = 0, recored = 0, max_gap = 1;
 		pixel prev;
-		if (Pixel_Matrix == nullptr) {
+		if (this->is_Matrix_Initiated() == false) {
 			init_pixel_matrix();
 		}
 
@@ -6191,7 +6145,7 @@ void Image::Tresholding(const char *mode, int const &value, int const &alter) {
 }
 void Image::Edge_Detection() {
 
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -6248,7 +6202,7 @@ void Image::Edge_Detection() {
 }
 void Image::Edge_Detection(const int max_color_gap) {
 
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -6304,7 +6258,7 @@ void Image::Edge_Detection(const int max_color_gap) {
 	}
 }
 void Image::Mark_Contour(const char color, const int max_color_gap) {
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 
@@ -6371,7 +6325,7 @@ void Image::Mark_Contour(const char color, const int max_color_gap) {
 
 }
 void Image::Feature_Matching(const int source_x, const int source_y) {
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	if ((source_x + 1 > width) || (source_x - 1 < 0) || (source_y + 1 > Height) || (source_y - 1 < 0)) {
@@ -6438,90 +6392,8 @@ void Image::Feature_Matching(const int source_x, const int source_y) {
 
 
 }
-void Image::Pixel_Matrix_Multiplication(Image &b) {
-
-	if (this->width != b.Height) {
-		std::cout << "Cannot Multiply Pixel Please Make Sure Image A's Width = Image B's Height\n";
-		return;
-	}
-	if (this->Pixel_Matrix == nullptr) {
-		this->init_pixel_matrix();
-	}
-	if (b.Pixel_Matrix == nullptr) {
-		b.init_pixel_matrix();
-	}
-
-	pixel sum;
-
-	if (this->Height != b.width) {
-		pixel **n_mat = new pixel*[this->Height];
-		for (int i = 0; i < b.width; i++) {
-			n_mat[i] = new pixel[b.width];
-		}
-
-
-		for (int i = 0; i < this->width; i++) {
-			pixel temp;
-			for (int j = 0; j < b.width; j++) {
-				for (int k = 0; k < this->width; k++) {
-					temp = Pixel_Matrix[i][k] * b.Pixel_Matrix[k][j];
-					sum + temp;
-				}
-				n_mat[i][j] = sum;
-				sum.r = 0;
-				sum.g = 0;
-				sum.b = 0;
-			}
-		}
-
-		delete[] this->Pixel_Matrix;
-		delete[] this->image_data;
-		unsigned char *updated = new unsigned char[this->Height *b.width * 3];
-
-		int index = 0;
-		this->Pixel_Matrix = n_mat;
-		this->width = b.width;
-		for (int i = 0; i < this->Height; i++) {
-			for (int j = 0; j < this->width; j++) {
-				updated[index++] = Pixel_Matrix[i][j].r;
-				updated[index++] = Pixel_Matrix[i][j].g;
-				updated[index++] = Pixel_Matrix[i][j].b;
-
-			}
-		}
-
-
-	}
-	else {/////////////
-
-		for (int i = 0; i < this->width; i++) {
-			pixel temp;
-			for (int j = 0; j < b.width; j++) {
-				for (int k = 0; k < this->width; k++) {
-					temp = Pixel_Matrix[i][k] * b.Pixel_Matrix[k][j];
-					sum + temp;
-				}
-				this->Pixel_Matrix[i][j] = sum;
-				sum.r = 0;
-				sum.g = 0;
-				sum.b = 0;
-			}
-		}
-
-		int index = 0;
-		for (int i = 0; i < this->Height; i++) {
-			for (int j = 0; j < this->width; j++) {
-				image_data[index++] = Pixel_Matrix[i][j].r;
-				image_data[index++] = Pixel_Matrix[i][j].g;
-				image_data[index++] = Pixel_Matrix[i][j].b;
-
-			}
-		}
-	}
-
-}
 void Image::Quarantine_Pixel(pixel const &sample, const float max_difference, const char *mode, const int Alter) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	char m1[10], m2[10];
@@ -6581,18 +6453,17 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 	strcpy(m2, "Size");
 	strcpy(m3, "Build_From");
 	strcpy(m4, "Mix");
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
-	if (b.Pixel_Matrix == nullptr) {
+	if (b.is_Matrix_Initiated() == false) {
 		b.init_pixel_matrix();
 	}
 
 	if (strcmp(m1, mode) == 0) {
-		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
-		for (int i = 0; i < b.Height*this->Height; i++) {
-			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
-		}
+		Matrix<pixel> Kr_mat(b.Height*this->Height,this->width*b.width);
+
+
 
 		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height*b.Height*b.width*this->width * 3));
 		unsigned long long startRow, startCol, index = 0;
@@ -6604,7 +6475,7 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 				for (int k = 0; k < b.Height; k++) {
 					for (int l = 0; l < b.width; l++) {
 						temp = this->Pixel_Matrix[i][j] * b.Pixel_Matrix[k][l];
-						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+						Kr_mat[startRow + k][startCol + l] = temp;
 
 					}
 				}
@@ -6615,13 +6486,12 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 			this->width *= b.width;
 			this->Height *= b.Height;
 			delete[] this->image_data;
-			delete[] this->Pixel_Matrix;
-			this->Pixel_Matrix = Kronecker_pixel_mat;
+			this->Pixel_Matrix = Kr_mat;
 			for (long long i = 0; i < this->Height; i++) {
 				for (long long j = 0; j < this->width; j++) {
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+					Kronecker[index++] = Kr_mat[i][j].r;
+					Kronecker[index++] = Kr_mat[i][j].g;
+					Kronecker[index++] = Kr_mat[i][j].b;
 
 				}
 			}
@@ -6632,10 +6502,8 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 
 	}
 	else if (strcmp(m2, mode) == 0) {
-		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
-		for (int i = 0; i < b.Height*this->Height; i++) {
-			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
-		}
+		Matrix<pixel> Kr_mat(b.Height*this->Height, this->width*b.width);
+
 
 		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height * b.Height * b.width * this->width * 3));
 		pixel temp;
@@ -6653,7 +6521,7 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 							temp = b.Pixel_Matrix[k][l];
 						}
 
-						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+						Kr_mat[startRow + k][startCol + l] = temp;
 
 					}
 				}
@@ -6664,13 +6532,12 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 			this->width *= b.width;
 			this->Height *= b.Height;
 			delete[] this->image_data;
-			delete[] this->Pixel_Matrix;
-			this->Pixel_Matrix = Kronecker_pixel_mat;
+			this->Pixel_Matrix = Kr_mat;
 			for (long long i = 0; i < this->Height; i++) {
 				for (long long j = 0; j < this->width; j++) {
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+					Kronecker[index++] = Kr_mat[i][j].r;
+					Kronecker[index++] = Kr_mat[i][j].g;
+					Kronecker[index++] = Kr_mat[i][j].b;
 
 				}
 			}
@@ -6679,11 +6546,8 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 		}
 	}
 	else if (strcmp(m3, mode) == 0) {
+		Matrix<pixel> Kr_mat(b.Height*this->Height, this->width*b.width);
 
-		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
-		for (int i = 0; i < b.Height*this->Height; i++) {
-			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
-		}
 		unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Height * b.Height * b.width * this->width * 3));
 		pixel temp;
 		unsigned long long startRow, startCol, index = 0;
@@ -6703,7 +6567,7 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 							flag = 0;
 						}
 
-						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+						Kr_mat[startRow + k][startCol + l] = temp;
 
 					}
 				}
@@ -6714,13 +6578,12 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 			this->width *= b.width;
 			this->Height *= b.Height;
 			delete[] this->image_data;
-			delete[] this->Pixel_Matrix;
-			this->Pixel_Matrix = Kronecker_pixel_mat;
+			this->Pixel_Matrix = Kr_mat;
 			for (long long i = 0; i < this->Height; i++) {
 				for (long long j = 0; j < this->width; j++) {
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+					Kronecker[index++] = Kr_mat[i][j].r;
+					Kronecker[index++] = Kr_mat[i][j].g;
+					Kronecker[index++] = Kr_mat[i][j].b;
 
 				}
 			}
@@ -6735,10 +6598,8 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 		unsigned long long startRow, startCol, index = 0;
 		int flag = 0;
 
-		pixel **Kronecker_pixel_mat = (pixel**)malloc(sizeof(pixel*)*b.Height*this->Height);
-		for (int i = 0; i < b.Height*this->Height; i++) {
-			Kronecker_pixel_mat[i] = (pixel*)malloc(sizeof(pixel)*this->width*b.width);
-		}
+		Matrix<pixel> Kr_mat(b.Height*this->Height, this->width*b.width);
+
 
 		for (int i = 0; i < this->Height; i++) {
 
@@ -6758,7 +6619,7 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 					for (int l = 0; l < b.width; l++)
 					{
 
-						Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+						Kr_mat[startRow + k][startCol + l] = temp;
 					}
 					if (flag == 1) {
 						flag = 0;
@@ -6777,13 +6638,12 @@ void Image::Kronecker_product(Image &b, const char *mode, const int Alter) {
 			this->width *= b.width;
 			this->Height *= b.Height;
 			delete[] this->image_data;
-			delete[] this->Pixel_Matrix;
-			this->Pixel_Matrix = Kronecker_pixel_mat;
+			this->Pixel_Matrix = Kr_mat;
 			for (long long i = 0; i < this->Height; i++) {
 				for (long long j = 0; j < this->width; j++) {
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-					Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+					Kronecker[index++] = Kr_mat[i][j].r;
+					Kronecker[index++] = Kr_mat[i][j].g;
+					Kronecker[index++] = Kr_mat[i][j].b;
 
 				}
 			}
@@ -6802,18 +6662,25 @@ void Image::Image_Transpose(const int Alter) {
 		T_mat[i] = (pixel*)malloc(sizeof(pixel)*W);
 	}
 
-	if (this->Pixel_Matrix == nullptr) {
+	Matrix <pixel> tmat(H, W);
+
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 
-	for (int i = 0; i < this->Height; i++) {
+	/*for (int i = 0; i < this->Height; i++) {
 		for (int j = 0; j < this->width; j++) {
 			T_mat[j][i] = this->Pixel_Matrix[i][j];
 		}
+	}*/
+
+	for (int i = 0; i < this->Height; i++) {
+		for (int j = 0; j < this->width; j++) {
+			tmat[j][i] = this->Pixel_Matrix[i][j];
+		}
 	}
 
-	delete[] this->Pixel_Matrix;
-	this->Pixel_Matrix = T_mat;
+	this->Pixel_Matrix = tmat;
 
 	if (Alter == 1) {
 		int index = 0;
@@ -6828,6 +6695,7 @@ void Image::Image_Transpose(const int Alter) {
 			}
 		}
 	}
+
 }
 VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_iterations) {
 	static std::random_device seed; //seed for psudo random engine 
@@ -6887,7 +6755,7 @@ VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_i
 
 
 void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	Color_Palette CSET;
@@ -6963,7 +6831,7 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 	}
 }
 void Image::Figure_Detection(int const &blob_distance_treshold, int const &color_distance_treshold, int const &Thresholding_level) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	this->Tresholding("Trunc", Thresholding_level, 0);
@@ -7004,7 +6872,7 @@ void Image::Color_Flooring(const char *mod, int const &alter) {
 	strcpy(m1, "10");
 	strcpy(m2, "100");
 
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 
@@ -7059,12 +6927,11 @@ void Image::Color_Flooring(const char *mod, int const &alter) {
 	}
 }
 void Image::Image_Segmentation(int const &k, int const &iterations, int const &alter) {
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	else {
-		free(Pixel_Matrix);
-		this->init_pixel_matrix();
+		this->Update_Pixel_Matrix();
 	}
 
 	VectorFrame image_ThreeD_Mat, Result;
@@ -7168,7 +7035,7 @@ void Image::Pixel_Griding() {
 	double GKernel[5][5];
 	double sum = 0.0;
 	int index = 0;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 
@@ -7226,7 +7093,7 @@ void Image::Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors) 
 	int index = 0;
 	float best_dist;
 	Point temp;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	for (int i = 0; i < Height; i++) {
@@ -7261,7 +7128,7 @@ void Image::Set_Colors_Using_Average_Palette(VectorFrame const &Average_Colors) 
 }
 PixelFrame Image::Get_Line_Pixels(const int start_y, const int start_x, const int target_y, const int target_x) {
 	float dx, sx, dy, sy, err, e2;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	PixelFrame Points;
@@ -7342,13 +7209,13 @@ void Image::Image_Rebuild_With_Lines(int const &Iterations) {
 	int x0, y0, x1, y1;
 	double cur_difference, temp_dif;
 
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
-	if (B.Pixel_Matrix == nullptr) {
+	if (B.is_Matrix_Initiated() == false) {
 		B.init_pixel_matrix();
 	}
-	if (C.Pixel_Matrix == nullptr) {
+	if (C.is_Matrix_Initiated() == false) {
 		C.init_pixel_matrix();
 	}
 
@@ -7439,7 +7306,7 @@ void Image::Image_Convolution(int const &iterations, int const &alter, const cha
 	int index = 0;
 	Mid.Load_Image(this->f_name);
 
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	if (Mid.getHeight() != this->Height) {
@@ -7507,7 +7374,7 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 	double Kernel_Normal = 0;
 	Mid.Load_Image(this->f_name);
 
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	Mid.init_pixel_matrix();
@@ -7583,24 +7450,9 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 	}
 
 }
-void Image::Save_As_PNG(const char *name) {
-	char s_name[50];
-	char type[10];
-	strcpy(type, ".png");
-	strcpy(s_name, name);
-	strcat(s_name, type);
-	if (channel > 3) {
-		channel = 3;
-	}
-	stbi_write_jpg(s_name, width, Height, channel, image_data, 100);
-	//stbi_write_png(s_name, this->width, this->Height, 8, this->image_data, 1);
-	//stbi_write_bmp(s_name, this->width, this->Height, 8, this->image_data);
-	std::cout << "\nFile Saved Succsfully As: " << s_name << std::endl;
-
-}
 CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x) {
 	float dx, sx, dy, sy, err, e2;
-	if (this->Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 	CoordinateFrame Points;
@@ -7648,12 +7500,10 @@ void Image::Update_Image_Data() {
 	}
 }
 void Image::Free_Pixel_Matrix() {
-	if (Pixel_Matrix != nullptr) {
-		for (int i = 0; i < this->Height;i++) {
-			delete[] Pixel_Matrix[i];
-		}
-		//delete[] Pixel_Matrix;
+	if (this->is_Matrix_Initiated() == true) {
+		Pixel_Matrix.FreeMatrix();
 	}
+	this->is_Matrix_init = false;
 }
 void Image::Up_Scale() {
 	std::vector<unsigned char> temp;
@@ -7670,6 +7520,7 @@ void Image::Up_Scale() {
 		for (int j = 0; j < this->width; j += 3) {
 			for (int k = 0; k < 3; k++) {
 				for (int m = 0; m < 3; m++) {
+
 					Pixel_Matrix[i + k][j + m].r = temp[z];
 					Pixel_Matrix[i + k][j + m].g = temp[z + 1];
 					Pixel_Matrix[i + k][j + m].b = temp[z + 2];
@@ -7739,6 +7590,7 @@ void Image::Up_Scale() {
 	Free_Pixel_Matrix();
 
 
+
 }
 
 
@@ -7751,7 +7603,7 @@ void Image::Up_Scale() {
 
 
 void Image::Convert_RGB_To_LAB(int const &alter) {
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		this->init_pixel_matrix();
 	}
 	double M[3][3] = { {0.4124,	0.3567,	0.1805},
@@ -7783,7 +7635,7 @@ void Image::Convert_RGB_To_LAB(int const &alter) {
 //ver 1 under development
 
 void Image::Detect_Faces() {
-	if (Pixel_Matrix == nullptr) {
+	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
 	}
 

@@ -2,14 +2,12 @@
 #include "Color_Catalog.h"
 
 
-
 int main() {
 
-	Image A;
+	Image A,B;
 	Color_Palette CSET;
-	//A.Load_Image("Image3.jpg");
-	//A.Up_Scale();
-
+	A.Load_Image("Image1.jpg");
+	B.Load_Image("Coin1.jpg");
 
 	A.Write_Image("Test");
 	system("Test.jpg");
