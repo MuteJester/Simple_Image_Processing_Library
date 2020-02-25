@@ -7594,10 +7594,13 @@ void Image::Up_Scale() {
 }
 
 
-
 // Under DEV
 
 
+void Image::Up_Scale(int const &Height, int const &Width) {
+
+
+}
 
 
 
@@ -7608,7 +7611,8 @@ void Image::Convert_RGB_To_LAB(int const &alter) {
 	}
 	double M[3][3] = { {0.4124,	0.3567,	0.1805},
 					   {0.2126,	0.7152,	0.0722},
-					   {0.0193,	0.1192,	0.9505} };
+					   {0.0193,	0.1192,	0.9505} 
+	};
 
 	int index;
 	for (int i = 0; i < Height; i++) {
@@ -7619,15 +7623,7 @@ void Image::Convert_RGB_To_LAB(int const &alter) {
 	}
 
 	if (alter == 1) {
-		index = 0;
-		for (int i = 0; i < Height; i++) {
-			for (int j = 0; j < width; j++) {
-				image_data[index++] = Pixel_Matrix[i][j].r;
-				image_data[index++] = Pixel_Matrix[i][j].g;
-				image_data[index++] = Pixel_Matrix[i][j].b;
-
-			}
-		}
+		Update_Image_Data();
 
 	}
 }

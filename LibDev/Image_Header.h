@@ -38,6 +38,8 @@ struct Point {
 	//x = r, y = g, z =b
 };
 
+
+
 using VectorFrame = std::vector<Point>;
 using PixelFrame = std::vector<pixel>;
 using CoordinateFrame = std::vector<coordinate>;
@@ -443,3 +445,37 @@ public:
 using ImageFrame = std::vector<Image>;
 
 bool operator^(CoordinateFrame A, CoordinateFrame B);
+
+class LA_Masks {
+public:
+	LA_Masks(){
+		Roberts_Mask_3x3 = Matrix<int>(3, 3);
+		Sobel_Mask_3x3 = Matrix<int>(3, 3);
+
+		Roberts_Mask_3x3[0][0]=0;
+		Roberts_Mask_3x3[0][1]=0;
+		Roberts_Mask_3x3[0][2]=0;
+		Roberts_Mask_3x3[1][0]=0;
+		Roberts_Mask_3x3[1][1]=0;
+		Roberts_Mask_3x3[1][2]=1;
+		Roberts_Mask_3x3[2][0]=0;
+		Roberts_Mask_3x3[2][1]=-1;
+		Roberts_Mask_3x3[2][2]=0;
+
+		Sobel_Mask_3x3[0][0] = -1;
+		Sobel_Mask_3x3[0][1] = 0;
+		Sobel_Mask_3x3[0][2] = 1;
+		Sobel_Mask_3x3[1][0] = -2;
+		Sobel_Mask_3x3[1][1] = 0;
+		Sobel_Mask_3x3[1][2] = 2;
+		Sobel_Mask_3x3[2][0] = -1;
+		Sobel_Mask_3x3[2][1] = 0;
+		Sobel_Mask_3x3[2][2] = 1;
+
+
+
+	}
+	Matrix<int> Roberts_Mask_3x3;
+	Matrix<int> Sobel_Mask_3x3;
+	
+};
