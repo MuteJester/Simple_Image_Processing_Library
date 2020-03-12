@@ -1,3 +1,4 @@
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -5,6 +6,42 @@ import javax.imageio.ImageIO;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Collections;
+class Point{
+	
+	public double x,y,z;
+	Point(){
+		x=y=z=0;
+	}
+	Point(double X,double Y,double Z){
+		x=X;
+		y=Y;
+		z=Z;
+	}
+	Point(Point copy){
+		this.x=copy.x;
+		this.y=copy.y;
+		this.z =copy.z;
+	}
+	void Add(Point B) {
+		this.x+=B.x;
+		this.y+=B.y;
+		this.z+=B.z;
+	}
+	void Divide_All(int Divider) {
+		this.x /= Divider;
+		this.y /= Divider;
+		this.z /= Divider;
+
+	}
+	@Override
+	public String toString() {
+		return "[X: " + this.x +"]" +" [Y: " + this.y +"]" + " [Z: " + this.z +"]"+ "\n";
+	}
+}
+
 
 class Pixel {
 	public Pixel(int r,int g,int b) {
@@ -12,18 +49,65 @@ class Pixel {
 		this.b=b;
 		this.g=g;
 		A =255;
+		analysis=0;
+	}
+	public Pixel(int r,int g,int b,int i,int j) {
+		this.r=r;
+		this.b=b;
+		this.g=g;
+		this.i=i;
+		this.j=j;
+		A =255;
+		analysis=0;
 	}
 	public Pixel() {
 		this.r=0;
 		this.b=0;
 		this.g=0;
 		this.A=255;
+		analysis=0;
+	}
+	public Pixel(Pixel copy) {
+		this.r = copy.r;
+		this.g = copy.g;
+		this.b = copy.b;
+		this.A = copy.A;
+		this.analysis = copy.analysis;
 	}
 	public int r;
 	public int g;
 	public int b;
 	public int A;
-	
+	public int analysis;
+	public int i,j;
+	public Pixel Pixel_Mul(Pixel b) {
+		Pixel ret = new Pixel();
+		ret.r = this.r*b.r;
+		if (ret.r > 255) {
+			ret.r = ret.r % 255;
+		}
+		ret.g = this.g*b.g;
+		if (ret.g > 255) {
+			ret.g = ret.g % 255;
+		}
+		ret.b = this.b*b.b;
+		if (ret.b > 255) {
+			ret.b = ret.b % 255;
+		}
+		return ret;
+	}
+	public boolean is_Bigger(Pixel b) {
+		if (this.r > b.r && this.g > b.g && this.b > b.b) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	public void Add_Location(int i,int j) {
+		this.i = i;
+		this.j =j;
+	}
 	@Override
     public String toString() {
         return "(" + r + ", " + g +  ", "+b+")";
@@ -1080,6 +1164,9 @@ class Blob{
 
 
 
+
+
+
 public class Image {
 	
 	
@@ -1091,10 +1178,21 @@ public class Image {
 	private BufferedImage IMG;
 	public Pixel Pixel_Matrix[][];
 	public int Image_Width,Image_Height;
+	public String F_Path;
 	//public boolean hasAlphaChannel;
 	
 	//functionality
+	Image(){
 
+		
+	}
+	Image(Image copy){
+		this.F_Path = copy.F_Path;
+		this.Image_Width = copy.Image_Width;
+		this.Image_Height = copy.Image_Height;
+		this.IMG = copy.IMG;
+		this.Pixel_Matrix = copy.Pixel_Matrix;
+	}
 	private void Image_Load_Wrapper() {
 		  this.Image_Width = IMG.getWidth();
 		  this.Image_Height = IMG.getHeight();
@@ -1105,6 +1203,7 @@ public class Image {
 	  int p_value =0;
 	  p_value = (255<<24) | (r<<16) | (g<<8) | b;
 		  this.IMG.setRGB(j, i, p_value);
+		  
 	  }
 	public void Set_Color(Pixel target,int r,int g,int b) {
 		target.r=r;
@@ -1113,7 +1212,9 @@ public class Image {
 	}
     public void Load_Image(String FilePath) throws IOException {
 		try {
+			this.F_Path = FilePath;
 		this.IMG = ImageIO.read(Image.class.getResource(FilePath));
+		//this.IMG = ImageIO.read(new File(FilePath));
 		this.Image_Load_Wrapper();
 		}catch(IOException e) {
 			System.out.println("Error");
@@ -1140,7 +1241,7 @@ public class Image {
 					}
 				}
 		      File f = new File(Filename);
-		      ImageIO.write(IMG, "jpg", f);
+		      ImageIO.write(IMG, "png", f);
 		    }catch(IOException e){
 		      System.out.println(e);
 		    }
@@ -1163,6 +1264,29 @@ public class Image {
 			}
 		}
 	}
+	public void Load_Blank_Canvas(int height,int width,Pixel Background_Color) {
+		this.IMG = new BufferedImage(width,height,BufferedImage.TYPE_3BYTE_BGR);
+		this.init_pixel_matrix();
+		this.Image_Load_Wrapper();
+		for(int i=0;i<height;i++) {
+			for(int j=0;j<width;j++) {
+				this.Pixel_Matrix[i][j] = Background_Color;
+			}
+		}
+	}
+	public void convertToARGB()
+	{
+	    BufferedImage newImage = new BufferedImage(
+	        IMG.getWidth(), IMG.getHeight(),
+	        BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g = newImage.createGraphics();
+	    g.drawImage(IMG, 0, 0, null);
+	    g.dispose();
+	    this.IMG = newImage;
+	}
+	
+	
+	
 	public void Draw_Square(int center_x,int center_y,int square_Image_Width,int square_Image_Height,Pixel Color) {
 		if (center_x + square_Image_Width >= this.Image_Width || center_y + square_Image_Height >= this.Image_Height || center_x - square_Image_Width < 0 || center_y - square_Image_Height < 0) {
 			System.out.println("Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n");
@@ -1193,12 +1317,13 @@ public class Image {
 		err = dx + dy;  //error value
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
-				Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = color;
+				Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
+
 				break;
 			}
 
-			Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = color;
-					
+			Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
+
 			e2 = 2 * err;
 			if (e2 >= dy) {
 				err += dy;
@@ -1214,6 +1339,25 @@ public class Image {
 	public void Draw_Line(int start_y,int start_x,int target_y,int target_x, Pixel color) {
 
 		this.BresenhamsLine(start_y, start_x, target_y, target_x, color);
+	}
+	public void Draw_Line(int start_x,int start_y,int target_y,Pixel color) {
+	
+		if (target_y > this.Image_Height || start_y > this.Image_Height || start_y < 0 || start_x > Image_Width || start_x < 0) {
+			System.out.println("Line Out Of Image Range\nDraw Action Aborted");
+			return;
+		}
+
+		if (start_y < target_y) {
+			for (int i = start_y; i < target_y; i++) {
+				Pixel_Matrix[i][start_x] = color;
+			}
+		}
+		else {
+			for (int i = start_y; i > target_y; i--) {
+				Pixel_Matrix[i][start_x]= color;
+			}
+		}
+
 	}
 	public void Draw_Line(int start_x,int start_y,int target_x,int target_y, Pixel color, int line_Image_Width) {
 		if (line_Image_Width > 0) {
@@ -1379,6 +1523,986 @@ public class Image {
 						Pixel_Matrix[center_y + y][center_x + x] = color;
 		}
 	}
+	public void Draw_Text(int center_y,int center_x,String text, Pixel color) {
+
+		int text_length = text.length();
+		int start_x, end_x, draw_y, flag = 0, temp=0, count = 0;
+		LibCharacters Set = new LibCharacters();
+		if (center_x + (9 * (text_length / 2)) > Image_Width || center_x - (9 * (text_length / 2)) < 0
+			|| center_y + 4 > Image_Height || center_y - 4 < 0) {
+			System.out.println("Text Longer The Image Frame, Aborting...\n");
+			return;
+		}
+
+		start_x = center_x - (9 * (text_length / 2));
+		draw_y = center_y - 4;
+		end_x = center_x + (9 * (text_length / 2));
+
+		for (int i = 0; i < text.length(); i++) {
+
+			switch (text.charAt(i))
+			{
+
+			case '0':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Zero[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x]=color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '1':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_One[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '2':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Two[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '3':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Three[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '4':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Four[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '5':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Five[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '6':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Six[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '7':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Seven[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '8':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Eight[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+			case '9':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Number_Nine[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'A':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_A[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'B':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_B[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'C':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_C[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'D':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_D[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'E':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_E[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'F':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_F[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'G':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_G[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'H':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_H[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'I':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_I[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'J':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_J[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'K':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_K[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'L':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_L[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'M':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_M[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'N':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_N[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'O':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_O[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'P':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_P[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'Q':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_Q[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'R':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_R[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'S':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_S[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'T':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_T[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'U':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_U[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'V':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_V[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'W':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_W[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+
+				break;
+
+			case 'X':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_X[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'Y':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_Y[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'Z':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Letter_Z[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case '?':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Quesiton_Mark[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case '!':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Exclamation_Point[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case '(':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Left_Braket[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case ')':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Right_Braket[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case '&':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Ampersand[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case ',':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Comma[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case '[':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Squaure_Braket_Left[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case ']':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Square_Braket_Right[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case ' ':
+				temp += 9;
+				break;
+
+			case ':':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Colon[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case '=':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.EqualSign[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case '+':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.PlusSign[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+				
+			case '%':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Precent[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+				
+			case '*':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Astersik[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+				
+			case '.':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Dot[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+				
+			case ';':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.Semi_Colon[flag] == 1) {
+						Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+		
+
+			default:
+				break;
+				
+				
+			}
+			
+			
+
+			draw_y = center_y - 4;
+			start_x = temp;
+			start_x += 9;
+
+		}
+
+
+
+	}
+	public double Get_Square(double value) {
+		return value * value;
+	}
+
+	public double squared_3Point_distance(Point first, Point second) {
+		return Get_Square(first.x - second.x) + Get_Square(first.y - second.y) + Get_Square(first.z - second.z);
+	}
+
 	
 	public void Grayscale() {
 		for (int i = 0; i < Image_Height; i++) {
@@ -1402,7 +2526,6 @@ public class Image {
 		}
 	}
 
-	
 	
 	public double Color_Delta(Pixel A, Pixel B) {
 		long  R_Gag = ((long)(A.r + (long)(B.r)) / 2);
@@ -1680,6 +2803,166 @@ public class Image {
 		return Mean / Divider;
 	}
 
+	public double Get_Neighbour_Mean_G(int i, int j, double Kernel[][], double Kernel_Normal) {
+		double Mean = 0;
+		int Divider = 1;
+		Mean += Pixel_Matrix[i][j].g * Kernel[1][1];
+
+		if (i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j].g * Kernel[2][1];
+			if (Kernel[2][1] != 0) {
+				Divider++;
+			}
+		}
+		if (i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j].g * Kernel[0][1];
+			if (Kernel[0][1] != 0) {
+				Divider++;
+			}
+		}
+		if (j + 1 < Image_Width) {
+			Mean += Pixel_Matrix[i][j + 1].g * Kernel[1][2];
+			if (Kernel[1][2] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0) {
+			Mean += Pixel_Matrix[i][j - 1].g * Kernel[1][0];
+			if (Kernel[1][0] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0 && i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j - 1].g * Kernel[0][0];
+			Divider++;
+
+		}
+		if (j - 1 >= 0 && i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j - 1].g * Kernel[2][0];
+			if (Kernel[2][0] != 0) {
+				Divider++;
+			}
+		}
+		if (j + 1 < Image_Width && i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j + 1].g * Kernel[2][2];
+			Divider++;
+
+		}
+		if (j + 1 < Image_Width && i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j + 1].g * Kernel[0][2];
+			Divider++;
+
+		}
+		return Mean / Divider;
+
+	}
+	public double Get_Neighbour_Mean_R(int i, int j, double Kernel[][], double Kernel_Normal) {
+		double Mean = 0;
+		int Divider = 1;
+		Mean += Pixel_Matrix[i][j].r * Kernel[1][1];
+
+		if (i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j].r * Kernel[2][1];
+			if (Kernel[2][1] != 0) {
+				Divider++;
+			}
+		}
+		if (i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j].r * Kernel[0][1];
+			if (Kernel[0][1] != 0) {
+				Divider++;
+			}
+		}
+		if (j + 1 < Image_Width) {
+			Mean += Pixel_Matrix[i][j + 1].r * Kernel[1][2];
+			if (Kernel[1][2] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0) {
+			Mean += Pixel_Matrix[i][j - 1].r * Kernel[1][0];
+			if (Kernel[1][0] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0 && i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j - 1].r * Kernel[0][0];
+			if (Kernel[0][0] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0 && i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j - 1].r * Kernel[2][0];
+			Divider++;
+
+		}
+		if (j + 1 < Image_Width && i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j + 1].r * Kernel[2][2];
+			Divider++;
+
+		}
+		if (j + 1 < Image_Width && i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j + 1].r * Kernel[0][2];
+			Divider++;
+
+		}
+		return Mean / Divider;
+
+	}
+	public double Get_Neighbour_Mean_B(int i, int j, double Kernel[][], double Kernel_Normal) {
+		double Mean = 0;
+		int Divider = 1;
+		Mean += Pixel_Matrix[i][j].b * Kernel[1][1];
+
+		if (i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j].b * Kernel[2][1];
+			if (Kernel[2][1] != 0) {
+				Divider++;
+			}
+		}
+		if (i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j].b * Kernel[0][1];
+			if (Kernel[0][1] != 0) {
+				Divider++;
+			}
+		}
+		if (j + 1 < Image_Width) {
+			Mean += Pixel_Matrix[i][j + 1].b * Kernel[1][2];
+			if (Kernel[1][2] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0) {
+			Mean += Pixel_Matrix[i][j - 1].b * Kernel[1][0];
+			if (Kernel[1][0] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0 && i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j - 1].b * Kernel[0][0];
+			if (Kernel[0][0] != 0) {
+				Divider++;
+			}
+		}
+		if (j - 1 >= 0 && i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j - 1].b * Kernel[2][0];
+			Divider++;
+
+		}
+		if (j + 1 < Image_Width && i + 1 < Image_Height) {
+			Mean += Pixel_Matrix[i + 1][j + 1].b * Kernel[2][2];
+			Divider++;
+
+		}
+		if (j + 1 < Image_Width && i - 1 >= 0) {
+			Mean += Pixel_Matrix[i - 1][j + 1].b * Kernel[0][2];
+			Divider++;
+
+		}
+		return Mean / Divider;
+
+	}
+	
 	public void Mark_Identical_Pixels(Pixel Target) {
 		Color_Palette cset = new Color_Palette();
 		for (int i = 0; i < Height; i++) {
@@ -1798,15 +3081,15 @@ public class Image {
 		
 		
 		for (int m = 0; m < Blobs.size(); ++m) {
-			this.Draw_Square(Blobs.get(m).Upleft_X, Blobs.get(m).Upleft_Y, Blobs.get(m).Downright_X, Blobs.get(m).Downright_Y, frame_color, "Corners");
-			System.out.format("UL-x: %d UL-y: %d DR-x: %d DR-y: %d\n",Blobs.get(m).Upleft_X, Blobs.get(m).Upleft_Y, Blobs.get(m).Downright_X, Blobs.get(m).Downright_Y);
+			this.Draw_Square(Blobs.get(m).Upleft_Y, Blobs.get(m).Upleft_X, Blobs.get(m).Downright_Y, Blobs.get(m).Downright_X, frame_color, "Corners");
+			//System.out.format("UL-x: %d UL-y: %d DR-x: %d DR-y: %d\n",Blobs.get(m).Upleft_X, Blobs.get(m).Upleft_Y, Blobs.get(m).Downright_X, Blobs.get(m).Downright_Y);
 		}
 		
 
 
 
 	}
-
+	
 	public void Write_Pixel_Difference(Image Source, String mode, int min_diff) {
 
 		if (mode.equals("Copy")) {
@@ -1865,11 +3148,1970 @@ public class Image {
 
 	}
 
+	public void Write_Channel_Histogram() {
+		int posR, PosG, PosB, H = 500, W = 1300;
+		int bar_width = this.Image_Width / 300;
+		if (bar_width == 0) {
+			bar_width = 1;
+		}
+		int sR = 0, sG = 0, sB = 0;
+		Image frame = new Image();
+		Color_Palette CSET = new Color_Palette();
+		frame.Load_Blank_Canvas(W, H, CSET.Azure);
+		
+		frame.Draw_Square(250, 250, 150, 150, CSET.Black);
+		frame.Draw_Square(650, 250, 150, 150, CSET.Black);
+		frame.Draw_Square(1050, 250, 150, 150, CSET.Black);
+		frame.Draw_Square(250, 250, 151, 151, CSET.Black);
+		frame.Draw_Square(650, 250, 151, 151, CSET.Black);
+		frame.Draw_Square(1050, 250, 151, 151, CSET.Black);
+
+		for (int i = 103; i <= 400; i += 5) {
+			frame.Draw_Line(100, i, 400, i, CSET.Light_Gray);
+		}
+		for (int i = 103; i <= 400; i += 5) {
+			frame.Draw_Line(i, 100, i, 400, CSET.Light_Gray);
+		}
+
+		for (int i = 503; i <= 800; i += 5) {
+			frame.Draw_Line(100, i, 400, i, CSET.Light_Gray);
+		}
+		for (int i = 103; i <= 400; i += 5) {
+			frame.Draw_Line(i, 500, i, 800, CSET.Light_Gray);
+		}
+
+		for (int i = 903; i <= 1200; i += 5) {
+			frame.Draw_Line(100, i, 400, i, CSET.Light_Gray);
+		}
+		for (int i = 103; i <= 400; i += 5) {
+			frame.Draw_Line(i, 900, i, 1200, CSET.Light_Gray);
+		}
+
+		frame.Draw_Text(90, 240, "RED GRAPH",CSET.Black);
+		frame.Draw_Text(90, 640, "GREEN GRAPH",CSET.Black);
+		frame.Draw_Text(90, 1040, "BLUE GRAPH",CSET.Black);
+
+
+		posR = 101;
+		PosG = 501;
+		PosB = 901;
+
+		
+
+		for (int i = 0; i < this.Image_Width; i++) {
+			for (int k = 0; k < bar_width; k++) {
+				for (int j = 0; j < this.Image_Height; j++) {
+					if (Pixel_Matrix[j][i].r >= Pixel_Matrix[j][i].g &&Pixel_Matrix[j][i].r >= Pixel_Matrix[j][i].b &&
+							Pixel_Matrix[j][i] != CSET.Black
+						&& Pixel_Matrix[j][i] != CSET.White) {
+						
+						sR++;
+					}
+					else if (Pixel_Matrix[j][i].g >= Pixel_Matrix[j][i].r &&Pixel_Matrix[j][i].g >= Pixel_Matrix[j][i].b
+						&& Pixel_Matrix[j][i] != CSET.Black
+						&&Pixel_Matrix[j][i] != CSET.White) {
+						//sG += Pixel_Matrix[j][i].g;
+						sG++;
+					}
+					else if (Pixel_Matrix[j][i].b >= Pixel_Matrix[j][i].r &&Pixel_Matrix[j][i].b >= Pixel_Matrix[j][i].g
+						&& Pixel_Matrix[j][i] != CSET.Black
+						&& Pixel_Matrix[j][i] != CSET.White) {
+						//sB += Pixel_Matrix[j][i].b;
+						sB++;
+					}
+
+				}
+				if (bar_width > 1) {
+					i++;
+				}
+			}
+
+			sR /= bar_width;
+			sG /= bar_width;
+			sB /= bar_width;
+
+			sR %= 300;
+			sG %= 300;
+			sB %= 300;
+
+			
+			if (posR < 399) {
+				frame.Draw_Line(posR, 399, 399 - sR, CSET.Red);
+				//frame.Draw_Line(399, posR, 399 - sR, posR, CSET.Red);
+			}
+			if (PosG < 799) {
+				frame.Draw_Line(PosG, 399, 399 - sG, CSET.Green);
+				//frame.Draw_Line(399, PosG, 399 - sG, PosG, CSET.Red);
+
+			}
+			if (PosB < 1199) {
+				frame.Draw_Line(PosB, 399, 399 - sB, CSET.Blue);
+				//frame.Draw_Line(399, PosB, 399 - sB, PosB, CSET.Red);
+
+			}
+
+			posR += bar_width;
+			PosG += bar_width;
+			PosB += bar_width;
+
+			sR = sG = sB = 0;
+
+		}
+
+
+
+
+		frame.Write_Image("ChannelGraph.png");
+	}
+	
+
+	public void Write_Channel(char color) {
+		
+		switch (color)
+		{
+		case 'R':
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+					Pixel_Matrix[i][j].g =0;
+					Pixel_Matrix[i][j].b =0;
+
+				}
+			}
+			break;
+		case 'G':
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+					Pixel_Matrix[i][j].r =0;
+					Pixel_Matrix[i][j].b =0;
+
+				}
+			}
+			break;
+		case 'B':
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+					Pixel_Matrix[i][j].g =0;
+					Pixel_Matrix[i][j].r =0;
+
+				}
+			}
+			break;
+		default:
+			break;
+		}
+
+
+	}
+	public void Shutdown_Channel(char color) {
+		
+		int index = 0;
+		switch (color)
+		{
+		case 'R':
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+					
+					Pixel_Matrix[i][j].r = 0;
+				}
+			}
+			break;
+		case 'G':
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+
+					Pixel_Matrix[i][j].g = 0;
+
+				}
+			}
+			break;
+		case 'B':
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+
+					Pixel_Matrix[i][j].b = 0;
+				}
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	public void Flip180() {
+		Image temp = new Image(this);
+		int k=0,m=0;
+		
+		for (int i = Image_Height - 1; i >= 0; i--) {
+			for (int j = Image_Width - 1; j >= 0; j--) {
+				temp.Pixel_Matrix[k][m] = this.Pixel_Matrix[i][j];
+				++m;
+			}
+			++k;
+			m=0;
+
+		}
+
+		for(int i=0;i<Image_Height;i++) {
+			for(int j=0;j<Image_Width;j++) {
+				this.Pixel_Matrix[i][j] = temp.Pixel_Matrix[i][j];
+
+			}
+		}
+	}
+	public void Color_Flooring(String mode) {
+	
+		if (mode.equals("10")) {
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					this.Pixel_Matrix[i][j].r = (this.Pixel_Matrix[i][j].r / 10) * 10;
+					this.Pixel_Matrix[i][j].g = (this.Pixel_Matrix[i][j].g / 10) * 10;
+					this.Pixel_Matrix[i][j].b = (this.Pixel_Matrix[i][j].b / 10) * 10;
+
+				}
+			}
+
+
+
+		}
+		else if (mode.equals("100")) {
+
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					this.Pixel_Matrix[i][j].r = (this.Pixel_Matrix[i][j].r / 100) * 100;
+					this.Pixel_Matrix[i][j].g = (this.Pixel_Matrix[i][j].g / 100) * 100;
+					this.Pixel_Matrix[i][j].b = (this.Pixel_Matrix[i][j].b / 100) * 100;
+
+				}
+			}
+
+		}
+	}
+
+	public void Tresholding(String mode, int value) {
+		
+		if (mode.equals("Trunc")) {
+		
+			this.Color_Flooring("10");
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 1; j < Image_Width; j++) {
+					if (Pixel_Matrix[i][j].r > value || Pixel_Matrix[i][j].g > value || Pixel_Matrix[i][j].b > value)
+					{
+						Pixel_Matrix[i][j].r = 255;
+						Pixel_Matrix[i][j].g = 255;
+						Pixel_Matrix[i][j].b = 255;
+
+
+
+					}
+					else {
+						Pixel_Matrix[i][j].r = 0;
+						Pixel_Matrix[i][j].g = 0;
+						Pixel_Matrix[i][j].b = 0;
+
+
+
+					}
+
+				}
+			}
+			
+		}
+
+		else if (mode.equals("EdgeTriggerd")) {
+			Pixel prev = new Pixel();
+			
+			for (int i = 0; i < Image_Height; i++) {
+				prev.r = Pixel_Matrix[i][0].r;
+				prev.g = Pixel_Matrix[i][0].g;
+				prev.b = Pixel_Matrix[i][0].b;
+
+				Pixel_Matrix[i][0].r = 0;
+				Pixel_Matrix[i][0].g = 0;
+				Pixel_Matrix[i][0].b = 0;
+
+				for (int j = 1; j < Image_Width; j++) {
+					if (Color_Distance(prev, Pixel_Matrix[i][j]) > value)
+					{
+						Pixel_Matrix[i][j].r = 255;
+						Pixel_Matrix[i][j].g = 255;
+						Pixel_Matrix[i][j].b = 255;
+
+
+
+					}
+					else {
+						Pixel_Matrix[i][j].r = 0;
+						Pixel_Matrix[i][j].g = 0;
+						Pixel_Matrix[i][j].b = 0;
+
+
+
+					}
+
+				}
+			}
+			
+		}
+
+	}
+	public void Edge_Detection() {
+		int index = 0, recored = 0, max_gap = 1;
+		Pixel prev = new Pixel() ;
+
+		for (int i = 0; i < Image_Height; i++) {
+			prev.r = Pixel_Matrix[i][0].r;
+			prev.g = Pixel_Matrix[i][0].g;
+			prev.b = Pixel_Matrix[i][0].b;
+
+			Pixel_Matrix[i][0].r = 0;
+			Pixel_Matrix[i][0].g = 0;
+			Pixel_Matrix[i][0].b = 0;
+
+			for (int j = 1; j < Image_Width; j++) {
+				if (Color_Distance(prev, Pixel_Matrix[i][j]) > 50)
+				{
+					prev.r = Pixel_Matrix[i][j].r;
+					prev.g = Pixel_Matrix[i][j].g;
+					prev.b = Pixel_Matrix[i][j].b;
+
+					Pixel_Matrix[i][j].r = 255;
+					Pixel_Matrix[i][j].g = 255;
+					Pixel_Matrix[i][j].b = 255;
+
+
+
+				}
+				else {
+					prev.r = Pixel_Matrix[i][j].r;
+					prev.g = Pixel_Matrix[i][j].g;
+					prev.b = Pixel_Matrix[i][j].b;
+
+					Pixel_Matrix[i][j].r = 0;
+					Pixel_Matrix[i][j].g = 0;
+					Pixel_Matrix[i][j].b = 0;
+
+
+
+				}
+
+			}
+		}
+
+	}
+	public void Edge_Detection(int max_color_gap) {
+		int index = 0, recored = 0, max_gap = 1;
+		Pixel prev = new Pixel() ;
+
+		for (int i = 0; i < Image_Height; i++) {
+			prev.r = Pixel_Matrix[i][0].r;
+			prev.g = Pixel_Matrix[i][0].g;
+			prev.b = Pixel_Matrix[i][0].b;
+
+			Pixel_Matrix[i][0].r = 0;
+			Pixel_Matrix[i][0].g = 0;
+			Pixel_Matrix[i][0].b = 0;
+
+			for (int j = 1; j < Image_Width; j++) {
+				if (Color_Distance(prev, Pixel_Matrix[i][j]) > max_color_gap)
+				{
+					prev.r = Pixel_Matrix[i][j].r;
+					prev.g = Pixel_Matrix[i][j].g;
+					prev.b = Pixel_Matrix[i][j].b;
+
+					Pixel_Matrix[i][j].r = 255;
+					Pixel_Matrix[i][j].g = 255;
+					Pixel_Matrix[i][j].b = 255;
+
+
+
+				}
+				else {
+					prev.r = Pixel_Matrix[i][j].r;
+					prev.g = Pixel_Matrix[i][j].g;
+					prev.b = Pixel_Matrix[i][j].b;
+
+					Pixel_Matrix[i][j].r = 0;
+					Pixel_Matrix[i][j].g = 0;
+					Pixel_Matrix[i][j].b = 0;
+
+
+
+				}
+
+			}
+		}
+	}
+	public void Mark_Contour(Pixel Color,int max_color_gap) {
+		Pixel prev = new Pixel();
+
+		for (int i = 0; i < Image_Height; i++) {
+			prev.r = Pixel_Matrix[i][0].r;
+			prev.g = Pixel_Matrix[i][0].g;
+			prev.b = Pixel_Matrix[i][0].b;
+
+			for (int j = 1; j < Image_Width; j++) {
+				if (Color_Distance(prev, Pixel_Matrix[i][j]) > max_color_gap)
+				{
+					prev.r = Pixel_Matrix[i][j].r;
+					prev.g = Pixel_Matrix[i][j].g;
+					prev.b = Pixel_Matrix[i][j].b;
+
+					Pixel_Matrix[i][j] = Color;
+
+
+
+				}
+				else {
+					prev.r = Pixel_Matrix[i][j].r;
+					prev.g = Pixel_Matrix[i][j].g;
+					prev.b = Pixel_Matrix[i][j].b;
+
+
+
+				}
+
+			}
+		}
+
+		for (int i = 0; i < Image_Width; i++) {
+			prev.r = Pixel_Matrix[0][i].r;
+			prev.g = Pixel_Matrix[0][i].g;
+			prev.b = Pixel_Matrix[0][i].b;
+
+			for (int j = 1; j < Image_Height; j++) {
+				if (Color_Distance(prev, Pixel_Matrix[j][i]) > max_color_gap)
+				{
+					prev.r = Pixel_Matrix[j][i].r;
+					prev.g = Pixel_Matrix[j][i].g;
+					prev.b = Pixel_Matrix[j][i].b;
+
+					Pixel_Matrix[j][i] = Color;
+
+
+
+				}
+				else {
+					prev.r = Pixel_Matrix[j][i].r;
+					prev.g = Pixel_Matrix[j][i].g;
+					prev.b = Pixel_Matrix[j][i].b;
+
+
+
+				}
+
+			}
+		}
+
+	}
+	public void Feature_Matching(int source_x,int source_y) {
+		if ((source_x + 1 > Image_Width) || (source_x - 1 < 0) || (source_y + 1 > Image_Height) || (source_y - 1 < 0)) {
+			//out of image border;
+			return;
+		}
+		Pixel up=new Pixel(), down=new Pixel(), left=new Pixel(), right=new Pixel(), center = new Pixel();
+		Color_Palette cset = new Color_Palette();
+		int band = 5;
+		center.r = Pixel_Matrix[source_y][source_x].r;
+		center.g = Pixel_Matrix[source_y][source_x].g;
+		center.b = Pixel_Matrix[source_y][source_x].b;
+
+		up.r = Pixel_Matrix[source_y - 1][source_x].r;
+		up.g = Pixel_Matrix[source_y - 1][source_x].g;
+		up.b = Pixel_Matrix[source_y - 1][source_x].b;
+
+		down.r = Pixel_Matrix[source_y + 1][source_x].r;
+		down.g = Pixel_Matrix[source_y + 1][source_x].g;
+		down.b = Pixel_Matrix[source_y + 1][source_x].b;
+
+		left.r = Pixel_Matrix[source_y][source_x - 1].r;
+		left.g = Pixel_Matrix[source_y][source_x - 1].g;
+		left.b = Pixel_Matrix[source_y][source_x - 1].b;
+
+		right.r = Pixel_Matrix[source_y][source_x + 1].r;
+		right.g = Pixel_Matrix[source_y][source_x + 1].g;
+		right.b = Pixel_Matrix[source_y][source_x + 1].b;
+
+		Draw_Circle(source_x, source_y, 3, cset.Red);
+		Draw_Circle(source_x, source_y, 2, cset.Blue);
+
+
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
+
+				if (i + 1 < Image_Height && i - 1 > 0 && j + 1 < Image_Width && j - 1 > 0) {
+					if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], down) < band &&Color_Distance(Pixel_Matrix[i - 1][j], up) < band
+						&&Color_Distance(Pixel_Matrix[i][j + 1], right) < band &&Color_Distance(Pixel_Matrix[i][j - 1], left) < band) {
+						Draw_Circle(j, i, 3, cset.Red);
+						Draw_Line(source_y, source_x, i, j, cset.Blue);
+					}
+					else if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], left) < band &&Color_Distance(Pixel_Matrix[i - 1][j], right) < band
+						&&Color_Distance(Pixel_Matrix[i][j + 1], down) < band &&Color_Distance(Pixel_Matrix[i][j - 1], up) < band) {
+						Draw_Circle(j, i, 3, cset.Red);
+						Draw_Line(source_y, source_x, i, j, cset.Blue);
+
+					}
+					else if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], left) < band &&Color_Distance(Pixel_Matrix[i - 1][j], right) < band
+						&&Color_Distance(Pixel_Matrix[i][j + 1], down) < band &&Color_Distance(Pixel_Matrix[i][j - 1], up) < band) {
+						Draw_Circle(j, i, 3, cset.Red);
+						Draw_Line(source_y, source_x, i, j, cset.Blue);
+
+					}
+					else if (Color_Distance(Pixel_Matrix[i][j], center) < band && Color_Distance(Pixel_Matrix[i + 1][j], left) < band &&Color_Distance(Pixel_Matrix[i - 1][j], right) < band
+						&&Color_Distance(Pixel_Matrix[i][j + 1], down) < band &&Color_Distance(Pixel_Matrix[i][j - 1], up) < band) {
+						Draw_Circle(j, i, 3, cset.Red);
+						Draw_Line(source_y, source_x, i, j, cset.Blue);
+
+					}
+				}
+			}
+		}
+
+
+
+	}
+	public void Quarantine_Pixel(Pixel sample,double max_difference,String mode) {
+
+		if (mode.equals("Keep_Self")) {
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					if (Color_DistanceSq(Pixel_Matrix[i][j], sample) > max_difference) {
+						Pixel_Matrix[i][j].r = 0;
+						Pixel_Matrix[i][j].g = 0;
+						Pixel_Matrix[i][j].b = 0;
+
+					}
+				}
+			}
+
+		}
+		else if (mode.equals("Drop_Self")) {
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					if (Color_DistanceSq(Pixel_Matrix[i][j], sample) < max_difference) {
+						Pixel_Matrix[i][j].r = 0;
+						Pixel_Matrix[i][j].g = 0;
+						Pixel_Matrix[i][j].b = 0;
+
+					}
+				}
+			}
+			
+		}
+	}
+	public void Kronecker_product(Image b, String mode,int Alter) {
+		
+		if (mode.equals("Mul")) {
+			Pixel[][] Kr_mat = new Pixel[b.Image_Height*this.Image_Height][this.Image_Width*b.Image_Width];
+			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
+		    long startRow=0, startCol=0, index = 0;
+			Pixel temp = new Pixel();
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++) {
+						for (int l = 0; l < b.Image_Width; l++) {
+							temp = this.Pixel_Matrix[i][j].Pixel_Mul(b.Pixel_Matrix[k][l]);
+							Kr_mat[(int)startRow + k][(int)startCol + l] = temp;
+
+						}
+					}
+				}
+			}
+
+			if (Alter == 1) {
+				this.Image_Width *= b.Image_Width;
+				this.Image_Height *= b.Image_Height;
+				this.Pixel_Matrix = Kr_mat;
+				this.IMG = Kronecker;
+
+			}
+
+
+		}
+		else if (mode.equals("Size")) {
+			Pixel[][] Kr_mat = new Pixel[b.Image_Height*this.Image_Height][this.Image_Width*b.Image_Width];
+			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
+			
+			Pixel temp = new Pixel();
+			int startRow =0 , startCol= 0, index = 0;
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++) {
+						for (int l = 0; l < b.Image_Width; l++) {
+							if (this.Pixel_Matrix[i][j].is_Bigger(b.Pixel_Matrix[k][l])) {
+								temp = this.Pixel_Matrix[i][j];
+							}
+							else {
+								temp = b.Pixel_Matrix[k][l];
+							}
+
+							Kr_mat[startRow + k][startCol + l] = temp;
+
+						}
+					}
+				}
+			}
+
+			if (Alter == 1) {
+				this.Image_Width *= b.Image_Width;
+				this.Image_Height *= b.Image_Height;
+				this.Pixel_Matrix = Kr_mat;
+				this.IMG = Kronecker;
+			}
+		}
+		else if (mode.equals("Build_From")) {
+			Pixel[][] Kr_mat = new Pixel[b.Image_Height*this.Image_Height][this.Image_Width*b.Image_Width];
+			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
+			
+			Pixel temp = new Pixel();
+			int startRow =0 , startCol= 0, index = 0;
+			int flag = 0;
+			for (int i = 0; i < this.Image_Height; i++) {
+				for (int j = 0; j < this.Image_Width; j++) {
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++) {
+						for (int l = 0; l < b.Image_Width; l++) {
+							if (flag == 0) {
+								temp = this.Pixel_Matrix[i][j];
+								flag = 1;
+							}
+							else {
+								temp = b.Pixel_Matrix[k][l];
+								flag = 0;
+							}
+
+							Kr_mat[startRow + k][startCol + l] = temp;
+
+						}
+					}
+				}
+			}
+
+			if (Alter == 1) {
+				this.Image_Width *= b.Image_Width;
+				this.Image_Height *= b.Image_Height;
+				this.Pixel_Matrix = Kr_mat;
+				this.IMG = Kronecker;
+
+			}
+		}
+		else if (mode.equals("Mix")) {
+
+			Pixel[][] Kr_mat = new Pixel[b.Image_Height*this.Image_Height][this.Image_Width*b.Image_Width];
+			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
+			
+			Pixel temp = new Pixel();
+			int startRow =0 , startCol= 0, index = 0,flag =0;
+
+
+			for (int i = 0; i < this.Image_Height; i++) {
+
+				for (int j = 0; j < this.Image_Width; j++)
+				{
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++)
+					{
+						if (flag == 1) {
+							temp = this.Pixel_Matrix[i][j];
+						}
+						else if (flag == 0) {
+							temp = b.Pixel_Matrix[i][j];
+						}
+
+						for (int l = 0; l < b.Image_Width; l++)
+						{
+
+							Kr_mat[startRow + k][startCol + l] = temp;
+						}
+						if (flag == 1) {
+							flag = 0;
+						}
+						else {
+							flag = 1;
+						}
+					}
+
+
+				}
+
+			}
+
+			if (Alter == 1) {
+				this.Image_Width *= b.Image_Width;
+				this.Image_Height *= b.Image_Height;
+				this.Pixel_Matrix = Kr_mat;
+				this.IMG = Kronecker;
+			}
+		}
+
+
+	}
+	public void Image_Transpose() {
+		int H = this.Image_Width, W = this.Image_Height;
+		Pixel[][] tmat = new Pixel[H][W];
+		for (int i = 0; i < this.Image_Height; i++) {
+			for (int j = 0; j < this.Image_Width; j++) {
+				tmat[j][i] = this.Pixel_Matrix[i][j];
+			}
+		}
+
+		this.Pixel_Matrix = tmat;
+
+
+	}
+	public double Pixel_Dataframe_Difference(Pixel Pix, Point DF_point) {
+		double distance;
+		distance = ((DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b));
+		return Math.sqrt(distance);
+	}
+
+	private ArrayList<Point> K_Means(ArrayList<Point> data, int k, int number_of_iterations) {
+		Random random_machine = new Random();
+		
+		ArrayList<Point> means = new ArrayList<Point>(k);
+		for(int i = 0 ; i<k;i++) {
+			means.add(new Point());
+		}
+		
+		
+		for(int cluster =0 ;cluster < means.size();cluster++) {
+			means.set(cluster, data.get(random_machine.nextInt(data.size())));
+		}
+
+		ArrayList<Integer> assignments = new ArrayList<Integer>(data.size());
+		for(int i=0;i<data.size();i++) {
+			assignments.add(0);
+		}
+
+		for (int iteration = 0; iteration < number_of_iterations; ++iteration) {
+			// Find assignments.
+			for (int point = 0; point < data.size(); ++point) {
+				double best_distance = Double.MAX_VALUE;
+				int best_cluster = 0;
+				for (int cluster = 0; cluster < k; ++cluster) {
+					double distance = squared_3Point_distance(data.get(point), means.get(cluster));
+					if (distance < best_distance) {
+						best_distance = distance;
+						best_cluster = cluster;
+					}
+				}
+				assignments.set(point, best_cluster);
+
+			}
+
+			// Sum up and count points for each cluster.
+			ArrayList<Point> new_means = new ArrayList<Point>(k);
+			for(int i = 0 ; i <k ; i++) {
+				new_means.add(new Point());
+			}
+			ArrayList<Integer> counts = new ArrayList<>(k);
+			for(int i=0;i<k;i++) {
+				counts.add(0);
+			}
+		
+
+			for (int point = 0; point < data.size(); ++point) {
+				int cluster = assignments.get(point);
+				double x,y,z;
+				Point temp = new Point();
+				x = new_means.get(cluster).x + data.get(point).x;
+				y = new_means.get(cluster).y + data.get(point).y;
+				z = new_means.get(cluster).z + data.get(point).z;
+				temp.x=x;
+				temp.y=y;
+				temp.z=z;
+				//System.out.println("Iter: "+iteration  + " temp: " + temp );
+
+				new_means.set(cluster, temp);
+				int c = counts.get(cluster);
+				c++;
+				counts.set(cluster, c);
+			}
+
+			// Divide sums by counts to get new centroids.
+			for (int cluster = 0; cluster < k; ++cluster) {
+				// Turn 0/0 into 0/1 to avoid zero division.
+				int count = Math.max(1, counts.get(cluster));
+				Point temp = new Point();
+				temp.x = new_means.get(cluster).x / count;
+				temp.y = new_means.get(cluster).y / count;
+				temp.z = new_means.get(cluster).z / count;
+				//System.out.println(temp);
+				means.set(cluster, temp);
+			
+			}
+		}
+
+		return means;
+
+		
+		
+		
+	}
+	
+	public void Image_Segmentation(int k, int iterations) {
+		
+		ArrayList<Point> image_ThreeD_Mat = new ArrayList<Point>();
+		ArrayList<Point> Result = new ArrayList<Point>();
+	
+		for(int i=0;i<Image_Height;i++) {
+			for(int j=0;j<Image_Width;j++) {
+				image_ThreeD_Mat.add(new Point(this.Pixel_Matrix[i][j].r,this.Pixel_Matrix[i][j].g,
+						this.Pixel_Matrix[i][j].b));
+			}
+		}
+
+		Result = this.K_Means(image_ThreeD_Mat, k, iterations);
+
+
+		double best_dist;
+		Point temp = new Point();
+
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
+				best_dist = Double.MAX_VALUE;
+				
+				for(int m = 0 ;m < Result.size();m++) {
+					if (Pixel_Dataframe_Difference(Pixel_Matrix[i][j], Result.get(m)) < best_dist) {
+						best_dist = Pixel_Dataframe_Difference(Pixel_Matrix[i][j],  Result.get(m));
+						temp =  Result.get(m);
+					}
+				}
+				
+				Pixel_Matrix[i][j].r = (int)temp.x;
+				Pixel_Matrix[i][j].g = (int)temp.y;
+				Pixel_Matrix[i][j].b = (int)temp.z;
+
+			}
+		}
+
+
+
+
+
+
+	}
+
+	private void Blob_Framing(int distance_treshold, Pixel frame_color) {
+		Color_Palette CSET = new Color_Palette();
+		ArrayList<Blob> Blobs = new ArrayList<Blob>();
+		
+		Blob temp = new Blob(0, 0, distance_treshold);
+		
+		boolean detected = false;
+		Blob  ing = new Blob(0,0,distance_treshold);
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < this.Image_Width; j++) {
+
+				if (this.Pixel_Matrix[i][j].analysis == 42) {
+
+					for (int k = 0; k < Blobs.size(); ++k) {
+						if (Blobs.get(k).Near(i, j)) {
+						
+							ing = Blobs.get(k);
+							ing.add(i, j);;
+							Blobs.set(k, ing);
+							
+							detected = true;
+
+							break;
+
+						}
+
+					}
+
+					if (!detected) {
+						temp.SetProps(i, j);
+						Blobs.add(temp);
+					}
+					detected = false;
+
+				}
+			}
+		}
+		for (int k = 0; k < Blobs.size(); k++) {
+			if (Blobs.get(k).Size() < distance_treshold) {
+
+				Blobs.remove(k);
+			}
+
+		}
+		System.out.println(Blobs.size());
+
+		for (int k = 0; k < Blobs.size(); ++k) {
+
+			Draw_Square(Blobs.get(k).Downright_X, Blobs.get(k).Downright_Y, Blobs.get(k).Upleft_X, 
+					Blobs.get(k).Upleft_Y, frame_color, "Corners");
+			Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = CSET.Yellow;
+			Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = CSET.Green;
+
+
+
+		}
+	}
+
+	public void Figure_Detection(int blob_distance_treshold, int color_distance_treshold, int Thresholding_level) {
+
+		//this.Tresholding("Trunc", Thresholding_level);
+		
+		int[][] adj_matrix = new int[Image_Height][Image_Width];
+		int color_treshold = color_distance_treshold;
+		Color_Palette C = new Color_Palette();
+		for (int i = 0; i < this.Image_Height; i++) {
+			for(int j=0;j<Image_Width;j++) {
+				adj_matrix[i][j] = 0;
+			}
+		}
+
+		for (int i = 0; i < this.Image_Height; i++) {
+			for (int j = 0; j < this.Image_Width-1; j++) {
+				if (Color_Delta(Pixel_Matrix[i][j], Pixel_Matrix[i][j + 1]) > color_treshold) {
+					adj_matrix[i][j] = 1;
+
+
+				}
+			}
+		}
+
+
+		for (int i = 0; i < this.Image_Height; i++) {
+			for (int j = 0; j < this.Image_Width; j++) {
+				if (adj_matrix[i][j] == 1) {
+					Pixel_Matrix[i][j].analysis = 42;
+				}
+			}
+		}
+		
+		this.Blob_Framing(blob_distance_treshold, C.Red);
+
+	}
+
+	
+	public void Write_Average_Color_Palette(int palette_size) {
+		int H, W, lx;
+		Color_Palette CSET =new Color_Palette();
+		Pixel palette_sample = new Pixel();
+		ArrayList<Point> imData = new ArrayList<Point>(), Means = new ArrayList<Point>();
+		Image palette_image = new Image();
+		
+		
+		
+		for(int i =0;i<Image_Height;i++) {
+			for(int j =0 ;j<Image_Width;j++) {
+				imData.add(new Point(this.Pixel_Matrix[i][j].r,this.Pixel_Matrix[i][j].g,this.Pixel_Matrix[i][j].b));
+			}
+		}
+		
+		
+		Means = K_Means(imData, palette_size, 200);
+		H = 200;
+		W = 200 * palette_size;
+		palette_image.Load_Blank_Canvas(H, W, CSET.Black);
+		lx = 0;
+
+		for (int m = 0 ; m<Means.size();m++) {
+			palette_sample.r = (int)Means.get(m).x;
+			palette_sample.g = (int)Means.get(m).y;
+			palette_sample.b = (int)Means.get(m).z;
+			
+			  for (int j = 0; j < 199; j++) {
+				  palette_image.Draw_Line(j,lx,j,lx + 199,palette_sample);
+			  
+			  
+			  }
+			 
+
+			lx += 199;
+		}
+
+		palette_image.Write_Image(palette_size + " Bit Palette.png");
+
+	}
+	public void Pixel_Griding() {
+		double sigma = 1.0;
+		double r, s = 2.0 * sigma * sigma;
+		double GKernel[][] = new double[5][5];
+		double sum = 0.0;
+		for (int x = -2; x <= 2; x++) {
+			for (int y = -2; y <= 2; y++) {
+				r = Math.sqrt(x * x + y * y);
+				GKernel[x + 2][y + 2] = (Math.exp(-(r * r) / s)) / (Math.PI * s);
+				sum += GKernel[x + 2][y + 2];
+			}
+		}
+
+		for (int i = 0; i < 5; ++i) {
+			for (int j = 0; j < 5; ++j) {
+				GKernel[i][j] /= sum;
+			}
+		}
+
+
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
+
+				Pixel_Matrix[i][j].r += (int)GKernel[i % 5][j % 5] * Pixel_Matrix[i][j].r;
+				Pixel_Matrix[i][j].g += (int)GKernel[i % 5][j % 5] * Pixel_Matrix[i][j].g;
+				Pixel_Matrix[i][j].b += (int)GKernel[i % 5][j % 5] * Pixel_Matrix[i][j].b;
+
+			}
+		}
+
+
+
+	}
+	public ArrayList<Point> Get_Average_Color_Palette(int palette_size) {
+		ArrayList<Point> imData = new ArrayList<Point>();
+
+		for(int i =0;i<Image_Height;i++) {
+			for(int j =0 ;j<Image_Width;j++) {
+				imData.add(new Point(this.Pixel_Matrix[i][j].r,this.Pixel_Matrix[i][j].g,this.Pixel_Matrix[i][j].b));
+			}
+		}
+		
+
+		return this.K_Means(imData, palette_size, 200);
+
+	}
+	public	void Set_Colors_Using_Average_Palette(ArrayList<Point> Average_Colors) {
+		double best_dist;
+		Point temp = new Point();
+
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
+				best_dist = Double.MAX_VALUE;
+			
+				
+				for(int m = 0 ; m <Average_Colors.size();m++) {
+					if (Pixel_Dataframe_Difference(Pixel_Matrix[i][j], Average_Colors.get(m)) < best_dist) {
+						best_dist = Pixel_Dataframe_Difference(Pixel_Matrix[i][j], Average_Colors.get(m));
+						temp.x = Average_Colors.get(m).x;
+						temp.y = Average_Colors.get(m).y;
+						temp.z = Average_Colors.get(m).z;
+
+					}
+				}
+				
+				Pixel_Matrix[i][j] = new Pixel((int)temp.x,(int)temp.y,(int)temp.z);
+			
+
+			}
+			
+			
+			
+		}
+
+
+
+
+	}
+	public ArrayList<Pixel> Get_Line_Pixels(int start_y,int start_x,int target_y,int target_x) {
+		double dx, sx, dy, sy, err, e2;
+
+		ArrayList<Pixel> Points = new ArrayList<Pixel>();
+		double x0 = (double)start_y, x1 = (double)target_y, y0 = (double)start_x, y1 = (double)target_x;
+		dx = (double)(Math.abs(target_y - start_y));
+		sx = (double)(start_y < target_y ? 1 : -1);
+		dy = (double)(-Math.abs(target_x - start_x));
+		sy = (double)(start_x < target_x ? 1 : -1);
+		err = dx + dy;  //error value
+		while (true) {
+			if (x0 == x1 && y0 == y1) {
+				//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+				Points.add(new Pixel(Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].r,Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].g,
+						Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].b,(int)Math.floor(x0),(int)Math.floor(x0)));
+				break;
+			}
+
+			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+			Points.add(new Pixel(Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].r,Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].g,
+					Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].b,(int)Math.floor(x0),(int)Math.floor(x0)));
+			
+			e2 = 2 * err;
+			if (e2 >= dy) {
+				err += dy;
+				x0 += sx;
+			}
+			if (e2 <= dx) {
+				err += dx;
+				y0 += sy;
+			}
+
+		}
+
+
+
+		return Points;
+	}
+	public void Register_PixelFrame(ArrayList<Pixel> Frame) {
+		Pixel color= new Pixel();
+		for(int i =0;i< Frame.size();i++) {
+			color.r = Frame.get(i).r;
+			color.g = Frame.get(i).g;
+			color.b = Frame.get(i).b;
+			this.Pixel_Matrix[Frame.get(i).i][Frame.get(i).j] = new Pixel(color.r,color.g,color.b);
+		}
+	}
+	public Pixel Dominant_Color_Via_Line(int start_y,int start_x,int target_y,int target_x) {
+		double dx, sx, dy, sy, err, e2;
+		Pixel Dom_Color = new Pixel();
+		ArrayList<Point> Points = new ArrayList<Point>();
+		ArrayList<Point> Res = new ArrayList<Point>();
+		double x0 = (double)start_y, x1 = (double)target_y, y0 = (double)start_x, y1 = (double)target_x;
+		dx = (double)Math.abs(target_y - start_y);
+		sx = (double)(start_y < target_y ? 1 : -1);
+		dy = (double)(-Math.abs(target_x - start_x));
+		sy = (double)(start_x < target_x ? 1 : -1);
+		err = dx + dy;  //error value
+		while (true) {
+			if (x0 == x1 && y0 == y1) {
+				//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+				Points.add(new Point(Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].r,Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].g,
+						Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].b));
+				
+				break;
+			}
+
+			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
+			Points.add(new Point(Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].r,Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].g,
+					Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)].b));
+			e2 = 2 * err;
+			if (e2 >= dy) {
+				err += dy;
+				x0 += sx;
+			}
+			if (e2 <= dx) {
+				err += dx;
+				y0 += sy;
+			}
+
+		}
+
+		Res = K_Means(Points, 1, 100);
+		Dom_Color.r = (int)Res.get(0).x;
+		Dom_Color.g = (int)Res.get(0).y;
+		Dom_Color.b = (int)Res.get(0).z;
+
+		return Dom_Color;
+	}
+
+	public void Image_Rebuild_With_Lines(int Iterations) {
+	
+		Random x0_picks = new Random();
+		Random x1_picks = new Random();
+		Random y0_picks = new Random();
+		Random y1_picks = new Random();
+		
+		Color_Palette CSET = new Color_Palette();
+		Pixel dominant_color = new Pixel();
+		ArrayList<Pixel> Line = new ArrayList<Pixel>();
+		Image B = new Image(), C = new Image();
+		B.Load_Blank_Canvas(this.Image_Height,this.Image_Width, CSET.Black);
+		C.Load_Blank_Canvas(this.Image_Height,this.Image_Width, CSET.Black);
+
+/*	#ifdef Line_StepByStep
+
+
+
+		std::stringstream ss;
+		std::string via;
+		int counter = 0;
+
+	#endif
+*/
+		int x0, y0, x1, y1;
+		double cur_difference, temp_dif;
+
+		cur_difference = this.Image_Difference_Value(B);
+
+		for (int i = 0; i < Iterations; i++) {
+			//Runtime.getRuntime().gc();
+				
+				  x0 = x0_picks.nextInt(Math.abs(Image_Width)); 
+				  y0 = y0_picks.nextInt(Math.abs(Image_Height)); 
+				  x1 = x1_picks.nextInt(Image_Width);
+				  y1 = y1_picks.nextInt(Image_Height);
+				 
+			//System.out.println("Iter: " + i + " W/H: "+Image_Width +"/ "+Image_Height );
+			
+			/*
+			 * x0 = (int)((double)(Image_Width-1) * Math.random()); y0 =
+			 * (int)((double)(Image_Height-1) * Math.random()); x1 =
+			 * (int)((double)(Image_Width-1) * Math.random()); y1 =
+			 * (int)((double)(Image_Height-1) * Math.random());
+			 */
+			
+			dominant_color = this.Dominant_Color_Via_Line(y0, x0, y1, x1);
+			Line = B.Get_Line_Pixels(y0, x0, y1, x1);
+			B.Draw_Line(y0, x0, y1, x1, dominant_color);
+
+
+			temp_dif = this.Image_Difference_Value(B);
+
+			if (temp_dif < cur_difference) {
+				C.Draw_Line(y0, x0, y1, x1, dominant_color);
+/*	#ifdef Line_StepByStep
+				ss << counter;
+				via = ss.str();
+				if ((counter + 1) % 40 == 0) {
+					C.Write_Image(via.c_str());
+
+				}
+				ss.str(std::string());
+				counter++;
+
+
+	#endif // Line_StepByStep
+*/
+				cur_difference = temp_dif;
+				
+
+			}
+			else {
+				B.Register_PixelFrame(Line);
+				Line.clear();
+				
+			}
+
+
+		}
+
+		C.Write_Image("Build_From_Random_Lines.png");
+
+
+
+	}
+	public void Image_Convolution(int iterations,String Type) throws IOException {
+		double Conv_Kernel[][] = new double[3][3];
+		double Kernel_Normal = 0;
+		if (Type.equals("Mean")) {
+			Conv_Kernel[0][0] = 1;
+			Conv_Kernel[0][1] = 1;
+			Conv_Kernel[0][2] = 1;
+			Conv_Kernel[1][0] = 1;
+			Conv_Kernel[1][1] = 1;
+			Conv_Kernel[1][2] = 1;
+			Conv_Kernel[2][0] = 1;
+			Conv_Kernel[2][1] = 1;
+			Conv_Kernel[2][2] = 1;
+		}
+		else if (Type.equals("Gaussian")) {
+			Conv_Kernel[0][0] = 0;
+			Conv_Kernel[0][1] = 1;
+			Conv_Kernel[0][2] = 0;
+			Conv_Kernel[1][0] = 1;
+			Conv_Kernel[1][1] = 4;
+			Conv_Kernel[1][2] = 1;
+			Conv_Kernel[2][0] = 0;
+			Conv_Kernel[2][1] = 1;
+			Conv_Kernel[2][2] = 0;
+		}
+
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				Kernel_Normal += Conv_Kernel[i][j];
+			}
+		}
+		Image Mid = new Image();
+		int index = 0;
+		Mid.Load_Image(this.F_Path);
+		if (Mid.Image_Height != this.Image_Height) {
+			Mid.Image_Width = this.Image_Width;
+			Mid.Image_Height = this.Image_Height;
+		}
+
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
+
+				Mid.Pixel_Matrix[i][j].r = (int)(this.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+				Mid.Pixel_Matrix[i][j].g = (int)(this.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+				Mid.Pixel_Matrix[i][j].b = (int)(this.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
+
+			}
+
+
+		}
+
+		for (int k = 0; k < iterations; k++) {
+
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+
+					//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
+					Mid.Pixel_Matrix[i][j].r = (int)(Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+					Mid.Pixel_Matrix[i][j].g = (int)(Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+					Mid.Pixel_Matrix[i][j].b = (int)(Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
+					//}
+				}
+
+
+			}
+
+		}
+
+
+			for (int i = 0; i < Image_Height; i++) {
+				for (int j = 0; j < Image_Width; j++) {
+					this.Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
+				}
+			}
+		
+
+	}
+
+	
 	
 	
 
+
+
+
 }
 	
+class LibCharacters {
+	
+	
+
+	//UpperCase
+	int[] Letter_A;
+	int[] Letter_B;
+	int[] Letter_C;
+	int[] Letter_D;
+	int[] Letter_E;
+	int[] Letter_F;
+	int[] Letter_G;
+	int[] Letter_H;
+	int[] Letter_I;
+	int[] Letter_J;
+	int[] Letter_K;
+	int[] Letter_L;
+	int[] Letter_M;
+	int[] Letter_N;
+	int[] Letter_O;
+	int[] Letter_P;
+	int[] Letter_Q;
+	int[] Letter_R;
+	int[] Letter_S;
+	int[] Letter_T;
+	int[] Letter_U;
+	int[] Letter_V;
+	int[] Letter_W;
+	int[] Letter_X;
+	int[] Letter_Y;
+	int[] Letter_Z;
+
+	//Numbers
+	int[] Number_Zero;
+	int[] Number_One;
+	int[] Number_Two;
+	int[] Number_Three;
+	int[] Number_Four;
+	int[] Number_Five;
+	int[] Number_Six;
+	int[] Number_Seven;
+	int[] Number_Eight;
+	int[] Number_Nine;
+
+	//Symbols
+	int[] Exclamation_Point;
+	int[] Quesiton_Mark;
+	int[] Right_Braket;
+	int[] Left_Braket;
+	int[] Ampersand;
+	int[] Comma;
+	int[] Squaure_Braket_Left;
+	int[] Square_Braket_Right;
+	int[] Colon;
+	int[] Semi_Colon;
+	int[] EqualSign;
+	int[] PlusSign;
+	int[] Precent;
+	int[] Astersik;
+	int[] Dot;
+
+	public LibCharacters(){
+		this.Letter_A =
+				new int[]
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,0,1,1,1,0,0,0,
+			  0,0,1,1,0,1,1,0,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,1,1,1,1,1,1,1,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+		
+		
+		this.Letter_B = new int[] 
+					{ 0,0,0,0,0,0,0,0,0,
+					  0,0,1,1,1,1,1,0,0,
+					  0,0,1,1,0,0,1,1,0,
+					  0,0,1,1,0,0,1,1,0,
+					  0,0,1,1,1,1,1,0,0,
+					  0,0,1,1,0,0,1,1,0,
+					  0,0,1,1,0,0,1,1,0,
+					  0,0,1,1,1,1,1,0,0,
+					  0,0,0,0,0,0,0,0,0
+					};
+		
+		
+		this.Letter_C = 	new int[]
+					{ 0,0,0,0,0,0,0,0,0,
+					  0,0,1,1,1,1,1,0,0,
+					  0,1,1,1,0,0,1,1,0,
+					  0,1,1,0,0,0,0,0,0,
+					  0,1,1,0,0,0,0,0,0,
+					  0,1,1,0,0,0,0,0,0,
+					  0,1,1,1,0,0,1,1,0,
+					  0,0,1,1,1,1,1,0,0,
+					  0,0,0,0,0,0,0,0,0
+					};
+		
+		
+		this.Letter_D = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_E = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_F = new int[]
+						{ 0,0,0,0,0,0,0,0,0,
+						  0,1,1,1,1,1,1,0,0,
+						  0,1,1,0,0,0,0,0,0,
+						  0,1,1,0,0,0,0,0,0,
+						  0,1,1,1,1,1,1,0,0,
+						  0,1,1,0,0,0,0,0,0,
+						  0,1,1,0,0,0,0,0,0,
+						  0,1,1,0,0,0,0,0,0,
+						  0,0,0,0,0,0,0,0,0
+						};
+		this.Letter_G = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,1,1,1,1,0,
+				  0,1,1,0,0,1,1,1,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_H = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_I = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_J = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,1,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_K = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,1,1,0,0,
+				  0,1,1,0,1,1,0,0,0,
+				  0,1,1,1,1,0,0,0,0,
+				  0,1,1,0,1,1,0,0,0,
+				  0,1,1,0,0,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_L = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_M = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,0,1,1,1,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,1,1,0,1,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_N = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,0,0,1,1,0,
+				  0,1,1,1,1,0,1,1,0,
+				  0,1,1,0,1,1,1,1,0,
+				  0,1,1,0,0,1,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_O = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_P = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_Q = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,0,0,0,0,1,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_R = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,0,0,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_S = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,1,1,1,0,
+				  0,0,1,1,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,1,1,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_T = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_U = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,1,0,1,1,1,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_V = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,1,1,0,1,1,0,0,
+				  0,0,0,1,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_W = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,1,0,1,1,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,1,1,1,0,1,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_X = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,1,1,0,1,1,0,0,
+				  0,0,0,1,1,1,0,0,0,
+				  0,0,1,1,0,1,1,0,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_Y = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,1,1,0,0,1,1,0,
+				  0,0,1,1,0,0,1,1,0,
+				  0,0,1,1,0,0,1,1,0,
+				  0,0,0,1,1,1,1,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Letter_Z = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,1,1,0,0,0,0,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		
+		//Numbers
+		
+		
+	this.Number_Zero = new int[]	
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,1,1,0,0,1,1,1,0,
+			  0,1,1,0,1,0,1,1,0,
+			  0,1,1,1,0,0,1,1,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_One = new int[]	
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,0,1,1,1,0,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,0,1,1,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Two = new int[]	
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,0,1,1,1,1,0,0,
+			  0,0,1,1,0,0,0,0,0,
+			  0,0,1,1,0,0,0,0,0,
+			  0,0,1,1,1,1,1,1,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Three = new int[]
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,1,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,1,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Four = new int[]
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,0,0,1,1,1,0,0,
+			  0,0,0,1,1,1,1,0,0,
+			  0,0,1,1,0,1,1,0,0,
+			  0,1,1,0,0,1,1,0,0,
+			  0,1,1,1,1,1,1,0,0,
+			  0,0,0,0,0,1,1,0,0,
+			  0,0,0,0,0,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Five = new int[]
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,1,1,1,1,1,1,0,
+			  0,0,1,1,0,0,0,0,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,0,0,0,0,1,1,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Six = new int[]	
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,0,0,1,1,1,0,0,
+			  0,0,0,1,1,0,0,0,0,
+			  0,0,1,1,0,0,0,0,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,1,1,0,0,1,1,0,
+			  0,0,1,1,0,0,1,1,0,
+			  0,0,0,1,1,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Seven = new int[]	
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,1,1,1,1,1,1,0,0,
+			  0,0,0,0,0,1,1,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,0,1,1,0,0,0,0,
+			  0,0,0,1,1,0,0,0,0,
+			  0,0,0,1,1,0,0,0,0,
+			  0,0,0,1,1,0,0,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Eight = new int[]
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,1,1,0,0,0,1,1,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+	this.Number_Nine = new int[]
+			{ 0,0,0,0,0,0,0,0,0,
+			  0,0,1,1,1,1,0,0,0,
+			  0,1,1,0,0,1,1,0,0,
+			  0,1,1,0,0,1,1,0,0,
+			  0,0,1,1,1,1,1,0,0,
+			  0,0,0,0,0,1,1,0,0,
+			  0,0,0,0,1,1,0,0,0,
+			  0,0,1,1,1,0,0,0,0,
+			  0,0,0,0,0,0,0,0,0
+			};
+
+		this.Exclamation_Point = new int[]			
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		
+		this.Quesiton_Mark = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,1,1,1,1,1,0,0,
+				  0,1,0,0,0,0,1,1,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Right_Braket = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Left_Braket = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,1,1,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,0,0,
+				  0,0,1,1,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Ampersand = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,0,1,1,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Precent = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,0,0,0,0,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,1,1,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,1,1,0,0,1,1,0,
+				  0,1,1,0,0,0,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Comma = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Dot = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,1,1,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Squaure_Braket_Left = new int[]
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,0,0,0,0,0,
+				  0,1,0,0,0,0,0,0,0,
+				  0,1,0,0,0,0,0,0,0,
+				  0,1,0,0,0,0,0,0,0,
+				  0,1,0,0,0,0,0,0,0,
+				  0,1,0,0,0,0,0,0,0,
+				  0,1,1,1,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Square_Braket_Right = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,1,1,1,0,
+				  0,0,0,0,0,0,0,1,0,
+				  0,0,0,0,0,0,0,1,0,
+				  0,0,0,0,0,0,0,1,0,
+				  0,0,0,0,0,0,0,1,0,
+				  0,0,0,0,0,0,0,1,0,
+				  0,0,0,0,0,1,1,1,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Colon = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.Semi_Colon = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,1,1,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		
+		this.PlusSign = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,1,1,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		this.EqualSign = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,1,1,1,1,1,1,1,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
+		
+		this.Astersik = new int[]	
+						{ 0,0,0,0,0,0,0,0,0,
+						  0,0,0,0,0,0,0,0,0,
+						  0,0,0,0,1,0,0,0,0,
+						  0,0,0,1,1,1,0,0,0,
+						  0,0,1,1,1,1,1,0,0,
+						  0,0,0,1,1,1,0,0,0,
+						  0,0,0,0,1,0,0,0,0,
+						  0,0,0,0,0,0,0,0,0,
+						  0,0,0,0,0,0,0,0,0
+						};
+	}
+}
 
 
 	
