@@ -7450,6 +7450,19 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 	}
 
 }
+void Image::Image_Convolution(Matrix<int> Mask, int const &iterations, int const &alter) {
+	if (this->is_Matrix_Initiated() == false) {
+		init_pixel_matrix();
+	}
+	for (int i = 0; i < iterations; i++) {
+		this->Pixel_Matrix.Convolve(Mask, 3, 3);
+	}
+	if (alter == 1) {
+		Update_Image_Data();
+	}
+	
+	
+}
 CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x) {
 	float dx, sx, dy, sy, err, e2;
 	if (this->is_Matrix_Initiated() == false) {

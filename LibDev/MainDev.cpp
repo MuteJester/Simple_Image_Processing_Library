@@ -6,9 +6,9 @@ int main() {
 
 	Image A,B;
 	Color_Palette CSET;
-	A.Load_Image("Image1.jpg");
-	B.Load_Image("Coin1.jpg");
-	A.Up_Scale(150, 90);
+	LA_Masks masks;
+	A.Load_Image("Image10.jpg");
+	
 
 	A.Write_Image("Test");
 	system("Test.jpg");

@@ -128,6 +128,7 @@ public:
 	Matrix<MType> Hadamard_Product(Matrix<MType> &Mul_By);
 	Matrix<MType> Kronecker_Product(Matrix<MType> &Mul_By);
 	void Horizontal_Matrix_Concatenation(Matrix<MType> &To_HConcat);
+	void Convolve(Matrix<int> &Mask, int mask_h, int mask_w);
 
 protected:
 	std::vector<std::vector<MType> > Matrix_Body;
@@ -278,6 +279,79 @@ template<class MType> void Matrix<MType>::Horizontal_Matrix_Concatenation(Matrix
 	*this = ConcatH;
 }
 
+template<class pixel> void Matrix<pixel>::Convolve(Matrix<int> &Mask, int mask_h, int mask_w) {
+
+	Matrix<pixel> sample(mask_h, mask_w);
+	int accumulator_r = 0;
+	int accumulator_g = 0;
+	int accumulator_b = 0;
+	int divider = 0;
+	for (int i = 0; i < mask_h; i++) {
+		for (int j = 0; j < mask_w; j++) {
+			divider += (Mask[i][j]);
+
+		}
+	}
+	for (int i = 0; i < this->Rows; i++) {
+		for (int j = 0; j < this->Cols; j++) {
+			for (int k = -(mask_h / 2); k<= (mask_h / 2); k++) {
+				for (int m = -(mask_w / 2); m <= (mask_w / 2); m++) {
+
+					if (i + k < 0 && j + m < 0) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[this->Rows + k][this->Cols + m];
+
+					}
+					else if (i + k < 0 && j + m >= 0  && j+m < Cols) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[(this->Rows-1) + k][j + m];
+
+					}
+					else if (i + k < 0 && j + m >= 0 && j + m >= Cols) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[(this->Rows - 1) + k][(j + m) - Cols];
+
+					}
+					else if (j + m < 0 && i + k >= 0 && i+k < Rows) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[i + k][(this->Cols-1) + m];
+
+					}//till here before
+					else if (i + k >= Rows && j + m >= Cols) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[(i + k) - Rows][(j + m) - Cols];
+					}
+					else if (i + k >= Rows && j + m < Cols) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[(i + k) - Rows][j + m];
+
+					}
+					else if (i + k < Rows && j + m >= Cols) {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[i + k][(j + m) - Cols];
+
+					}
+					else {
+						sample[k + (mask_h / 2)][m + (mask_h / 2)] = Matrix_Body[i + k][j + m];
+
+					}
+
+				}
+			}
+			Mask.Matrix_Transpose();
+			for (int k = 0; k < mask_h; k++) {
+				for (int m = 0; m < mask_w; m++) {
+					accumulator_r +=sample[k][m].r * Mask[k][m];
+					accumulator_g +=sample[k][m].g * Mask[k][m];
+					accumulator_b +=sample[k][m].b * Mask[k][m];
+
+				}
+			}
+			
+			Matrix_Body[i][j].r = ((accumulator_r)/divider);
+			Matrix_Body[i][j].g = ((accumulator_g)/divider);
+			Matrix_Body[i][j].b = ((accumulator_b)/divider);
+			accumulator_r = 0;
+			accumulator_g = 0;
+			accumulator_b = 0;
+
+		}
+	}
+
+}
 
 
 
@@ -436,6 +510,8 @@ public:
 	CoordinateFrame GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x);
 	void Image_Convolution(int const &iterations, int const &alter, const char *Type);
 	void Image_Convolution(double Kernel[3][3], int const &iterations, int const &alter);
+	void Image_Convolution(Matrix<int> Mask, int const &iterations, int const &alter);
+
 
 	void Up_Scale(int const &Height, int const &Width);
 	void Up_Scale();
@@ -451,6 +527,11 @@ public:
 	LA_Masks(){
 		Roberts_Mask_3x3 = Matrix<int>(3, 3);
 		Sobel_Mask_3x3 = Matrix<int>(3, 3);
+		Identity_3x3 = Matrix<int>(3, 3);
+		Sharpen_3x3 = Matrix<int>(3, 3);
+		Mean_3x3 = Matrix<int>(3, 3);
+		Gaussian_Blur_3x3 = Matrix<int>(3, 3);
+		Edge_Detection_3x3 = Matrix<int>(3, 3);
 
 		Roberts_Mask_3x3[0][0]=0;
 		Roberts_Mask_3x3[0][1]=0;
@@ -472,10 +553,65 @@ public:
 		Sobel_Mask_3x3[2][1] = 0;
 		Sobel_Mask_3x3[2][2] = 1;
 
+		Identity_3x3[0][0] = 0;
+		Identity_3x3[0][1] = 0;
+		Identity_3x3[0][2] = 0;
+		Identity_3x3[1][0] = 0;
+		Identity_3x3[1][1] = 1;
+		Identity_3x3[1][2] = 0;
+		Identity_3x3[2][0] = 0;
+		Identity_3x3[2][1] = 0;
+		Identity_3x3[2][2] = 0;
+
+		Sharpen_3x3[0][0] = 0;
+		Sharpen_3x3[0][1] =-1;
+		Sharpen_3x3[0][2] = 0;
+		Sharpen_3x3[1][0] = -1;
+		Sharpen_3x3[1][1] = 5;
+		Sharpen_3x3[1][2] = -1;
+		Sharpen_3x3[2][0] = 0;
+		Sharpen_3x3[2][1] = -1;
+		Sharpen_3x3[2][2] = 0;
+
+
+		Gaussian_Blur_3x3[0][0] = 1;
+		Gaussian_Blur_3x3[0][1] = 2;
+		Gaussian_Blur_3x3[0][2] = 1;
+		Gaussian_Blur_3x3[1][0] = 4;
+		Gaussian_Blur_3x3[1][1] = 4;
+		Gaussian_Blur_3x3[1][2] = 2;
+		Gaussian_Blur_3x3[2][0] = 1;
+		Gaussian_Blur_3x3[2][1] = 2;
+		Gaussian_Blur_3x3[2][2] = 1;
+
+		Mean_3x3[0][0] = 1;
+		Mean_3x3[0][1] = 1;
+		Mean_3x3[0][2] = 1;
+		Mean_3x3[1][0] = 1;
+		Mean_3x3[1][1] = 1;
+		Mean_3x3[1][2] = 1;
+		Mean_3x3[2][0] = 1;
+		Mean_3x3[2][1] = 1;
+		Mean_3x3[2][2] = 1;
+
+		Edge_Detection_3x3[0][0] = 0;
+		Edge_Detection_3x3[0][1] = 1;
+		Edge_Detection_3x3[0][2] = 0;
+		Edge_Detection_3x3[1][0] = 1;
+		Edge_Detection_3x3[1][1] = -4;
+		Edge_Detection_3x3[1][2] = 1;
+		Edge_Detection_3x3[2][0] = 0;
+		Edge_Detection_3x3[2][1] = 1;
+		Edge_Detection_3x3[2][2] = 0;
 
 
 	}
 	Matrix<int> Roberts_Mask_3x3;
 	Matrix<int> Sobel_Mask_3x3;
+	Matrix<int> Identity_3x3;
+	Matrix<int> Sharpen_3x3;
+	Matrix<int> Mean_3x3;
+	Matrix<int> Gaussian_Blur_3x3;
+	Matrix<int> Edge_Detection_3x3;
 	
 };
