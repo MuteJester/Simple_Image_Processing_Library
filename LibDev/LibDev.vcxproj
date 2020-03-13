@@ -124,8 +124,8 @@
     <ClCompile Include="MainDev.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Characters.h" />
     <ClInclude Include="Color_Catalog.h" />
+    <ClInclude Include="CPP_MP.h" />
     <ClInclude Include="Image_Header.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stb_image_write.h" />
