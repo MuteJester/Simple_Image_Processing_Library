@@ -10,7 +10,6 @@
 #include "stb_image_write.h"
 #include "Image_Header.h"
 #include "Color_Catalog.h"
-#include "Characters.h"
 
 #endif
 
@@ -1639,6 +1638,29 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 	}*/
 
 }
+
+void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const unsigned char color, const char *mode) {
+	char mode_f[5];
+	strcpy(mode_f, "Fill");
+	if (strcmp(mode_f, mode) == 0) {
+		if (this->is_Matrix_Initiated() == false) {
+			init_pixel_matrix();
+		}
+		int x, y;
+		unsigned i = 0;
+		if (center_x + c_radius > width || center_x - c_radius <0 || center_y + c_radius > Height || center_y - c_radius < 0) {
+			std::cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+			std::cout << "Height Of Image: " << Height << std::endl;
+			std::cout << "Width Of Image: " << width << std::endl;
+			std::cout << std::endl;
+			return;
+		}
+		for (y = -c_radius; y <= c_radius; y++)
+			for (x = -c_radius; x <= c_radius; x++)
+				if ((x * x) + (y * y) <= (c_radius * c_radius))
+					Color_Spec(Pixel_Matrix[center_y + y][center_x + x].index_range, color);
+	}
+}
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, pixel const &color) {
 	if (this->is_Matrix_Initiated() == false) {
 		init_pixel_matrix();
@@ -1685,28 +1707,6 @@ void Image::Draw_Circle(const int center_x, const int center_y, const int c_radi
 
 }
 
-void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const unsigned char color, const char *mode) {
-	char mode_f[5];
-	strcpy(mode_f, "Fill");
-	if (strcmp(mode_f, mode) == 0) {
-		if (this->is_Matrix_Initiated() == false) {
-			init_pixel_matrix();
-		}
-		int x, y;
-		unsigned i = 0;
-		if (center_x + c_radius > width || center_x - c_radius <0 || center_y + c_radius > Height || center_y - c_radius < 0) {
-			std::cout << "Circle Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-			std::cout << "Height Of Image: " << Height << std::endl;
-			std::cout << "Width Of Image: " << width << std::endl;
-			std::cout << std::endl;
-			return;
-		}
-		for (y = -c_radius; y <= c_radius; y++)
-			for (x = -c_radius; x <= c_radius; x++)
-				if ((x * x) + (y * y) <= (c_radius * c_radius))
-					Color_Spec(Pixel_Matrix[center_y + y][center_x + x].index_range, color);
-	}
-}
 void Image::Draw_Circle(const int center_x, const int center_y, const int c_radius, const pixel color, const char *mode) {
 	char mode_f[5];
 	strcpy(mode_f, "Fill");
@@ -4857,7 +4857,113 @@ void Image::Draw_Text(const int center_y, const int center_x, const char *text, 
 			flag = 0;
 			break;
 
-	
+		case ';':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Semi_COLON.Semi_COLON[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '.':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Dot.DOT[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '/':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Slash.B[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '*':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.ASTRK.astrk[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '^':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.Pow.pow[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
+
+		case '%':
+			temp = start_x;
+			while (flag != 81) {
+
+				if ((flag + 1) % 9 == 0) {
+					draw_y++;
+					start_x = temp;
+				}
+				if (Set.PREC.B[flag] == 1) {
+					Color_Spec(Pixel_Matrix[draw_y][start_x].index_range, color);
+				}
+				start_x++;
+				flag++;
+			}
+
+			flag = 0;
+			break;
 
 		default:
 			break;
@@ -5721,7 +5827,7 @@ void Image::Mark_Different_Pixels(Image &Source, int const &Color_Treshold, int 
 	}
 
 	for (std::list<Blob>::iterator k = Blobs.begin(); k != Blobs.end(); ++k) {
-		Draw_Square(k->Upleft_X, k->Upleft_Y, k->Downright_X, k->Downright_Y, frame_color, "Corners");
+		Draw_Square(k->Upleft_Y, k->Upleft_X, k->Downright_Y, k->Downright_X, frame_color, "Corners");
 	}
 
 
@@ -6724,28 +6830,36 @@ VectorFrame Image::K_Means(const VectorFrame& data, size_t k, size_t number_of_i
 				}
 			}
 			assignments[point] = best_cluster;
+
 		}
 
 		// Sum up and count points for each cluster.
 		VectorFrame new_means(k);
 		std::vector<size_t> counts(k, 0);
+	
 
 		for (size_t point = 0; point < data.size(); ++point) {
 			const auto cluster = assignments[point];
+
 			new_means[cluster].x += data[point].x;
 			new_means[cluster].y += data[point].y;
 			new_means[cluster].z += data[point].z;
 			counts[cluster] += 1;
+
+			//std::cout << new_means[cluster].x << " " << new_means[cluster].y << " " << new_means[cluster].z << std::endl;
 		}
 
 		// Divide sums by counts to get new centroids.
 		for (size_t cluster = 0; cluster < k; ++cluster) {
 			// Turn 0/0 into 0/1 to avoid zero division.
 			const auto count = std::max<size_t>(1, counts[cluster]);
+			std::cout << count << std::endl;
+			std::cout << new_means[cluster].x << " " << new_means[cluster].y << " " << new_means[cluster].z << std::endl;
+
 			means[cluster].x = new_means[cluster].x / count;
 			means[cluster].y = new_means[cluster].y / count;
 			means[cluster].z = new_means[cluster].z / count;
-
+		    //std::cout << means[cluster].x << " " << means[cluster].y << " " << means[cluster].z << std::endl;
 		}
 	}
 
@@ -6798,18 +6912,6 @@ void Image::Blob_Framing(int const &distance_treshold, pixel const &frame_color)
 			}
 		}
 	}
-
-	//for (list<Blob>::iterator k = Blobs.begin(); k != Blobs.end(); ++k) {
-	//	if (((k->Upleft_X - k->Downright_X)*(k->Upleft_Y - k->Downright_Y)) > distance_treshold / 4) {
-	//		
-	//		Draw_Square(k->Downright_X, k->Downright_Y, k->Upleft_X, k->Upleft_Y, frame_color, "Corners");
-	//		Color_Spec(Pixel_Matrix[k->Upleft_X][k->Upleft_Y].index_range, 'W');
-	//		Color_Spec(Pixel_Matrix[k->Downright_X][k->Downright_Y].index_range, 'g');
-
-
-	//	}
-	//}
-
 
 	for (int k = 0; k < (signed)Blobs.size(); k++) {
 		if (Blobs[k].Size() < distance_treshold) {
@@ -7450,6 +7552,19 @@ void Image::Image_Convolution(double Conv_Kernel[3][3], int const &iterations, i
 	}
 
 }
+void Image::Image_Convolution(Matrix<int> Mask, int const &iterations, int const &alter) {
+	if (this->is_Matrix_Initiated() == false) {
+		init_pixel_matrix();
+	}
+	for (int i = 0; i < iterations; i++) {
+		this->Pixel_Matrix.Convolve(Mask, 3, 3);
+	}
+	if (alter == 1) {
+		Update_Image_Data();
+	}
+	
+	
+}
 CoordinateFrame Image::GetCoordinateFrame(const int start_y, const int start_x, const int target_y, const int target_x) {
 	float dx, sx, dy, sy, err, e2;
 	if (this->is_Matrix_Initiated() == false) {
@@ -7594,10 +7709,13 @@ void Image::Up_Scale() {
 }
 
 
-
 // Under DEV
 
 
+void Image::Up_Scale(int const &Height, int const &Width) {
+
+
+}
 
 
 
@@ -7608,7 +7726,8 @@ void Image::Convert_RGB_To_LAB(int const &alter) {
 	}
 	double M[3][3] = { {0.4124,	0.3567,	0.1805},
 					   {0.2126,	0.7152,	0.0722},
-					   {0.0193,	0.1192,	0.9505} };
+					   {0.0193,	0.1192,	0.9505} 
+	};
 
 	int index;
 	for (int i = 0; i < Height; i++) {
@@ -7619,15 +7738,7 @@ void Image::Convert_RGB_To_LAB(int const &alter) {
 	}
 
 	if (alter == 1) {
-		index = 0;
-		for (int i = 0; i < Height; i++) {
-			for (int j = 0; j < width; j++) {
-				image_data[index++] = Pixel_Matrix[i][j].r;
-				image_data[index++] = Pixel_Matrix[i][j].g;
-				image_data[index++] = Pixel_Matrix[i][j].b;
-
-			}
-		}
+		Update_Image_Data();
 
 	}
 }

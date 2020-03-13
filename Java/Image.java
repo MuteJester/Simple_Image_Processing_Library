@@ -1121,7 +1121,13 @@ class Blob{
 		this.Upleft_Y = y;
 		this.Distnace_Treshold = Distnace_Treshold;
 	}
-
+	public Blob(Blob copy) {
+		this.Downright_X=copy.Downright_X;
+		this.Downright_Y = copy.Downright_Y;
+		this.Upleft_X = copy.Upleft_X;
+		this.Upleft_Y = copy.Upleft_Y;
+		this.Distnace_Treshold = copy.Distnace_Treshold;
+	}
 	public boolean Near(int x, int y) {
 		double CentetX, CenterY, Dist;
 		CentetX = Math.max(Math.min(x, Upleft_X), Downright_X);
@@ -1157,7 +1163,8 @@ class Blob{
 	}
 	
 	public double Size() {
-		return (double)Math.abs(this.Upleft_X - Downright_X)*(Upleft_Y - Downright_Y);
+		//return (double)Math.abs(this.Upleft_X - Downright_X)*(Upleft_Y - Downright_Y);
+		return Math.sqrt((this.Downright_X-this.Upleft_X)*(this.Downright_X-this.Upleft_X) + (this.Downright_Y-this.Upleft_Y)*(this.Downright_Y-this.Upleft_Y));
 	}
 
 }
@@ -1223,7 +1230,6 @@ public class Image {
 		
 	
 	}
-
 	public void Write_Image() {
 		try{
 		      File f = new File("Output.jpg");
@@ -1284,9 +1290,6 @@ public class Image {
 	    g.dispose();
 	    this.IMG = newImage;
 	}
-	
-	
-	
 	public void Draw_Square(int center_x,int center_y,int square_Image_Width,int square_Image_Height,Pixel Color) {
 		if (center_x + square_Image_Width >= this.Image_Width || center_y + square_Image_Height >= this.Image_Height || center_x - square_Image_Width < 0 || center_y - square_Image_Height < 0) {
 			System.out.println("Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n");
@@ -1295,16 +1298,16 @@ public class Image {
 			return;
 		}
 		for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i++) {
-			Pixel_Matrix[center_y + square_Image_Height][i] =Color;
+			Pixel_Matrix[center_y + square_Image_Height][i] = new Pixel(Color);
 		}
 		for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i++) {
-			Pixel_Matrix[center_y - square_Image_Height][i]=Color;
+			Pixel_Matrix[center_y - square_Image_Height][i]= new Pixel(Color);
 		}
 		for (int i = center_y - square_Image_Height; i <= center_y + square_Image_Height; i++) {
-			Pixel_Matrix[i][center_x - square_Image_Width]=Color;
+			Pixel_Matrix[i][center_x - square_Image_Width]= new Pixel(Color);
 		}
 		for (int i = center_y - square_Image_Height; i <= center_y + square_Image_Height; i++) {
-			Pixel_Matrix[i][center_x + square_Image_Height]=Color;
+			Pixel_Matrix[i][center_x + square_Image_Height]= new Pixel(Color);
 		}
 	}
 	private void BresenhamsLine(int start_y,int start_x,int target_y,int target_x, Pixel color) {
@@ -1349,12 +1352,12 @@ public class Image {
 
 		if (start_y < target_y) {
 			for (int i = start_y; i < target_y; i++) {
-				Pixel_Matrix[i][start_x] = color;
+				Pixel_Matrix[i][start_x] = new Pixel(color);
 			}
 		}
 		else {
 			for (int i = start_y; i > target_y; i--) {
-				Pixel_Matrix[i][start_x]= color;
+				Pixel_Matrix[i][start_x]= new Pixel(color);
 			}
 		}
 
@@ -1370,20 +1373,20 @@ public class Image {
 			err = dx + dy;  /* error value e_xy */
 			while (true) {
 				if (x0 == x1 && y0 == y1) {
-					Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = color;
+					Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
 					if (line_Image_Width > 0) {
 
 						if (start_y != target_y) {
 							for (int i = 1; i <= line_Image_Width; i++) {
 							
-								Pixel_Matrix[(int)Math.floor(x0) + i][(int)Math.floor(y0)] = color;
-								Pixel_Matrix[(int)Math.floor(x0) - i][(int)Math.floor(y0)] = color;
+								Pixel_Matrix[(int)Math.floor(x0) + i][(int)Math.floor(y0)] = new Pixel(color);
+								Pixel_Matrix[(int)Math.floor(x0) - i][(int)Math.floor(y0)] = new Pixel(color);
 							}
 						}
 						else {
 							for (int i = 1; i <= line_Image_Width; i++) {
-								Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) + i] = color;
-								Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) - i] = color;
+								Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) + i] = new Pixel(color);
+								Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) - i] = new Pixel(color);
 							}
 						}
 
@@ -1444,7 +1447,7 @@ public class Image {
 			
 			for (int j = center_y - square_Image_Height; j <= center_y + square_Image_Height; j++) {
 				for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i++) {
-					Pixel_Matrix[j][i] = Color;
+					Pixel_Matrix[j][i] = new Pixel(Color);
 				}
 			}
 		}
@@ -1457,7 +1460,7 @@ public class Image {
 			
 			for (int j = center_y - square_Image_Height; j <= center_y + square_Image_Height; j++) {
 				for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i += 2) {
-					Pixel_Matrix[j][i] = Color;
+					Pixel_Matrix[j][i] = new Pixel(Color);
 				}
 			}
 		}
@@ -1526,7 +1529,7 @@ public class Image {
 	public void Draw_Text(int center_y,int center_x,String text, Pixel color) {
 
 		int text_length = text.length();
-		int start_x, end_x, draw_y, flag = 0, temp=0, count = 0;
+		int start_x, draw_y, flag = 0, temp=0;
 		LibCharacters Set = new LibCharacters();
 		if (center_x + (9 * (text_length / 2)) > Image_Width || center_x - (9 * (text_length / 2)) < 0
 			|| center_y + 4 > Image_Height || center_y - 4 < 0) {
@@ -1536,7 +1539,6 @@ public class Image {
 
 		start_x = center_x - (9 * (text_length / 2));
 		draw_y = center_y - 4;
-		end_x = center_x + (9 * (text_length / 2));
 
 		for (int i = 0; i < text.length(); i++) {
 
@@ -2498,12 +2500,9 @@ public class Image {
 	public double Get_Square(double value) {
 		return value * value;
 	}
-
 	public double squared_3Point_distance(Point first, Point second) {
 		return Get_Square(first.x - second.x) + Get_Square(first.y - second.y) + Get_Square(first.z - second.z);
 	}
-
-	
 	public void Grayscale() {
 		for (int i = 0; i < Image_Height; i++) {
 
@@ -2525,16 +2524,13 @@ public class Image {
 			}
 		}
 	}
-
-	
-	public double Color_Delta(Pixel A, Pixel B) {
+    public double Color_Delta(Pixel A, Pixel B) {
 		long  R_Gag = ((long)(A.r + (long)(B.r)) / 2);
 		long  r = (long)A.r - (long)B.r;
 		long  g = (long)A.g - (long)B.g;
 		long  b = (long)A.b - (long)B.b;
 		return (float)(Math.sqrt((((512 + R_Gag)*r*r) >> 8) + 4 * g*g + (((767 - R_Gag)*b*b) >> 8)));
 	}
-
 	public int Color_Distance(Pixel a, Pixel b) {
 		int recored;
 		recored = (a.b - b.b) + (a.r - b.r) + (a.g - b.g);
@@ -2802,7 +2798,6 @@ public class Image {
 		}
 		return Mean / Divider;
 	}
-
 	public double Get_Neighbour_Mean_G(int i, int j, double Kernel[][], double Kernel_Normal) {
 		double Mean = 0;
 		int Divider = 1;
@@ -2962,11 +2957,10 @@ public class Image {
 		return Mean / Divider;
 
 	}
-	
 	public void Mark_Identical_Pixels(Pixel Target) {
 		Color_Palette cset = new Color_Palette();
-		for (int i = 0; i < Height; i++) {
-			for (int j = 0; j < width; j++) {
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
 				if (Pixel_Matrix[i][j] == Target) {
 					this.Draw_Square(j, i, 2, 2, cset.Red);
 				}
@@ -3041,7 +3035,6 @@ public class Image {
 			}
 		}
 	}
-	
 	public void Mark_Different_Pixels(Image Source, int Color_Treshold, int Distnace_Treshold, Pixel frame_color) {
 
 
@@ -3050,7 +3043,7 @@ public class Image {
 		}
 		
 		ArrayList<Blob> Blobs = new ArrayList<Blob>();
-		Blob temp = new Blob(0, 0, Distnace_Treshold);
+		//Blob temp = new Blob(0, 0, Distnace_Treshold);
 		boolean detected = false;
 
 		for (int i = 0; i < this.Image_Width; i++)
@@ -3089,7 +3082,6 @@ public class Image {
 
 
 	}
-	
 	public void Write_Pixel_Difference(Image Source, String mode, int min_diff) {
 
 		if (mode.equals("Copy")) {
@@ -3097,7 +3089,6 @@ public class Image {
 				return;
 			}
 			Image Temp = this;
-			int index = 0;
 			for (int i = 0; i < this.Image_Height; i++) {
 				for (int j = 0; j < this.Image_Width; j++) {
 					if (Color_Distance(Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) > min_diff) {
@@ -3111,7 +3102,6 @@ public class Image {
 			return;
 		}
 	}
-
 	public void Mark_Different_Pixels(Image Source) {
 		if (this.Image_Width != Source.Image_Width || this.Image_Height != Source.Image_Height) {
 			return;
@@ -3147,7 +3137,6 @@ public class Image {
 		}
 
 	}
-
 	public void Write_Channel_Histogram() {
 		int posR, PosG, PosB, H = 500, W = 1300;
 		int bar_width = this.Image_Width / 300;
@@ -3157,7 +3146,7 @@ public class Image {
 		int sR = 0, sG = 0, sB = 0;
 		Image frame = new Image();
 		Color_Palette CSET = new Color_Palette();
-		frame.Load_Blank_Canvas(W, H, CSET.Azure);
+		frame.Load_Blank_Canvas(H, W, CSET.Azure);
 		
 		frame.Draw_Square(250, 250, 150, 150, CSET.Black);
 		frame.Draw_Square(650, 250, 150, 150, CSET.Black);
@@ -3236,17 +3225,17 @@ public class Image {
 
 			
 			if (posR < 399) {
-				frame.Draw_Line(posR, 399, 399 - sR, CSET.Red);
-				//frame.Draw_Line(399, posR, 399 - sR, posR, CSET.Red);
+				//frame.Draw_Line(posR, 399, 399 - sR, CSET.Red,bar_width);
+				frame.Draw_Line(399, posR, 399 - sR, posR, CSET.Red,Math.max(1,bar_width/3));
 			}
 			if (PosG < 799) {
-				frame.Draw_Line(PosG, 399, 399 - sG, CSET.Green);
-				//frame.Draw_Line(399, PosG, 399 - sG, PosG, CSET.Red);
+				//frame.Draw_Line(PosG, 399, 399 - sG, CSET.Green);
+				frame.Draw_Line(399, PosG, 399 - sG, PosG, CSET.Green,Math.max(1,bar_width/3));
 
 			}
 			if (PosB < 1199) {
-				frame.Draw_Line(PosB, 399, 399 - sB, CSET.Blue);
-				//frame.Draw_Line(399, PosB, 399 - sB, PosB, CSET.Red);
+				//frame.Draw_Line(PosB, 399, 399 - sB, CSET.Blue);
+				frame.Draw_Line(399, PosB, 399 - sB, PosB, CSET.Blue,Math.max(1,bar_width/3));
 
 			}
 
@@ -3263,8 +3252,6 @@ public class Image {
 
 		frame.Write_Image("ChannelGraph.png");
 	}
-	
-
 	public void Write_Channel(char color) {
 		
 		switch (color)
@@ -3304,7 +3291,6 @@ public class Image {
 	}
 	public void Shutdown_Channel(char color) {
 		
-		int index = 0;
 		switch (color)
 		{
 		case 'R':
@@ -3337,22 +3323,24 @@ public class Image {
 		}
 	}
 	public void Flip180() {
-		Image temp = new Image(this);
+		Image temp = new Image();
+		temp.Load_Blank_Canvas(this.Image_Height, this.Image_Width, new Pixel(0,0,0));
 		int k=0,m=0;
 		
 		for (int i = Image_Height - 1; i >= 0; i--) {
 			for (int j = Image_Width - 1; j >= 0; j--) {
-				temp.Pixel_Matrix[k][m] = this.Pixel_Matrix[i][j];
-				++m;
+				temp.Pixel_Matrix[k][m] = new Pixel(this.Pixel_Matrix[i][j]);
+				m++;
 			}
-			++k;
+			
+			k++;
 			m=0;
 
 		}
 
 		for(int i=0;i<Image_Height;i++) {
 			for(int j=0;j<Image_Width;j++) {
-				this.Pixel_Matrix[i][j] = temp.Pixel_Matrix[i][j];
+				this.Pixel_Matrix[i][j] = new Pixel(temp.Pixel_Matrix[i][j]);
 
 			}
 		}
@@ -3385,7 +3373,6 @@ public class Image {
 
 		}
 	}
-
 	public void Tresholding(String mode, int value) {
 		
 		if (mode.equals("Trunc")) {
@@ -3454,7 +3441,6 @@ public class Image {
 
 	}
 	public void Edge_Detection() {
-		int index = 0, recored = 0, max_gap = 1;
 		Pixel prev = new Pixel() ;
 
 		for (int i = 0; i < Image_Height; i++) {
@@ -3498,7 +3484,7 @@ public class Image {
 
 	}
 	public void Edge_Detection(int max_color_gap) {
-		int index = 0, recored = 0, max_gap = 1;
+		
 		Pixel prev = new Pixel() ;
 
 		for (int i = 0; i < Image_Height; i++) {
@@ -3702,7 +3688,7 @@ public class Image {
 		if (mode.equals("Mul")) {
 			Pixel[][] Kr_mat = new Pixel[b.Image_Height*this.Image_Height][this.Image_Width*b.Image_Width];
 			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
-		    long startRow=0, startCol=0, index = 0;
+		    long startRow=0, startCol=0;
 			Pixel temp = new Pixel();
 			for (int i = 0; i < this.Image_Height; i++) {
 				for (int j = 0; j < this.Image_Width; j++) {
@@ -3733,7 +3719,7 @@ public class Image {
 			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
 			
 			Pixel temp = new Pixel();
-			int startRow =0 , startCol= 0, index = 0;
+			int startRow =0 , startCol= 0;
 			for (int i = 0; i < this.Image_Height; i++) {
 				for (int j = 0; j < this.Image_Width; j++) {
 					startRow = i * b.Image_Height;
@@ -3766,7 +3752,7 @@ public class Image {
 			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
 			
 			Pixel temp = new Pixel();
-			int startRow =0 , startCol= 0, index = 0;
+			int startRow =0 , startCol= 0;
 			int flag = 0;
 			for (int i = 0; i < this.Image_Height; i++) {
 				for (int j = 0; j < this.Image_Width; j++) {
@@ -3804,7 +3790,7 @@ public class Image {
 			BufferedImage Kronecker =  new BufferedImage(this.Image_Width*b.Image_Width,b.Image_Height*this.Image_Height,BufferedImage.TYPE_3BYTE_BGR);
 			
 			Pixel temp = new Pixel();
-			int startRow =0 , startCol= 0, index = 0,flag =0;
+			int startRow =0 , startCol= 0,flag =0;
 
 
 			for (int i = 0; i < this.Image_Height; i++) {
@@ -3868,7 +3854,6 @@ public class Image {
 		distance = ((DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b));
 		return Math.sqrt(distance);
 	}
-
 	private ArrayList<Point> K_Means(ArrayList<Point> data, int k, int number_of_iterations) {
 		Random random_machine = new Random();
 		
@@ -3952,7 +3937,6 @@ public class Image {
 		
 		
 	}
-	
 	public void Image_Segmentation(int k, int iterations) {
 		
 		ArrayList<Point> image_ThreeD_Mat = new ArrayList<Point>();
@@ -3995,27 +3979,20 @@ public class Image {
 
 
 	}
-
 	private void Blob_Framing(int distance_treshold, Pixel frame_color) {
 		Color_Palette CSET = new Color_Palette();
 		ArrayList<Blob> Blobs = new ArrayList<Blob>();
-		
+
 		Blob temp = new Blob(0, 0, distance_treshold);
-		
 		boolean detected = false;
-		Blob  ing = new Blob(0,0,distance_treshold);
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < this.Image_Width; j++) {
 
 				if (this.Pixel_Matrix[i][j].analysis == 42) {
-
-					for (int k = 0; k < Blobs.size(); ++k) {
-						if (Blobs.get(k).Near(i, j)) {
-						
-							ing = Blobs.get(k);
-							ing.add(i, j);;
-							Blobs.set(k, ing);
-							
+				
+					for (int k = 0; k < (int)Blobs.size(); ++k) {
+						if (Blobs.get(k).Near(i, j) == true) {
+							Blobs.get(k).add(i, j);
 							detected = true;
 
 							break;
@@ -4024,39 +4001,38 @@ public class Image {
 
 					}
 
-					if (!detected) {
+					if (detected == false) {
 						temp.SetProps(i, j);
-						Blobs.add(temp);
+						Blobs.add(new Blob(temp));
 					}
+					
 					detected = false;
 
 				}
 			}
 		}
-		for (int k = 0; k < Blobs.size(); k++) {
+
+		for (int k = 0; k < (int)Blobs.size(); k++) {
 			if (Blobs.get(k).Size() < distance_treshold) {
 
 				Blobs.remove(k);
 			}
 
 		}
-		System.out.println(Blobs.size());
 
-		for (int k = 0; k < Blobs.size(); ++k) {
+		for (int k = 0; k < (int)Blobs.size(); ++k) {
 
-			Draw_Square(Blobs.get(k).Downright_X, Blobs.get(k).Downright_Y, Blobs.get(k).Upleft_X, 
-					Blobs.get(k).Upleft_Y, frame_color, "Corners");
-			Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = CSET.Yellow;
-			Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = CSET.Green;
+			Draw_Square(Blobs.get(k).Downright_X, Blobs.get(k).Downright_Y, Blobs.get(k).Upleft_X, Blobs.get(k).Upleft_Y, frame_color, "Corners");
+			//Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = new Pixel(CSET.Yellow);
+			//Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = new Pixel(CSET.Green);
 
 
 
 		}
 	}
-
 	public void Figure_Detection(int blob_distance_treshold, int color_distance_treshold, int Thresholding_level) {
 
-		//this.Tresholding("Trunc", Thresholding_level);
+		this.Tresholding("Trunc", Thresholding_level);
 		
 		int[][] adj_matrix = new int[Image_Height][Image_Width];
 		int color_treshold = color_distance_treshold;
@@ -4089,8 +4065,6 @@ public class Image {
 		this.Blob_Framing(blob_distance_treshold, C.Red);
 
 	}
-
-	
 	public void Write_Average_Color_Palette(int palette_size) {
 		int H, W, lx;
 		Color_Palette CSET =new Color_Palette();
@@ -4298,7 +4272,6 @@ public class Image {
 
 		return Dom_Color;
 	}
-
 	public void Image_Rebuild_With_Lines(int Iterations) {
 	
 		Random x0_picks = new Random();
@@ -4417,7 +4390,6 @@ public class Image {
 			}
 		}
 		Image Mid = new Image();
-		int index = 0;
 		Mid.Load_Image(this.F_Path);
 		if (Mid.Image_Height != this.Image_Height) {
 			Mid.Image_Width = this.Image_Width;
@@ -4462,6 +4434,340 @@ public class Image {
 		
 
 	}
+	public ArrayList<Point> GetCoordinateFrame(int start_y,int start_x,int target_y,int target_x) {
+		double dx, sx, dy, sy, err, e2;
+		
+		ArrayList<Point> Points = new ArrayList<Point>();
+		double x0 = (double)start_y, x1 = (double)target_y, y0 = (double)start_x, y1 = (double)target_x;
+		dx = (double)(Math.abs(target_y - start_y));
+		sx = (double)(start_y < target_y ? 1 : -1);
+		dy = (double)(-Math.abs(target_x - start_x));
+		sy = (double)(start_x < target_x ? 1 : -1);
+		err = dx + dy;  //error value
+		while (true) {
+			if (x0 == x1 && y0 == y1) {
+				Points.add(new Point((int)x0,(int)y0 ,0));
+				break;
+			}
+
+			Points.add(new Point((int)x0,(int)y0 ,0));
+
+			e2 = 2 * err;
+			if (e2 >= dy) {
+				err += dy;
+				x0 += sx;
+			}
+			if (e2 <= dx) {
+				err += dx;
+				y0 += sy;
+			}
+
+		}
+
+
+
+		return Points;
+	}
+	public void Up_Scale() {
+
+		//BufferedImage scaled = new BufferedImage(this.Image_Width * 3,	this.Image_Height * 3,BufferedImage.TYPE_3BYTE_BGR);
+		
+		
+		Image scaled = new Image();
+		int p=0,z=0;
+		scaled.Load_Blank_Canvas((Image_Height*3), (Image_Width*3), new Pixel(0,0,0));
+		for(int i=0;i<scaled.Image_Height;i+=3) {
+			for(int j =0 ; j <scaled.Image_Width;j+=3) {
+				for(int k =0 ;k<3;k++) {
+					for(int m = 0 ; m<3;m++) {
+						scaled.Pixel_Matrix[i+k][j+m] = new Pixel(this.Pixel_Matrix[p][z]);
+					}
+				}
+				z++;
+			}
+			p++;
+			z=0;
+		}
+		
+
+
+
+		//quality enchancment
+
+
+		for (int i = 0; i < this.Image_Height - 3; i += 3) {
+			for (int j = 0; j < this.Image_Width - 3; j += 3) {
+
+				if (j < 3) {
+					for (int k = 0; k < 3; k++) {
+						scaled.Pixel_Matrix[i + k][j + 2].r = (scaled.Pixel_Matrix[i + k][j + 2].r + scaled.Pixel_Matrix[i + k][j + 3].r) / 2;
+						scaled.Pixel_Matrix[i + k][j + 2].g = (scaled.Pixel_Matrix[i + k][j + 2].g + scaled.Pixel_Matrix[i + k][j + 3].g) / 2;
+						scaled.Pixel_Matrix[i + k][j + 2].b = (scaled.Pixel_Matrix[i + k][j + 2].b + scaled.Pixel_Matrix[i + k][j + 3].b) / 2;
+					}
+
+					for (int k = 0; k < 3; k++) {
+						scaled.Pixel_Matrix[i + 2][j + k].r = (scaled.Pixel_Matrix[i + 2][j + k].r + scaled.Pixel_Matrix[i + 3][j + k].r) / 2;
+						scaled.Pixel_Matrix[i + 2][j + k].g = (scaled.Pixel_Matrix[i + 2][j + k].g + scaled.Pixel_Matrix[i + 3][j + k].g) / 2;
+						scaled.Pixel_Matrix[i + 2][j + k].b = (scaled.Pixel_Matrix[i + 2][j + k].b + scaled.Pixel_Matrix[i + 3][j + k].b) / 2;
+
+					}
+				}
+
+				else {
+
+					for (int k = 0; k < 3; k++) {
+						scaled.Pixel_Matrix[i + k][j + 2].r = (scaled.Pixel_Matrix[i + k][j + 2].r + scaled.Pixel_Matrix[i + k][j + 3].r) / 2;
+						scaled.Pixel_Matrix[i + k][j + 2].g = (scaled.Pixel_Matrix[i + k][j + 2].g + scaled.Pixel_Matrix[i + k][j + 3].g) / 2;
+						scaled.Pixel_Matrix[i + k][j + 2].b = (scaled.Pixel_Matrix[i + k][j + 2].b + scaled.Pixel_Matrix[i + k][j + 3].b) / 2;
+
+						scaled.Pixel_Matrix[i + k][j + 3].r = (scaled.Pixel_Matrix[i + k][j + 3].r + scaled.Pixel_Matrix[i + k][j + 2].r) / 2;
+						scaled.Pixel_Matrix[i + k][j + 3].g = (scaled.Pixel_Matrix[i + k][j + 3].g + scaled.Pixel_Matrix[i + k][j + 2].g) / 2;
+						scaled.Pixel_Matrix[i + k][j + 3].b = (scaled.Pixel_Matrix[i + k][j + 3].b + scaled.Pixel_Matrix[i + k][j + 2].b) / 2;
+
+					}
+
+
+					for (int k = 0; k < 3; k++) {
+						scaled.Pixel_Matrix[i + 2][j + k].r = (scaled.Pixel_Matrix[i + 2][j + k].r + scaled.Pixel_Matrix[i + 3][j + k].r) / 2;
+						scaled.Pixel_Matrix[i + 2][j + k].g = (scaled.Pixel_Matrix[i + 2][j + k].g + scaled.Pixel_Matrix[i + 3][j + k].g) / 2;
+						scaled.Pixel_Matrix[i + 2][j + k].b = (scaled.Pixel_Matrix[i + 2][j + k].b + scaled.Pixel_Matrix[i + 3][j + k].b) / 2;
+
+
+						scaled.Pixel_Matrix[i + 3][j + k].r = (scaled.Pixel_Matrix[i + 3][j + k].r + scaled.Pixel_Matrix[i + 2][j + k].r) / 2;
+						scaled.Pixel_Matrix[i + 3][j + k].g = (scaled.Pixel_Matrix[i + 3][j + k].g + scaled.Pixel_Matrix[i + 2][j + k].g) / 2;
+						scaled.Pixel_Matrix[i + 3][j + k].b = (scaled.Pixel_Matrix[i + 3][j + k].b + scaled.Pixel_Matrix[i + 2][j + k].b) / 2;
+					}
+
+				}
+
+
+			}
+		}
+		this.Pixel_Matrix = scaled.Pixel_Matrix;
+		this.IMG=scaled.IMG;
+		this.Image_Height *=3;
+		this.Image_Width*=3;
+
+	}
+	public void Detect_Faces() {
+		short flag = 0;
+		Color_Palette CSET = new Color_Palette();
+		int distance = 0 ,min_d = 355, skin_thresh = 15, grap_thresh = 60;
+		float treshold = 45;
+		int validation_level = 0;
+		int n_valid_bounty = 10;
+		Point left_eye = new Point(), right_eye= new Point();
+		left_eye.x = right_eye.x = 0;
+		left_eye.y = right_eye.y = 0;
+		Pixel black = new Pixel();
+		Pixel skin_graph= new Pixel(), nose_graph= new Pixel(), forhead_graph = new Pixel(), chin_graph = new Pixel();
+		black.r = black.g = black.b = 0;
+
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < Image_Width; j++) {
+
+				if (flag == 0) {
+					if (Pixel_Matrix[i][j].r < treshold  && Pixel_Matrix[i][j].g < treshold && Pixel_Matrix[i][j].b < treshold) {
+						left_eye.x = j;
+						left_eye.y = i;
+						flag = 1;
+	//#ifdef FaceDebug	
+
+
+
+						Draw_Circle(j, i, 3, CSET.Green); //detected eye loctaion -left eye-
+
+	//#endif
+					}
+				}
+				else if (flag == 1) {
+					if (distance > Image_Width / 3) {
+						break;
+					}
+					else if (Pixel_Matrix[i][j].r < treshold && Pixel_Matrix[i][j].g < treshold && Pixel_Matrix[i][j].b < treshold && distance > 30) {
+						right_eye.x = j;
+						right_eye.y = i;
+						flag = 2;
+						//i += 4;
+	//#ifdef FaceDebug
+
+
+						Draw_Circle(j, i, 3, CSET.Red); //detected eye location -right eye
+						Draw_Circle((int)left_eye.x, (int)left_eye.y, 3, CSET.Green); //detected eye location -right eye
+	//#endif
+
+
+						//defenition of skin graphs for validation sequance
+						skin_graph = Pixel_Matrix[(int)(left_eye.y)][(int)(left_eye.x) + (distance / 2)];
+						if ((left_eye.y) + (distance / 2) < Image_Height && (left_eye.x) + (distance / 2) < Image_Width) {
+							nose_graph = Pixel_Matrix[(int)(left_eye.y) + (distance / 2)][(int)(left_eye.x) + (distance / 2)];
+						}
+						if (left_eye.y - (distance / 4) > 0) {
+							forhead_graph = Pixel_Matrix[(int)(left_eye.y - (distance / 4))][(int)(left_eye.x) + (distance / 2)];
+						}
+						if (left_eye.y + 1.3*distance < Image_Height) {
+							int temp = (int)1.3*distance;
+							chin_graph = Pixel_Matrix[(int)(left_eye.y + (temp))][(int)(left_eye.x) + (distance / 2)];
+						}
+						//
+
+						//in case skin graph is black -> most likely not a skin color
+						if (Color_Distance(black, skin_graph) < 30) {
+							flag = 0;
+							break;
+						}
+					}
+					distance++;
+				}
+
+			}
+			if (flag == 2 && distance > 50 && left_eye.x + (distance / 2) < Image_Width &&
+				left_eye.y + (distance / 2) < Image_Height &&Color_Distance(Pixel_Matrix[(int)(left_eye.y) + (distance / 2)][(int)(left_eye.x) + (distance / 2)], black) > min_d) {
+
+
+				skin_graph = Pixel_Matrix[(int)(left_eye.y)][(int)(left_eye.x) + (distance / 2)];
+
+				if (skin_graph.r < 120 && skin_graph.g < 120 && skin_graph.b < 120) {
+					continue;
+				}
+
+
+
+
+
+
+	//#ifdef FaceDebug
+
+				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 3, CSET.Blue); //sking graph location
+				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 4, CSET.Red); //sking graph location
+				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 2, CSET.Green); //sking graph location
+
+				Draw_Line((int)left_eye.y, (int)left_eye.x, (int)left_eye.y, (int)left_eye.x + distance / 2, CSET.Black); // line to cetner point 
+	//#endif
+				if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye.y + distance / 2][(int)left_eye.x]) < grap_thresh) {
+
+					if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye.y + distance / 2][(int)left_eye.x]) < skin_thresh) { // left chick cmp
+
+						validation_level++; //level 1
+
+						if (Distance_Neighbors(treshold, (int)left_eye.y + distance / 2, (int)left_eye.x)) {
+							validation_level += n_valid_bounty;
+							System.out.println("Validated --Neighbor-- left chick: " + validation_level);
+
+						}
+	//#ifdef FaceDebug
+						Draw_Circle((int)(left_eye.x), (int)(left_eye.y) + (distance / 2), 3, CSET.White); //chick graph location -left eye-
+						Draw_Line((int)left_eye.y, (int)left_eye.x, (int)left_eye.y + distance / 2, (int)left_eye.x, CSET.White); // line to chick point -left eye-
+						System.out.println("Validated left chick: " + validation_level);
+	//#endif // FaceDebug
+
+
+					}
+
+					if (Color_Distance(skin_graph, Pixel_Matrix[(int)right_eye.y + distance / 2][(int)right_eye.x]) < skin_thresh) {//right chick
+						validation_level++; //level 2
+						System.out.println("Validated Right chick: " + validation_level);
+
+						if (Distance_Neighbors(treshold, (int)right_eye.y + distance / 2, (int)right_eye.x)) {
+							validation_level += n_valid_bounty;
+							System.out.println("Validated  --Neighbor-- right chick: " + validation_level);
+
+						}
+
+					}
+
+
+
+					if (Color_Distance(skin_graph, forhead_graph) < grap_thresh) { //forhead vs skin center cmp
+	//#ifdef FaceDebug
+						Draw_Circle((int)left_eye.x + distance / 2, (int)left_eye.y - (distance / 4), 3, CSET.White); //at forhead
+						Draw_Line((int)left_eye.y, (int)left_eye.x + distance / 2, (int)left_eye.y - (distance / 4), (int)left_eye.x + distance / 2, CSET.White);
+
+	//#endif
+						validation_level++; //level 3
+						System.out.println("Validated Forhead - Center: " + validation_level );
+
+						if (Distance_Neighbors(treshold, (int)left_eye.y - (distance / 4), (int)left_eye.x + distance / 2)) {
+							validation_level += n_valid_bounty;
+							System.out.println("Validated  --Neighbor-- Forhead - Center: "+validation_level);
+
+						}
+
+					}
+
+
+
+
+
+					if (Color_Distance(nose_graph, skin_graph) < grap_thresh) {//nose vs middle face cmp
+	//#ifdef FaceDebug
+						Draw_Circle((int)left_eye.x + distance / 2, (int)left_eye.y + distance / 2, 3, CSET.White);
+						//Draw_Line(left_eye.x + distance / 2, left_eye.y, left_eye.x + distance / 2, left_eye.y + (distance / 2), 'W');
+
+	//#endif
+						validation_level++; //level 4
+						System.out.println("Validated Nose - Center: " + validation_level );
+
+						if (Distance_Neighbors(treshold, (int)left_eye.y + distance / 2, (int)left_eye.x + distance / 2)) {
+							validation_level += n_valid_bounty;
+							System.out.println("Validated  --Neighbor-- Nose - Center: " + validation_level);
+
+						}
+					}
+
+
+					if (Color_Distance(chin_graph, skin_graph) < grap_thresh) {//chin vs middle face cmp
+	//#ifdef FaceDebug
+						Draw_Circle((int)left_eye.x + distance / 2, (int)(left_eye.y + 1.3*distance), 3, CSET.White);
+						Draw_Line((int)left_eye.y, (int)left_eye.x + distance / 2, (int)(left_eye.y + 1.3*(distance)), (int)left_eye.x + distance / 2, CSET.White);
+
+	//#endif
+						validation_level++; //level 5
+						System.out.println("Validated Chin - Center: " + validation_level);
+
+						if (Distance_Neighbors(treshold, (int)left_eye.y + (int)(1.3*distance), (int)left_eye.x + distance / 2)) {
+							validation_level += n_valid_bounty;
+							System.out.println("Validated  --Neighbor-- Chin - Center: " + validation_level);
+
+						}
+					}
+
+
+
+
+
+	//#ifdef FaceDebug
+
+
+
+
+					//right eye validate for v2 yet to be added to calculation
+					Draw_Line((int)right_eye.y, (int)right_eye.x, (int)right_eye.y, (int)right_eye.x - distance / 2, CSET.Black); // line to cetner point from -right eye-
+					Draw_Circle((int)(right_eye.x), (int)(right_eye.y) + (distance / 2), 3, CSET.White); //chick graph location -right eye- 
+					Draw_Line((int)right_eye.y, (int)right_eye.x, (int)right_eye.y + distance / 2, (int)right_eye.x, CSET.White); // line to chick point -right eye-
+
+	//#endif
+
+					if (validation_level >= 30) {
+						Draw_Square((int)left_eye.x + distance / 2, (int)left_eye.y + distance / 2, distance, distance, CSET.Red);
+						i += 4;
+						validation_level = 0;
+					}
+
+				}
+
+				flag = 0;
+				distance = 0;
+			}
+			else {
+				flag = 0;
+				distance = 0;
+			}
+
+		}
+
+	}
+	
 
 	
 	
