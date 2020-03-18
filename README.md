@@ -14,7 +14,7 @@ to write processed data back to drive.
 
 #### In order To Use SIPL:
 
-__For Cpp Version-__
+__Cpp Version-__
 
 SIPL can be used just by adding to your project all the header files and CPP files located in the __SIPL Core__ folder.
 including only the core of the library will allow you to use all core features and methods without
@@ -22,7 +22,7 @@ the added functionality of the subclasses.
 the main core provides all needed tools for image processing, analysis, and handling.
 __!Important!__ all sub-libraries and functionality relay on the Core files always include the core folder first!.
 
-__For Java Version-__
+__Java Version-__
 
 SIPL can be used by adding to your project the "Image" java class file located under the __Java__ folder.
 adding the the class file will allow you to use all core features and methods without
