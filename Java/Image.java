@@ -1,4 +1,6 @@
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -255,7 +257,7 @@ class Color_Palette{
 	Pixel Gainsboro;
 	Pixel White_Smoke;
 	public Color_Palette() {
-		
+		Color_Serial_Number = new Pixel[138];
 		    Black = new Pixel();
 			 White = new Pixel();
 			 Red  = new Pixel();
@@ -1097,6 +1099,10 @@ class Color_Palette{
 		this.Color_Serial_Number[136] = Gainsboro;
 		this.Color_Serial_Number[137] = White_Smoke;
 	}
+	public Pixel Get_Random_Color() {
+		Random rand = new Random();
+		return this.Color_Serial_Number[Math.abs(rand.nextInt()) % 137 + 1];
+	}
 	}
 
 
@@ -1212,7 +1218,13 @@ public class Image {
 		  this.IMG.setRGB(j, i, p_value);
 		  
 	  }
-	public void Set_Color(Pixel target,int r,int g,int b) {
+    public void Set_Color(int i,int j,Pixel color) {
+	  int p_value =0;
+	  p_value = (255<<24) | (color.r<<16) | (color.g<<8) | color.b;
+		  this.IMG.setRGB(j, i, p_value);
+		  
+	  }
+    public void Set_Color(Pixel target,int r,int g,int b) {
 		target.r=r;
 		target.g=g;
 		target.b=b;
@@ -1230,6 +1242,16 @@ public class Image {
 		
 	
 	}
+	public void Commint_Matrix_Changes() {
+		for(int i=0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Set_Color(i, j, this.Pixel_Matrix[i][j].r,this.Pixel_Matrix[i][j].g,this.Pixel_Matrix[i][j].b);
+			}
+		}
+	}
+    public void Update_Pixel_Matrix() {
+    	this.init_pixel_matrix();
+    }
 	public void Write_Image() {
 		try{
 		      File f = new File("Output.jpg");
@@ -1241,11 +1263,7 @@ public class Image {
 	}
 	public void Write_Image(String Filename) {
 		try{
-				for(int i=0;i<this.Image_Height;i++) {
-					for(int j=0;j<this.Image_Width;j++) {
-						this.Set_Color(i, j, this.Pixel_Matrix[i][j].r,this.Pixel_Matrix[i][j].g,this.Pixel_Matrix[i][j].b);
-					}
-				}
+			
 		      File f = new File(Filename);
 		      ImageIO.write(IMG, "png", f);
 		    }catch(IOException e){
@@ -1298,16 +1316,20 @@ public class Image {
 			return;
 		}
 		for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i++) {
-			Pixel_Matrix[center_y + square_Image_Height][i] = new Pixel(Color);
+			this.Set_Color(center_y + square_Image_Height, i, Color);
+			//Pixel_Matrix[center_y + square_Image_Height][i] = new Pixel(Color);
 		}
 		for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i++) {
-			Pixel_Matrix[center_y - square_Image_Height][i]= new Pixel(Color);
+			this.Set_Color(center_y - square_Image_Height, i, Color);
+			//Pixel_Matrix[center_y - square_Image_Height][i]= new Pixel(Color);
 		}
 		for (int i = center_y - square_Image_Height; i <= center_y + square_Image_Height; i++) {
-			Pixel_Matrix[i][center_x - square_Image_Width]= new Pixel(Color);
+			this.Set_Color(i, center_x - square_Image_Width, Color);
+			//Pixel_Matrix[i][center_x - square_Image_Width]= new Pixel(Color);
 		}
 		for (int i = center_y - square_Image_Height; i <= center_y + square_Image_Height; i++) {
-			Pixel_Matrix[i][center_x + square_Image_Height]= new Pixel(Color);
+			//Pixel_Matrix[i][center_x + square_Image_Width]= new Pixel(Color);
+			this.Set_Color(i, center_x + square_Image_Width, Color);
 		}
 	}
 	private void BresenhamsLine(int start_y,int start_x,int target_y,int target_x, Pixel color) {
@@ -1320,13 +1342,16 @@ public class Image {
 		err = dx + dy;  //error value
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
-				Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
+				this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0), color);
+				//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
 
 				break;
 			}
 
-			Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
+			//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
+			this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0), color);
 
+			
 			e2 = 2 * err;
 			if (e2 >= dy) {
 				err += dy;
@@ -1352,12 +1377,14 @@ public class Image {
 
 		if (start_y < target_y) {
 			for (int i = start_y; i < target_y; i++) {
-				Pixel_Matrix[i][start_x] = new Pixel(color);
+				//Pixel_Matrix[i][start_x] = new Pixel(color);
+				this.Set_Color(i, start_x, color);
 			}
 		}
 		else {
 			for (int i = start_y; i > target_y; i--) {
-				Pixel_Matrix[i][start_x]= new Pixel(color);
+				//Pixel_Matrix[i][start_x]= new Pixel(color);
+				this.Set_Color(i, start_x, color);
 			}
 		}
 
@@ -1373,20 +1400,28 @@ public class Image {
 			err = dx + dy;  /* error value e_xy */
 			while (true) {
 				if (x0 == x1 && y0 == y1) {
-					Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
+					this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0), color);
+					//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0)] = new Pixel(color);
 					if (line_Image_Width > 0) {
 
 						if (start_y != target_y) {
 							for (int i = 1; i <= line_Image_Width; i++) {
 							
-								Pixel_Matrix[(int)Math.floor(x0) + i][(int)Math.floor(y0)] = new Pixel(color);
-								Pixel_Matrix[(int)Math.floor(x0) - i][(int)Math.floor(y0)] = new Pixel(color);
+								this.Set_Color((int)Math.floor(x0) + i, (int)Math.floor(y0), color);
+								this.Set_Color((int)Math.floor(x0) - i,(int)Math.floor(y0), color);
+
+								//Pixel_Matrix[(int)Math.floor(x0) + i][(int)Math.floor(y0)] = new Pixel(color);
+								//Pixel_Matrix[(int)Math.floor(x0) - i][(int)Math.floor(y0)] = new Pixel(color);
 							}
 						}
 						else {
 							for (int i = 1; i <= line_Image_Width; i++) {
-								Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) + i] = new Pixel(color);
-								Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) - i] = new Pixel(color);
+								
+								this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0) + i, color);
+								this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0) - i, color);
+
+								//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) + i] = new Pixel(color);
+								//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) - i] = new Pixel(color);
 							}
 						}
 
@@ -1403,14 +1438,20 @@ public class Image {
 					if (start_y != target_y) {
 						for (int i = 1; i <= line_Image_Width; i++) {
 		
-							Pixel_Matrix[(int)Math.floor(x0) + i][(int)Math.floor(y0)] = color;				
-							Pixel_Matrix[(int)Math.floor(x0) - i][(int)Math.floor(y0)] =color;
+							this.Set_Color((int)Math.floor(x0) + i, (int)Math.floor(y0), color);
+							this.Set_Color((int)Math.floor(x0) - i,(int)Math.floor(y0), color);
+							//Pixel_Matrix[(int)Math.floor(x0) + i][(int)Math.floor(y0)] = color;				
+							//Pixel_Matrix[(int)Math.floor(x0) - i][(int)Math.floor(y0)] =color;
 						}
 					}
 					else {
 						for (int i = 1; i <= line_Image_Width; i++) {
-							Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) + i] = color;
-							Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) - i] = color;
+							
+							this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0) + i, color);
+							this.Set_Color((int)Math.floor(x0), (int)Math.floor(y0) - i, color);
+
+							//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) + i] = color;
+							//Pixel_Matrix[(int)Math.floor(x0)][(int)Math.floor(y0) - i] = color;
 						}
 					}
 
@@ -1447,7 +1488,8 @@ public class Image {
 			
 			for (int j = center_y - square_Image_Height; j <= center_y + square_Image_Height; j++) {
 				for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i++) {
-					Pixel_Matrix[j][i] = new Pixel(Color);
+					//Pixel_Matrix[j][i] = new Pixel(Color);
+					this.Set_Color(j, i, Color);
 				}
 			}
 		}
@@ -1459,8 +1501,16 @@ public class Image {
 		}
 			
 			for (int j = center_y - square_Image_Height; j <= center_y + square_Image_Height; j++) {
-				for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i += 2) {
-					Pixel_Matrix[j][i] = new Pixel(Color);
+				for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i +=8) {
+					//Pixel_Matrix[j][i] = new Pixel(Color);
+					this.Set_Color(j, i, Color);
+				}
+			}
+			
+			for (int j = center_y - square_Image_Height; j <= center_y + square_Image_Height; j++) {
+				for (int i = center_x - square_Image_Width; i <= center_x + square_Image_Width; i +=8) {
+					//Pixel_Matrix[i][j] = new Pixel(Color);
+					this.Set_Color(i, j, Color);
 				}
 			}
 		}
@@ -1493,18 +1543,25 @@ public class Image {
 
 		for (x = -c_radius; x <= c_radius; x++) {
 			y = (int)(Math.sqrt(r2 - x * x) + 0.5);
-			Pixel_Matrix[center_y + y][center_x + x] = color;
-			Pixel_Matrix[center_y + y][center_x - x] = color;
+			this.Set_Color(center_y + y,center_x + x, color);
+			this.Set_Color(center_y + y,center_x - x, color);
+
+			//Pixel_Matrix[center_y + y][center_x + x] = color;
+			//Pixel_Matrix[center_y + y][center_x - x] = color;
 		}
 		for (x = -c_radius; x <= c_radius; x++) {
 			y = (int)(Math.sqrt(r2 - x * x) + 0.5);
-			Pixel_Matrix[center_y - y][center_x + x] = color;
-			Pixel_Matrix[center_y - y][center_x - x] = color;
+			this.Set_Color(center_y - y,center_x + x, color);
+			this.Set_Color(center_y - y,center_x - x, color);
+			//Pixel_Matrix[center_y - y][center_x + x] = color;
+			//Pixel_Matrix[center_y - y][center_x - x] = color;
 		}
 		for (x = -c_radius; x <= c_radius; x++) {
 			y = (int)(Math.sqrt(r2 - x * x) + 0.5);
-			Pixel_Matrix[center_y - x][center_x + y] = color;
-			Pixel_Matrix[center_y - x][center_x - y] = color;
+			this.Set_Color(center_y - x,center_x + y, color);
+			this.Set_Color(center_y - x,center_x - y, color);
+			//Pixel_Matrix[center_y - x][center_x + y] = color;
+			//Pixel_Matrix[center_y - x][center_x - y] = color;
 		}
 
 
@@ -1523,7 +1580,8 @@ public class Image {
 			for (y = -c_radius; y <= c_radius; y++)
 				for (x = -c_radius; x <= c_radius; x++)
 					if ((x * x) + (y * y) <= (c_radius * c_radius))
-						Pixel_Matrix[center_y + y][center_x + x] = color;
+						//Pixel_Matrix[center_y + y][center_x + x] = color;
+						this.Set_Color(center_y + y, center_x + x, color);
 		}
 	}
 	public void Draw_Text(int center_y,int center_x,String text, Pixel color) {
@@ -1554,7 +1612,8 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Zero[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x]=color;
+						this.Set_Color(draw_y, start_x, color);
+						//Pixel_Matrix[draw_y][start_x]=color;
 					}
 					start_x++;
 					flag++;
@@ -1571,7 +1630,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_One[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1588,7 +1649,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Two[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1605,7 +1668,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Three[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1622,7 +1687,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Four[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1639,7 +1706,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Five[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1656,7 +1725,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Six[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1673,7 +1744,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Seven[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1690,7 +1763,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Eight[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1707,7 +1782,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Number_Nine[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1725,7 +1802,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_A[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1743,7 +1822,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_B[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1761,7 +1842,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_C[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1779,7 +1862,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_D[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1797,7 +1882,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_E[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1816,7 +1903,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_F[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1834,7 +1923,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_G[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1852,7 +1943,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_H[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1870,7 +1963,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_I[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1888,7 +1983,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_J[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1906,7 +2003,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_K[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1924,7 +2023,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_L[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1942,7 +2043,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_M[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1961,7 +2064,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_N[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1979,7 +2084,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_O[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -1998,7 +2105,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_P[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2017,7 +2126,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_Q[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2035,7 +2146,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_R[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2054,7 +2167,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_S[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2073,7 +2188,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_T[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2092,7 +2209,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_U[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2111,7 +2230,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_V[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2130,7 +2251,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_W[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2149,7 +2272,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_X[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2168,7 +2293,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_Y[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2187,7 +2314,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Letter_Z[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2206,7 +2335,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Quesiton_Mark[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2225,7 +2356,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Exclamation_Point[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2244,7 +2377,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Left_Braket[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2262,7 +2397,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Right_Braket[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2281,7 +2418,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Ampersand[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2300,7 +2439,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Comma[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2319,7 +2460,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Squaure_Braket_Left[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2338,7 +2481,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Square_Braket_Right[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2360,7 +2505,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Colon[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2378,7 +2525,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.EqualSign[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2396,7 +2545,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.PlusSign[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2414,7 +2565,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Precent[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2432,7 +2585,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Astersik[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2450,7 +2605,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Dot[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2468,7 +2625,9 @@ public class Image {
 						start_x = temp;
 					}
 					if (Set.Semi_Colon[flag] == 1) {
-						Pixel_Matrix[draw_y][start_x] = color;
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
 					}
 					start_x++;
 					flag++;
@@ -2503,7 +2662,7 @@ public class Image {
 	public double squared_3Point_distance(Point first, Point second) {
 		return Get_Square(first.x - second.x) + Get_Square(first.y - second.y) + Get_Square(first.z - second.z);
 	}
-	public void Grayscale() {
+	public void Grayscale(int alter) {
 		for (int i = 0; i < Image_Height; i++) {
 
 			for (int j = 0; j < Image_Width; j++) {
@@ -2522,6 +2681,9 @@ public class Image {
 				}
 
 			}
+		}
+		if(alter == 1) {
+			this.Commint_Matrix_Changes();
 		}
 	}
     public double Color_Delta(Pixel A, Pixel B) {
@@ -2957,6 +3119,8 @@ public class Image {
 		return Mean / Divider;
 
 	}
+	
+
 	public void Mark_Identical_Pixels(Pixel Target) {
 		Color_Palette cset = new Color_Palette();
 		for (int i = 0; i < Image_Height; i++) {
@@ -2968,6 +3132,27 @@ public class Image {
 		}
 
 	}
+	
+	public void singlePixelConvolution(int i_c ,int j_c,double [][] k,int kernelWidth,int kernelHeight){
+		  Pixel output = new Pixel(0,0,0);
+		  output.i = i_c;
+		  output.j = j_c;
+		  for(int i=0;i<kernelWidth;++i){
+			  	for(int j=0;j<kernelHeight;++j){
+			  		try {
+			  			output.r = output.r + (this.Pixel_Matrix[i_c+i][j_c+j].r * (int)k[i][j]);
+			  			output.g = output.g + (this.Pixel_Matrix[i_c+i][j_c+j].g * (int)k[i][j]);
+			  			output.b = output.b + (this.Pixel_Matrix[i_c+i][j_c+j].b * (int)k[i][j]);
+			  		}catch(Exception e) {
+			  			continue;
+			  		}
+
+			  	}
+		  }
+		  this.Pixel_Matrix[i_c][j_c] = output;
+		
+	  }
+	
 	public void Mark_Identical_Pixels(Image Source) {
 		Color_Palette cset = new Color_Palette();
 
@@ -3345,7 +3530,7 @@ public class Image {
 			}
 		}
 	}
-	public void Color_Flooring(String mode) {
+	public void Color_Flooring(String mode , int alter) {
 	
 		if (mode.equals("10")) {
 			for (int i = 0; i < this.Image_Height; i++) {
@@ -3372,12 +3557,15 @@ public class Image {
 			}
 
 		}
+		if(alter == 1) {
+			this.Commint_Matrix_Changes();
+		}
 	}
-	public void Tresholding(String mode, int value) {
+	public void Tresholding(String mode, int value ,int alter) {
 		
 		if (mode.equals("Trunc")) {
 		
-			this.Color_Flooring("10");
+			this.Color_Flooring("10",1);
 			for (int i = 0; i < Image_Height; i++) {
 				for (int j = 1; j < Image_Width; j++) {
 					if (Pixel_Matrix[i][j].r > value || Pixel_Matrix[i][j].g > value || Pixel_Matrix[i][j].b > value)
@@ -3438,6 +3626,9 @@ public class Image {
 			}
 			
 		}
+		if (alter == 1) {
+			this.Commint_Matrix_Changes();
+		}
 
 	}
 	public void Edge_Detection() {
@@ -3481,6 +3672,7 @@ public class Image {
 
 			}
 		}
+		
 
 	}
 	public void Edge_Detection(int max_color_gap) {
@@ -4032,7 +4224,7 @@ public class Image {
 	}
 	public void Figure_Detection(int blob_distance_treshold, int color_distance_treshold, int Thresholding_level) {
 
-		this.Tresholding("Trunc", Thresholding_level);
+		this.Tresholding("Trunc", Thresholding_level,0);
 		
 		int[][] adj_matrix = new int[Image_Height][Image_Width];
 		int color_treshold = color_distance_treshold;
@@ -4063,7 +4255,7 @@ public class Image {
 		}
 		
 		this.Blob_Framing(blob_distance_treshold, C.Red);
-
+		this.Update_Pixel_Matrix();
 	}
 	public void Write_Average_Color_Palette(int palette_size) {
 		int H, W, lx;
@@ -4358,7 +4550,7 @@ public class Image {
 
 
 	}
-	public void Image_Convolution(int iterations,String Type) throws IOException {
+	public void Image_Convolution(int iterations,String Type,int alter) throws IOException {
 		double Conv_Kernel[][] = new double[3][3];
 		double Kernel_Normal = 0;
 		if (Type.equals("Mean")) {
@@ -4383,25 +4575,77 @@ public class Image {
 			Conv_Kernel[2][1] = 1;
 			Conv_Kernel[2][2] = 0;
 		}
+		else if (Type.equals("Sobol_X")) {
+			Conv_Kernel[0][0] = 1;
+			Conv_Kernel[0][1] = 0;
+			Conv_Kernel[0][2] = -1;
+			Conv_Kernel[1][0] = 2;
+			Conv_Kernel[1][1] = 0;
+			Conv_Kernel[1][2] = -2;
+			Conv_Kernel[2][0] = 1;
+			Conv_Kernel[2][1] = 0;
+			Conv_Kernel[2][2] = -1;
+		}
+		else if (Type.equals("Sobol_Y")) {
+			Conv_Kernel[0][0] = -1;
+			Conv_Kernel[0][1] = -2;
+			Conv_Kernel[0][2] = -1;
+			Conv_Kernel[1][0] = 0;
+			Conv_Kernel[1][1] = 0;
+			Conv_Kernel[1][2] = 0;
+			Conv_Kernel[2][0] = 1;
+			Conv_Kernel[2][1] = 2;
+			Conv_Kernel[2][2] = 1;
+		}
+		else if (Type.equals("Edge_D")) {
+			Conv_Kernel[0][0] = -1;
+			Conv_Kernel[0][1] = -1;
+			Conv_Kernel[0][2] = -1;
+			Conv_Kernel[1][0] = -1;
+			Conv_Kernel[1][1] =  8;
+			Conv_Kernel[1][2] = -1;
+			Conv_Kernel[2][0] = -1;
+			Conv_Kernel[2][1] = -1;
+			Conv_Kernel[2][2] = -1;
+		}else {
+			Conv_Kernel[0][0] = 0;
+			Conv_Kernel[0][1] = 0;
+			Conv_Kernel[0][2] = 0;
+			Conv_Kernel[1][0] = 0;
+			Conv_Kernel[1][1] = 1;
+			Conv_Kernel[1][2] = 0;
+			Conv_Kernel[2][0] = 0;
+			Conv_Kernel[2][1] = 0;
+			Conv_Kernel[2][2] = 0;
+		}
 
+
+		int divider =0;
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-				Kernel_Normal += Conv_Kernel[i][j];
+				Kernel_Normal += Math.abs(Conv_Kernel[i][j]);
+				if(Conv_Kernel[i][j] != 0) {
+					divider++;
+				}
 			}
 		}
-		Image Mid = new Image();
-		Mid.Load_Image(this.F_Path);
-		if (Mid.Image_Height != this.Image_Height) {
-			Mid.Image_Width = this.Image_Width;
-			Mid.Image_Height = this.Image_Height;
-		}
+		//Kernel_Normal = divider;
+		Image Mid = new Image(this);
+		//Mid.Load_Image(this.F_Path);
+		Mid.Set_Scale(Image_Height,Image_Width);
+		Mid.Image_Width = this.Image_Width;
+		Mid.Image_Height = this.Image_Height;
+		for (int i = 1; i < Image_Height; i++) {
+			for (int j = 1; j < Image_Width; j++) {
 
-		for (int i = 0; i < Image_Height; i++) {
-			for (int j = 0; j < Image_Width; j++) {
+				//Mid.Pixel_Matrix[i][j].r = (int)(this.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+				//Mid.Pixel_Matrix[i][j].g = (int)(this.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+				//Mid.Pixel_Matrix[i][j].b = (int)(this.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
+				Mid.singlePixelConvolution(i, j, Conv_Kernel, 3, 3);
+				Mid.Pixel_Matrix[i][j].r /= Kernel_Normal;
+				Mid.Pixel_Matrix[i][j].g /= Kernel_Normal;
+				Mid.Pixel_Matrix[i][j].b /= Kernel_Normal;
 
-				Mid.Pixel_Matrix[i][j].r = (int)(this.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
-				Mid.Pixel_Matrix[i][j].g = (int)(this.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
-				Mid.Pixel_Matrix[i][j].b = (int)(this.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
 
 			}
 
@@ -4410,13 +4654,17 @@ public class Image {
 
 		for (int k = 0; k < iterations; k++) {
 
-			for (int i = 0; i < Image_Height; i++) {
-				for (int j = 0; j < Image_Width; j++) {
+			for (int i = 1; i < Image_Height; i++) {
+				for (int j = 1; j < Image_Width; j++) {
 
-					//if (i >= 1 && j >= 1 && i < Height - 1 && j < width - 1) {
-					Mid.Pixel_Matrix[i][j].r = (int)(Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
-					Mid.Pixel_Matrix[i][j].g = (int)(Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
-					Mid.Pixel_Matrix[i][j].b = (int)(Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
+					//if (i >= 1 && j >= 1 && i < this.Image_Height - 1 && j < width - 1) {
+					//Mid.Pixel_Matrix[i][j].r = (int)(Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
+					//Mid.Pixel_Matrix[i][j].g = (int)(Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
+					//Mid.Pixel_Matrix[i][j].b = (int)(Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
+					Mid.singlePixelConvolution(i, j, Conv_Kernel, 3, 3);
+					Mid.Pixel_Matrix[i][j].r /= Kernel_Normal;
+					Mid.Pixel_Matrix[i][j].g /= Kernel_Normal;
+					Mid.Pixel_Matrix[i][j].b /= Kernel_Normal;
 					//}
 				}
 
@@ -4431,9 +4679,13 @@ public class Image {
 					this.Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
 				}
 			}
-		
+			
+			if(alter == 1) {
+				this.Commint_Matrix_Changes();
+			}
 
 	}
+
 	public ArrayList<Point> GetCoordinateFrame(int start_y,int start_x,int target_y,int target_x) {
 		double dx, sx, dy, sy, err, e2;
 		
@@ -4548,6 +4800,17 @@ public class Image {
 		this.Image_Height *=3;
 		this.Image_Width*=3;
 
+	}
+	public void Set_Scale(int Height ,int Width) {
+	    BufferedImage bi = new BufferedImage(Width, Height, this.IMG.getTransparency() == Transparency.OPAQUE ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g2d = bi.createGraphics();
+	    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR); //produces a balanced resizing (fast and decent quality)
+	    g2d.drawImage(this.IMG, 0, 0, Width, Height, null);
+	    g2d.dispose();
+	    this.IMG =bi;
+	    this.Image_Height =  Height;
+	    this.Image_Width = Width;
+	    this.init_pixel_matrix();
 	}
 	public void Detect_Faces() {
 		short flag = 0;
@@ -4766,6 +5029,12 @@ public class Image {
 
 		}
 
+		
+		
+		
+		
+		
+		
 	}
 	
 
@@ -4777,6 +5046,11 @@ public class Image {
 
 
 }
+
+
+
+
+
 	
 class LibCharacters {
 	
@@ -4784,6 +5058,16 @@ class LibCharacters {
 
 	//UpperCase
 	int[] Letter_A;
+	
+	
+	
+	
+	
+
+	
+	
+
+	
 	int[] Letter_B;
 	int[] Letter_C;
 	int[] Letter_D;
