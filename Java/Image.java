@@ -3230,8 +3230,6 @@ public class Image {
 		return Mean / Divider;
 
 	}
-	
-
 	public void Mark_Identical_Pixels(Pixel Target) {
 		Color_Palette cset = new Color_Palette();
 		for (int i = 0; i < Image_Height; i++) {
@@ -3243,27 +3241,6 @@ public class Image {
 		}
 
 	}
-	
-	public void singlePixelConvolution(int i_c ,int j_c,double [][] k,int kernelWidth,int kernelHeight){
-		  Pixel output = new Pixel(0,0,0);
-		  output.i = i_c;
-		  output.j = j_c;
-		  for(int i=0;i<kernelWidth;++i){
-			  	for(int j=0;j<kernelHeight;++j){
-			  		try {
-			  			output.r = output.r + (this.Pixel_Matrix[i_c+i][j_c+j].r * (int)k[i][j]);
-			  			output.g = output.g + (this.Pixel_Matrix[i_c+i][j_c+j].g * (int)k[i][j]);
-			  			output.b = output.b + (this.Pixel_Matrix[i_c+i][j_c+j].b * (int)k[i][j]);
-			  		}catch(Exception e) {
-			  			continue;
-			  		}
-
-			  	}
-		  }
-		  this.Pixel_Matrix[i_c][j_c] = output;
-		
-	  }
-	
 	public void Mark_Identical_Pixels(Image Source) {
 		Color_Palette cset = new Color_Palette();
 
@@ -4660,141 +4637,6 @@ public class Image {
 
 
 	}
-	public void Image_Convolution(int iterations,String Type,int alter) throws IOException {
-		double Conv_Kernel[][] = new double[3][3];
-		double Kernel_Normal = 0;
-		if (Type.equals("Mean")) {
-			Conv_Kernel[0][0] = 1;
-			Conv_Kernel[0][1] = 1;
-			Conv_Kernel[0][2] = 1;
-			Conv_Kernel[1][0] = 1;
-			Conv_Kernel[1][1] = 1;
-			Conv_Kernel[1][2] = 1;
-			Conv_Kernel[2][0] = 1;
-			Conv_Kernel[2][1] = 1;
-			Conv_Kernel[2][2] = 1;
-		}
-		else if (Type.equals("Gaussian")) {
-			Conv_Kernel[0][0] = 0;
-			Conv_Kernel[0][1] = 1;
-			Conv_Kernel[0][2] = 0;
-			Conv_Kernel[1][0] = 1;
-			Conv_Kernel[1][1] = 4;
-			Conv_Kernel[1][2] = 1;
-			Conv_Kernel[2][0] = 0;
-			Conv_Kernel[2][1] = 1;
-			Conv_Kernel[2][2] = 0;
-		}
-		else if (Type.equals("Sobol_X")) {
-			Conv_Kernel[0][0] = 1;
-			Conv_Kernel[0][1] = 0;
-			Conv_Kernel[0][2] = -1;
-			Conv_Kernel[1][0] = 2;
-			Conv_Kernel[1][1] = 0;
-			Conv_Kernel[1][2] = -2;
-			Conv_Kernel[2][0] = 1;
-			Conv_Kernel[2][1] = 0;
-			Conv_Kernel[2][2] = -1;
-		}
-		else if (Type.equals("Sobol_Y")) {
-			Conv_Kernel[0][0] = -1;
-			Conv_Kernel[0][1] = -2;
-			Conv_Kernel[0][2] = -1;
-			Conv_Kernel[1][0] = 0;
-			Conv_Kernel[1][1] = 0;
-			Conv_Kernel[1][2] = 0;
-			Conv_Kernel[2][0] = 1;
-			Conv_Kernel[2][1] = 2;
-			Conv_Kernel[2][2] = 1;
-		}
-		else if (Type.equals("Edge_D")) {
-			Conv_Kernel[0][0] = -1;
-			Conv_Kernel[0][1] = -1;
-			Conv_Kernel[0][2] = -1;
-			Conv_Kernel[1][0] = -1;
-			Conv_Kernel[1][1] =  8;
-			Conv_Kernel[1][2] = -1;
-			Conv_Kernel[2][0] = -1;
-			Conv_Kernel[2][1] = -1;
-			Conv_Kernel[2][2] = -1;
-		}else {
-			Conv_Kernel[0][0] = 0;
-			Conv_Kernel[0][1] = 0;
-			Conv_Kernel[0][2] = 0;
-			Conv_Kernel[1][0] = 0;
-			Conv_Kernel[1][1] = 1;
-			Conv_Kernel[1][2] = 0;
-			Conv_Kernel[2][0] = 0;
-			Conv_Kernel[2][1] = 0;
-			Conv_Kernel[2][2] = 0;
-		}
-
-
-		int divider =0;
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				Kernel_Normal += Math.abs(Conv_Kernel[i][j]);
-				if(Conv_Kernel[i][j] != 0) {
-					divider++;
-				}
-			}
-		}
-		//Kernel_Normal = divider;
-		Image Mid = new Image(this);
-		//Mid.Load_Image(this.F_Path);
-		Mid.Set_Scale(Image_Height,Image_Width);
-		Mid.Image_Width = this.Image_Width;
-		Mid.Image_Height = this.Image_Height;
-		for (int i = 1; i < Image_Height; i++) {
-			for (int j = 1; j < Image_Width; j++) {
-
-				//Mid.Pixel_Matrix[i][j].r = (int)(this.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
-				//Mid.Pixel_Matrix[i][j].g = (int)(this.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
-				//Mid.Pixel_Matrix[i][j].b = (int)(this.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
-				Mid.singlePixelConvolution(i, j, Conv_Kernel, 3, 3);
-				Mid.Pixel_Matrix[i][j].r /= Kernel_Normal;
-				Mid.Pixel_Matrix[i][j].g /= Kernel_Normal;
-				Mid.Pixel_Matrix[i][j].b /= Kernel_Normal;
-
-
-			}
-
-
-		}
-
-		for (int k = 0; k < iterations; k++) {
-
-			for (int i = 1; i < Image_Height; i++) {
-				for (int j = 1; j < Image_Width; j++) {
-
-					//if (i >= 1 && j >= 1 && i < this.Image_Height - 1 && j < width - 1) {
-					//Mid.Pixel_Matrix[i][j].r = (int)(Mid.Get_Neighbour_Mean_R(i, j, Conv_Kernel, Kernel_Normal));
-					//Mid.Pixel_Matrix[i][j].g = (int)(Mid.Get_Neighbour_Mean_G(i, j, Conv_Kernel, Kernel_Normal));
-					//Mid.Pixel_Matrix[i][j].b = (int)(Mid.Get_Neighbour_Mean_B(i, j, Conv_Kernel, Kernel_Normal));
-					Mid.singlePixelConvolution(i, j, Conv_Kernel, 3, 3);
-					Mid.Pixel_Matrix[i][j].r /= Kernel_Normal;
-					Mid.Pixel_Matrix[i][j].g /= Kernel_Normal;
-					Mid.Pixel_Matrix[i][j].b /= Kernel_Normal;
-					//}
-				}
-
-
-			}
-
-		}
-
-
-			for (int i = 0; i < Image_Height; i++) {
-				for (int j = 0; j < Image_Width; j++) {
-					this.Pixel_Matrix[i][j] = Mid.Pixel_Matrix[i][j];
-				}
-			}
-			
-			if(alter == 1) {
-				this.Commint_Matrix_Changes();
-			}
-
-	}
 
 	public ArrayList<Point> GetCoordinateFrame(int start_y,int start_x,int target_y,int target_x) {
 		double dx, sx, dy, sy, err, e2;
@@ -5181,7 +5023,6 @@ public class Image {
 		int xxR[] = new int[256];
 		int xxG[] = new int[256];
 		int xxB[] = new int[256];
-		Math_Toolbox tlb=  new Math_Toolbox();
 		double xxRProp[] = new double[256];
 		double xxGProp[] = new double[256];
 		double xxBProp[] = new double[256];
@@ -5196,7 +5037,6 @@ public class Image {
 		Arrays.fill(xxB, 0);
 		
 		int max_y = this.Image_Height*this.Image_Width;
-		Color_Palette CSET = new Color_Palette();
 		for(int i =0;i<this.Image_Height;i++) {
 			for(int j =0;j<this.Image_Width;j++) {
 				xxR[this.Pixel_Matrix[i][j].r]++;
@@ -5406,10 +5246,223 @@ public class Image {
 		
 		this.Commint_Matrix_Changes();
 	}
+	public void Zero_Padding() {
+		Image padded = new Image();
+		Color_Palette CSET = new Color_Palette();
+		padded.Load_Blank_Canvas(this.Image_Height+2, this.Image_Width+2, CSET.Black);
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j =0;j<this.Image_Width;j++) {
+				padded.Pixel_Matrix[i+1][j+1] = this.Pixel_Matrix[i][j];
+			}
+		}
+		
+		this.IMG = padded.IMG;
+		this.Image_Height = padded.Image_Height;
+		this.Image_Width=padded.Image_Width;
+		this.Pixel_Matrix = padded.Pixel_Matrix;
+		this.Commint_Matrix_Changes();
+	}
+	public void Extended_Padding() {
+		Image padded = new Image();
+		Color_Palette CSET = new Color_Palette();
+		padded.Load_Blank_Canvas(this.Image_Height+2, this.Image_Width+2, CSET.Black);
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j =0;j<this.Image_Width;j++) {
+				padded.Pixel_Matrix[i+1][j+1] = this.Pixel_Matrix[i][j];
+			}
+		}
+		for(int i = 0;i<this.Image_Height+2;i++) {
+			padded.Pixel_Matrix[i][0] = padded.Pixel_Matrix[i][1];
+			padded.Pixel_Matrix[i][this.Image_Width+1] = padded.Pixel_Matrix[i][this.Image_Width-1];
+		}
+		for(int i = 0;i<this.Image_Width+2;i++) {
+			padded.Pixel_Matrix[0][i] = padded.Pixel_Matrix[1][i];
+			padded.Pixel_Matrix[this.Image_Height+1][i] = padded.Pixel_Matrix[this.Image_Height-1][i];
+		}
+		
+		this.IMG = padded.IMG;
+		this.Image_Height = padded.Image_Height;
+		this.Image_Width=padded.Image_Width;
+		this.Pixel_Matrix = padded.Pixel_Matrix;
+		this.Commint_Matrix_Changes();
+	}
+	public void Image_Convolution(String Mode) {
+		if(Mode.equals("Median_Filter")) {
+			int GroupR[] = new int[9];
+			int GroupG[] = new int[9];
+			int GroupB[] = new int[9];
+			Math_Toolbox tlb = new Math_Toolbox();
+			this.Extended_Padding();
+			
+			
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					GroupR[0] = this.Pixel_Matrix[i][j].r;
+					GroupR[1] = this.Pixel_Matrix[i-1][j].r;
+					GroupR[2] = this.Pixel_Matrix[i-1][j-1].r;
+					GroupR[3] = this.Pixel_Matrix[i-1][j+1].r;
+					GroupR[4] = this.Pixel_Matrix[i+1][j].r;
+					GroupR[5] = this.Pixel_Matrix[i+1][j-1].r;
+					GroupR[6] = this.Pixel_Matrix[i+1][j+1].r;
+					GroupR[7] = this.Pixel_Matrix[i][j+1].r;
+					GroupR[8] = this.Pixel_Matrix[i][j-1].r;
+					//green
+					GroupG[0] = this.Pixel_Matrix[i][j].g;
+					GroupG[1] = this.Pixel_Matrix[i-1][j].g;
+					GroupG[2] = this.Pixel_Matrix[i-1][j-1].g;
+					GroupG[3] = this.Pixel_Matrix[i-1][j+1].g;
+					GroupG[4] = this.Pixel_Matrix[i+1][j].g;
+					GroupG[5] = this.Pixel_Matrix[i+1][j-1].g;
+					GroupG[6] = this.Pixel_Matrix[i+1][j+1].g;
+					GroupG[7] = this.Pixel_Matrix[i][j+1].g;
+					GroupG[8] = this.Pixel_Matrix[i][j-1].g;
+					//blue
+					GroupB[0] = this.Pixel_Matrix[i][j].b;
+					GroupB[1] = this.Pixel_Matrix[i-1][j].b;
+					GroupB[2] = this.Pixel_Matrix[i-1][j-1].b;
+					GroupB[3] = this.Pixel_Matrix[i-1][j+1].b;
+					GroupB[4] = this.Pixel_Matrix[i+1][j].b;
+					GroupB[5] = this.Pixel_Matrix[i+1][j-1].b;
+					GroupB[6] = this.Pixel_Matrix[i+1][j+1].b;
+					GroupB[7] = this.Pixel_Matrix[i][j+1].b;
+					GroupB[8] = this.Pixel_Matrix[i][j-1].b;
+					
+					this.Pixel_Matrix[i][j].r = (int)tlb.getMedian(GroupR);
+					this.Pixel_Matrix[i][j].g = (int)tlb.getMedian(GroupG);
+					this.Pixel_Matrix[i][j].b = (int)tlb.getMedian(GroupB);
+					
 
-	
-	
+				}
+			}
+			this.Commint_Matrix_Changes();
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			
+		}
+		else if(Mode.equals("Mean_Blur")) {
+			int Kernel[][] = new int[3][3];
+			Kernel[0][0] =1;
+			Kernel[0][1] =1;
+			Kernel[0][2] =1;
+			Kernel[1][0] =1;
+			Kernel[1][1] =1;
+			Kernel[1][2] =1;
+			Kernel[2][0] =1;
+			Kernel[2][1] =1;
+			Kernel[2][2] =1;
 
+			this.Extended_Padding();
+			double scaling_factor = (double)1/9;
+			double R_sum =0,G_sum=0,B_sum=0;
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].r;
+					R_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].g;
+					G_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].b;
+					B_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].b;
+					
+					this.Pixel_Matrix[i][j].r = (int)((R_sum * scaling_factor));
+					this.Pixel_Matrix[i][j].g = (int)(G_sum * scaling_factor);
+					this.Pixel_Matrix[i][j].b = (int)(B_sum * scaling_factor);
+					
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+				}
+			}
+			this.Commint_Matrix_Changes();
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			
+		}
+		else if(Mode.equals("Gaussian_Blur")) {
+			int Kernel[][] = new int[3][3];
+			Kernel[0][0] =1;
+			Kernel[0][1] =2;
+			Kernel[0][2] =1;
+			Kernel[1][0] =2;
+			Kernel[1][1] =4;
+			Kernel[1][2] =2;
+			Kernel[2][0] =1;
+			Kernel[2][1] =2;
+			Kernel[2][2] =1;
+
+			this.Extended_Padding();
+			double scaling_factor = (double)1/16;
+			double R_sum =0,G_sum=0,B_sum=0;
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].r;
+					R_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].g;
+					G_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].b;
+					B_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].b;
+					
+					this.Pixel_Matrix[i][j].r = (int)((R_sum * scaling_factor));
+					this.Pixel_Matrix[i][j].g = (int)(G_sum * scaling_factor);
+					this.Pixel_Matrix[i][j].b = (int)(B_sum * scaling_factor);
+					
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+				}
+			}
+			this.Commint_Matrix_Changes();
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			
+		}
+		
+	}
 
 
 
