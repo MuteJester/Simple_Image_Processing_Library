@@ -1241,7 +1241,22 @@ class Math_Toolbox{
 		}
 		return min;
 	}
-	
+	public double nthRoot(int A, int N) 
+    { 
+        double xPre = Math.random() % 10; 
+        double eps = 0.001; 
+        double delX = 2147483647; 
+        double xK = 0.0; 
+        while (delX > eps) 
+        { 
+            xK = ((N - 1.0) * xPre + 
+            (double)A / Math.pow(xPre, N - 1)) / (double)N; 
+            delX = Math.abs(xK - xPre); 
+            xPre = xK; 
+        } 
+      
+        return xK; 
+    } 
 }
 
 public class Image {
@@ -5131,14 +5146,50 @@ public class Image {
 		
 		
 	}
-	public void Histogram_Correction() {
+	public int[] Get_Red_Histogram() {
+		int Rh[] = new int[256];
+		Arrays.fill(Rh, 0);
+		for(int i = 0;i<this.Image_Height;i++) {
+			for(int j = 0 ; j<this.Image_Width;j++) {
+				Rh[this.Pixel_Matrix[i][j].r]++;
+			}
+		}
+		return Rh;
+	}
+	public int[] Get_Green_Histogram() {
+		int Rh[] = new int[256];
+		Arrays.fill(Rh, 0);
+		for(int i = 0;i<this.Image_Height;i++) {
+			for(int j = 0 ; j<this.Image_Width;j++) {
+				Rh[this.Pixel_Matrix[i][j].g]++;
+			}
+		}
+		return Rh;
+	}
+	public int[] Get_Blue_Histogram() {
+		int Rh[] = new int[256];
+		Arrays.fill(Rh, 0);
+		for(int i = 0;i<this.Image_Height;i++) {
+			for(int j = 0 ; j<this.Image_Width;j++) {
+				Rh[this.Pixel_Matrix[i][j].b]++;
+			}
+		}
+		return Rh;
+	}
+
+	public void Histogram_Equalization() {
 		int xxR[] = new int[256];
 		int xxG[] = new int[256];
 		int xxB[] = new int[256];
 		Math_Toolbox tlb=  new Math_Toolbox();
-		//double xxRhi[] = new double[256];
-		//double xxGhi[] = new double[256];
-		//double xxBhi[] = new double[256];
+		double xxRProp[] = new double[256];
+		double xxGProp[] = new double[256];
+		double xxBProp[] = new double[256];
+		
+		double xxRCP[] = new double[256];
+		double xxGCP[] = new double[256];
+		double xxBCP[] = new double[256];
+		
 		//double xxBytag[] = new double[256];
 		Arrays.fill(xxR, 0);
 		Arrays.fill(xxG, 0);
@@ -5154,41 +5205,208 @@ public class Image {
 
 			}
 		}
-		
-		/*
-		 * for(int i = 0;i<256;i++) { xxRhi[i] =
-		 * (double)xxR[i]/(this.Image_Height*this.Image_Width); xxGhi[i] =
-		 * (double)xxG[i]/(this.Image_Height*this.Image_Width); xxBhi[i] =
-		 * (double)xxB[i]/(this.Image_Height*this.Image_Width); } double t_sum=0;
-		 * for(int i = 0;i<256;i++) { t_sum+= xxBhi[i]; xxBytag[i] = t_sum; }
-		 */
-		double rankR[] = tlb.getRank_Array(xxR);
-		double rankG[] = tlb.getRank_Array(xxG);
-		double rankB[] = tlb.getRank_Array(xxB);
+			//propobility calculations
+			for(int i = 0;i<256;i++) {
+				xxRProp[i] = (double)xxR[i]/(double)max_y;
+				xxGProp[i] = (double)xxG[i]/(double)max_y;
+				xxBProp[i] = (double)xxB[i]/(double)max_y;
+				//System.out.println(xxRProp[i]);
+			}
+			double sumRP=0,sumGP=0,sumBP=0;
+			for(int i = 0 ;i<256;i++) {
+				sumRP+=xxRProp[i];
+				sumGP+=xxGProp[i];
+				sumBP+=xxBProp[i];
+				xxRCP[i] =sumRP;
+				xxGCP[i] =sumGP;
+				xxBCP[i] =sumBP;
+			}
+			//normalization to 255
+			for(int i = 0;i<256;i++) {
+				xxRCP[i] *=255;
+				xxGCP[i] *=255;
+				xxBCP[i] *=255;
+				//System.out.println(xxRCP[i] );
+
+			}
+			
+		//double rankR[] = tlb.getRank_Array(xxR);
+		//double rankG[] = tlb.getRank_Array(xxG);
+		//double rankB[] = tlb.getRank_Array(xxB);
 		int hvR[] = new int[256];
 		int hvG[] = new int[256];
 		int hvB[] = new int[256];
-		double R_cdf_min = tlb.get_Min_Of_Arrayd(rankR);
-		double G_cdf_min = tlb.get_Min_Of_Arrayd(rankG);
-		double B_cdf_min = tlb.get_Min_Of_Arrayd(rankB);
+		//double R_cdf_min = tlb.get_Min_Of_Arrayd(rankR);
+		//double G_cdf_min = tlb.get_Min_Of_Arrayd(rankG);
+		//double B_cdf_min = tlb.get_Min_Of_Arrayd(rankB);
 
 		for(int i =0;i<256;i++) {
-			hvR[i] = (int)Math.round(((rankR[i] - R_cdf_min)/(max_y - R_cdf_min)) * (255));
-			hvG[i] = (int)Math.round(((rankG[i] - G_cdf_min)/(max_y - G_cdf_min)) * (255));
-			hvB[i] = (int)Math.round(((rankB[i] - B_cdf_min)/(max_y - B_cdf_min)) * (255));
-			System.out.println(((rankR[i] - R_cdf_min)/(max_y-R_cdf_min))*255);
+			
+			//hvR[i] = (int)Math.round(((rankR[i] - R_cdf_min)/(max_y - R_cdf_min)) * (255));
+			//hvG[i] = (int)Math.round(((rankG[i] - G_cdf_min)/(max_y - G_cdf_min)) * (255));
+			//hvB[i] = (int)Math.round(((rankB[i] - B_cdf_min)/(max_y - B_cdf_min)) * (255));
+			hvR[i] = (int)Math.round(xxRCP[i]);
+			hvG[i] = (int)Math.round(xxGCP[i]);
+			hvB[i] = (int)Math.round(xxBCP[i]);
+			//System.out.println(hvR[i]);
+			//System.out.println("Val " +i+  " R freq: "+xxR[i] + " Rank R : " + rankR[i]);
 
 		}
 		
 		
-		for(int i =0;i<256;i++) {
-			//System.out.println(hvG[i]);
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = (int)hvR[this.Pixel_Matrix[i][j].r];
+				this.Pixel_Matrix[i][j].g = (int)hvG[this.Pixel_Matrix[i][j].g];
+				this.Pixel_Matrix[i][j].b = (int)hvB[this.Pixel_Matrix[i][j].b];
+
+			}
 		}
 		
-	
+		this.Commint_Matrix_Changes();
+	}
+	public void Histogram_Linear_Correction() {
+		int maxR=Integer.MIN_VALUE,maxG=Integer.MIN_VALUE,maxB=Integer.MIN_VALUE,minR =Integer.MAX_VALUE,minG=Integer.MAX_VALUE,minB=Integer.MAX_VALUE;
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				if(this.Pixel_Matrix[i][j].r > maxR) {
+					maxR=this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].r < minR) {
+					minR=this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].g > maxG) {
+					maxG=this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].g < minG) {
+					minG=this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].b > maxB) {
+					maxB=this.Pixel_Matrix[i][j].b;
+				}
+				if(this.Pixel_Matrix[i][j].b < minB) {
+					minB=this.Pixel_Matrix[i][j].b;
+				}
+
+			}
+		}
+		
+		
+		
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = ((this.Pixel_Matrix[i][j].r - minR)*255)/maxR;
+				this.Pixel_Matrix[i][j].g = ((this.Pixel_Matrix[i][j].g - minG)*255)/maxG;
+				this.Pixel_Matrix[i][j].b = ((this.Pixel_Matrix[i][j].b - minB)*255)/maxB;
+
+			}
+		}
+		
+		this.Commint_Matrix_Changes();
+	}
+	public void Histogram_Power_Correction() {
+		int maxR=Integer.MIN_VALUE,maxG=Integer.MIN_VALUE,maxB=Integer.MIN_VALUE,minR =Integer.MAX_VALUE,minG=Integer.MAX_VALUE,minB=Integer.MAX_VALUE;
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				if(this.Pixel_Matrix[i][j].r > maxR) {
+					maxR=this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].r < minR) {
+					minR=this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].g > maxG) {
+					maxG=this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].g < minG) {
+					minG=this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].b > maxB) {
+					maxB=this.Pixel_Matrix[i][j].b;
+				}
+				if(this.Pixel_Matrix[i][j].b < minB) {
+					minB=this.Pixel_Matrix[i][j].b;
+				}
+
+			}
+		}
+		
+		
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = ((this.Pixel_Matrix[i][j].r - minR));
+				this.Pixel_Matrix[i][j].g = ((this.Pixel_Matrix[i][j].g - minG));
+				this.Pixel_Matrix[i][j].b = ((this.Pixel_Matrix[i][j].b - minB));
+
+			}
+		}
+		
+		double powR = Math.log(255)/Math.log(maxR);
+		double powG = Math.log(255)/Math.log(maxG);
+		double powB = Math.log(255)/Math.log(maxB);
+		
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = (int)(Math.pow(this.Pixel_Matrix[i][j].r,powR));
+				this.Pixel_Matrix[i][j].g = (int)(Math.pow(this.Pixel_Matrix[i][j].g,powG));
+				this.Pixel_Matrix[i][j].b = (int)(Math.pow(this.Pixel_Matrix[i][j].b,powB));
+
+			}
+		}
+		
+		this.Commint_Matrix_Changes();
+	}
+	public void Histogram_Log_Correction() {
+		int maxR=Integer.MIN_VALUE,maxG=Integer.MIN_VALUE,maxB=Integer.MIN_VALUE,minR =Integer.MAX_VALUE,minG=Integer.MAX_VALUE,minB=Integer.MAX_VALUE;
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				if(this.Pixel_Matrix[i][j].r > maxR) {
+					maxR=this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].r < minR) {
+					minR=this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].g > maxG) {
+					maxG=this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].g < minG) {
+					minG=this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].b > maxB) {
+					maxB=this.Pixel_Matrix[i][j].b;
+				}
+				if(this.Pixel_Matrix[i][j].b < minB) {
+					minB=this.Pixel_Matrix[i][j].b;
+				}
+
+			}
+		}
+		
+		Math_Toolbox tlb = new Math_Toolbox();
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = ((this.Pixel_Matrix[i][j].r - minR+1));
+				this.Pixel_Matrix[i][j].g = ((this.Pixel_Matrix[i][j].g - minG+1));
+				this.Pixel_Matrix[i][j].b = ((this.Pixel_Matrix[i][j].b - minB+1));
+
+			}
+		}
+		
+		double BaseR = tlb.nthRoot(maxR, 255);
+		double BaseG = tlb.nthRoot(maxG, 255);
+		double BaseB = tlb.nthRoot(maxB, 255);
+		
+		for(int i = 0 ; i <this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = (int)(Math.log(this.Pixel_Matrix[i][j].r)/Math.log(BaseR));
+				this.Pixel_Matrix[i][j].g = (int)(Math.log(this.Pixel_Matrix[i][j].g)/Math.log(BaseG));
+				this.Pixel_Matrix[i][j].b = (int)(Math.log(this.Pixel_Matrix[i][j].b)/Math.log(BaseB));
+
+			}
+		}
+		
+		this.Commint_Matrix_Changes();
 	}
 
-	
 	
 	
 
@@ -5859,7 +6077,7 @@ class SPlot extends Image{
 	public void Write_Scatter_Plot(ArrayList<ArrayList<Integer>> data) {
 		
 	}
-	public void Write_Histogram(Image source,String Channel) {
+	public void Write_Histogram(Image source,String Channel,String output_name) {
 		int xxR[] = new int[256];
 		int xxG[] = new int[256];
 		int xxB[] = new int[256];
@@ -5955,7 +6173,7 @@ class SPlot extends Image{
 		
 		
 		
-		histo.Write_Image("Histogram.png");
+		histo.Write_Image(output_name + ".png");
 	}
 	
 	
