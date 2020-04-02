@@ -1,9 +1,15 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.Transparency;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +18,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.xml.crypto.Data;
 
 import java.util.LinkedList;
@@ -19,6 +26,7 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.Collections;
 
 
@@ -234,7 +242,12 @@ class Matrix {
 class SIPL_Window extends JFrame{
 	private static final long serialVersionUID = 1L;
 	BufferedImage IMG;
+	public boolean isopen;
 	JLabel label;
+	SIPL_Window(){
+		this.isopen = true;
+
+	}
 	SIPL_Window(BufferedImage img){
 		this.IMG = img;
 		//Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -245,6 +258,29 @@ class SIPL_Window extends JFrame{
 	    this.setSize(IMG.getWidth(), IMG.getHeight());
 		this.setVisible(true);
 		this.setLayout(null);
+		this.isopen = true;
+	}
+	public void start_window() {
+
+		label=new JLabel();
+	    this.setSize(300, 300);
+		this.setVisible(true);
+		this.setLayout(null);
+
+	}
+	
+	public void Refresh_Frame(BufferedImage img) {
+			this.IMG = img;
+			label.setIcon((Icon) new ImageIcon(IMG));
+		    this.setSize(IMG.getWidth(), IMG.getHeight());
+		    this.revalidate();
+		    this.repaint();
+			//this.setVisible(true);
+			//this.setLayout(null);
+	}
+	public void close() {
+		//this.dispatchEventToSelf(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+	
 	}
 }
 
@@ -382,6 +418,25 @@ class Math_Toolbox{
 		}
 		return max;
 	}
+	public int random_int_in_range(int lower,int upper) {
+		int rand = ThreadLocalRandom.current().nextInt(lower,upper);		
+		return rand;
+	}
+	public float Remap(float value, float fromMin, float fromMax, float toMin,  float toMax)
+    {
+        var fromAbs  =  value - fromMin;
+        var fromMaxAbs = fromMax - fromMin;      
+       
+        var normal = fromAbs / fromMaxAbs;
+ 
+        var toMaxAbs = toMax - toMin;
+        var toAbs = toMaxAbs * normal;
+ 
+        var to = toAbs + toMin;
+       
+        return to;
+    }	
+		
 }
 class Point{
 	
@@ -418,6 +473,21 @@ class Point{
 	@Override
 	public String toString() {
 		return "[X: " + this.x +"]" +" [Y: " + this.y +"]" + " [Z: " + this.z +"]"+ "\n";
+	}
+	public double X_Linear_Interpolation(Point B,double y_value) {
+		return (((y_value - this.y)*(B.x - this.x)) / (B.y - this.y) + this.x);
+		
+	}
+	public double Y_Linear_Interpolation(Point B,double x_value) {
+		return (x_value - this.x)*(B.y - this.y) / (B.x - this.x) + this.y;		
+	}
+	public Point lerp(Point B ,double amount) {
+		Point ret = new Point();
+		ret.x = this.x + (B.x -this.x)*amount;
+		ret.y = this.y +  (B.y -this.y)*amount;
+		ret.z = this.z +  (B.z -this.z)*amount;
+
+		return ret;
 	}
 }
 
@@ -555,7 +625,28 @@ class Pixel {
 	        
 	        return xyz;
 	    }
-	
+	public void Clamp_Outliers() {
+		if(this.r > 255 || this.r < 0) {
+			if(this.r>255) {
+				this.r =255;
+			}else {
+				this.r=0;
+			}
+		} if(this.g > 255 || this.g < 0) {
+			if(this.g>255) {
+				this.g =255;
+			}else {
+				this.g=0;
+			}
+		}
+		 if(this.b > 255 || this.b < 0) {
+			if(this.b>255) {
+				this.b =255;
+			}else {
+				this.b=0;
+			}
+		}
+	}
 	public void LAB_to_RGB(LabPixel lab) {
 		Point xyz = this.LABtoXYZ(lab);
 		this.XYZtoRGB(xyz);
@@ -1765,12 +1856,11 @@ public class Image {
 	}
 	Image(Image copy){
 		this.F_Path = copy.F_Path;
-		this.Image_Width = copy.Image_Width;
-		this.Image_Height = copy.Image_Height;
+		this.Load_Blank_Canvas(copy.Image_Height, copy.Image_Width, new Pixel(0,0,0));
 		this.IMG = copy.IMG;
-		this.Pixel_Matrix = copy.Pixel_Matrix;
+		this.init_pixel_matrix();
 	}
-	private void Image_Load_Wrapper() {
+	protected void Image_Load_Wrapper() {
 		  this.Image_Width = IMG.getWidth();
 		  this.Image_Height = IMG.getHeight();
 		  this.init_pixel_matrix();
@@ -1842,7 +1932,17 @@ public class Image {
 		tmp.Commint_Matrix_Changes();
 		tmp.Write_Image(save_as);
 	}
-
+	public void Add_Pixel_Values(Image Image_To_Add) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r += Image_To_Add.Pixel_Matrix[i][j].r;
+				this.Pixel_Matrix[i][j].g += Image_To_Add.Pixel_Matrix[i][j].g;
+				this.Pixel_Matrix[i][j].b += Image_To_Add.Pixel_Matrix[i][j].b;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
 	public void Commint_Matrix_Changes() {
 		for(int i=0;i<this.Image_Height;i++) {
 			for(int j=0;j<this.Image_Width;j++) {
@@ -1883,8 +1983,19 @@ public class Image {
 
 	}
 	public void Show_Image() {
-		SIPL_Window n = new SIPL_Window(this.IMG);
-	
+		SIPL_Window frame = new SIPL_Window(this.IMG);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		/*
+		 * frame.addWindowListener( new WindowAdapter() { public void
+		 * windowClosing(WindowEvent e) { JFrame frame = (JFrame)e.getSource();
+		 * 
+		 * int result = JOptionPane.showConfirmDialog( frame,
+		 * "Are you sure you want to exit the application?", "Exit Application",
+		 * JOptionPane.YES_NO_OPTION);
+		 * 
+		 * if (result == JOptionPane.YES_OPTION)
+		 * frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); } });
+		 */
 	}
 
 	public Pixel Get_Pixel(int i,int j) {
@@ -4225,7 +4336,7 @@ public class Image {
 
 	}
 	public void Thresholding(int alter) {
-		this.Grayscale(1);
+		this.Grayscale(alter);
 		//using otsus method
 		int Histogram[] = new int[256];
 		Arrays.fill(Histogram, 0);
@@ -4875,7 +4986,7 @@ public class Image {
 	}
 	public void Figure_Detection(int blob_distance_treshold, int color_distance_treshold, int Thresholding_level) {
 
-		this.Thresholding("Trunc", Thresholding_level,0);
+		this.Thresholding("Trunc",Thresholding_level,0);
 		
 		int[][] adj_matrix = new int[Image_Height][Image_Width];
 		int color_treshold = color_distance_treshold;
@@ -6026,6 +6137,407 @@ public class Image {
 			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
 			
 		}
+		else if(Mode.equals("Low_Pass")) {
+			double Kernel[][] = new double[3][3];
+			Kernel[0][0] =0;
+			Kernel[0][1] =(double)1/8;
+			Kernel[0][2] =0;
+			Kernel[1][0] =(double)1/8;
+			Kernel[1][1] =(double)1/2;
+			Kernel[1][2] =(double)1/8;
+			Kernel[2][0] =0;
+			Kernel[2][1] =(double)1/8;
+			Kernel[2][2] =0;
+
+			this.Extended_Padding();
+			double scaling_factor = (double)1/16;
+			double R_sum =0,G_sum=0,B_sum=0;
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].r;
+					R_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].g;
+					G_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].b;
+					B_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].b;
+					
+					this.Pixel_Matrix[i][j].r = (int)((R_sum));
+					this.Pixel_Matrix[i][j].g = (int)(G_sum);
+					this.Pixel_Matrix[i][j].b = (int)(B_sum);
+					
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+				}
+			}
+			this.Commint_Matrix_Changes();
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			
+		}
+		else if(Mode.equals("High_Pass")) {
+			double Kernel[][] = new double[3][3];
+			Kernel[0][0] =(double)-1/9;
+			Kernel[0][1] =(double)-1/9;
+			Kernel[0][2] =(double)-1/9;
+			Kernel[1][0] =(double)-1/9;
+			Kernel[1][1] =(double)1;
+			Kernel[1][2] =(double)-1/9;
+			Kernel[2][0] =(double)-1/9;
+			Kernel[2][1] =(double)-1/9;
+			Kernel[2][2] =(double)-1/9;
+			Image copy = new Image(this);
+			this.Extended_Padding();
+			copy.Extended_Padding();
+			double R_sum =0,G_sum=0,B_sum=0;
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].r;
+					R_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].g;
+					G_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].b;
+					B_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].b;
+					
+					//clamping
+					
+					
+					copy.Pixel_Matrix[i][j].r = (int)(((R_sum)));
+					copy.Pixel_Matrix[i][j].g = (int)((G_sum));
+					copy.Pixel_Matrix[i][j].b = (int)((B_sum));
+					//copy.Pixel_Matrix[i][j].Clamp_Outliers();
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+				}
+			}
+
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			copy.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			this.init_pixel_matrix();
+			this.Add_Pixel_Values(copy);
+			this.Commint_Matrix_Changes();
+
+		}
+		else if(Mode.equals("High_Pass_Streached")) {
+			double Kernel[][] = new double[3][3];
+			Kernel[0][0] =(double)-1/9;
+			Kernel[0][1] =(double)-1/9;
+			Kernel[0][2] =(double)-1/9;
+			Kernel[1][0] =(double)-1/9;
+			Kernel[1][1] =(double)-8/9;
+			Kernel[1][2] =(double)-1/9;
+			Kernel[2][0] =(double)-1/9;
+			Kernel[2][1] =(double)-1/9;
+			Kernel[2][2] =(double)-1/9;
+
+			this.Extended_Padding();
+			double scaling_factor = (double)1/16;
+			double R_sum =0,G_sum=0,B_sum=0;
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].r;
+					R_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].g;
+					G_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].b;
+					B_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].b;
+					
+					//clamping
+					
+					
+					this.Pixel_Matrix[i][j].r = (int)(((R_sum/2)) + 128);
+					this.Pixel_Matrix[i][j].g = (int)((G_sum/2)+ 128);
+					this.Pixel_Matrix[i][j].b = (int)((B_sum/2)+ 128);
+					this.Pixel_Matrix[i][j].Clamp_Outliers();
+					if(this.Pixel_Matrix[i][j].r < 0 || this.Pixel_Matrix[i][j].g < 0 ||this.Pixel_Matrix[i][j].r < 0) {
+						System.out.println("Found <0 !");
+					}
+					
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+				}
+			}
+			this.Commint_Matrix_Changes();
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			this.Commint_Matrix_Changes();
+
+		}
+		else if(Mode.equals("Unsharp")) {
+			double Kernel[][] = new double[3][3];
+			Kernel[0][0] =(double)1/9;
+			Kernel[0][1] =(double)-2/9;
+			Kernel[0][2] =(double)1/9;
+			Kernel[1][0] =(double)-2/9;
+			Kernel[1][1] =(double)-4/9;
+			Kernel[1][2] =(double)-2/9;
+			Kernel[2][0] =(double)1/9;
+			Kernel[2][1] =(double)-2/9;
+			Kernel[2][2] =(double)1/9;
+
+			this.Extended_Padding();
+			double scaling_factor = (double)1/16;
+			double R_sum =0,G_sum=0,B_sum=0;
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].r;
+					R_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].g;
+					G_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel[0][0] * this.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel[0][1] * this.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel[0][2] * this.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel[1][0] * this.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel[1][1] * this.Pixel_Matrix[i][j].b;
+					B_sum += Kernel[1][2] * this.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel[2][0] * this.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel[2][1] * this.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel[2][2] * this.Pixel_Matrix[i+1][j+1].b;
+					
+					//clamping
+					
+					
+					this.Pixel_Matrix[i][j].r = (int)(((R_sum)) + 128);
+					this.Pixel_Matrix[i][j].g = (int)((G_sum)+ 128);
+					this.Pixel_Matrix[i][j].b = (int)((B_sum)+ 128);
+					this.Pixel_Matrix[i][j].Clamp_Outliers();
+					if(this.Pixel_Matrix[i][j].r < 0 || this.Pixel_Matrix[i][j].g < 0 ||this.Pixel_Matrix[i][j].r < 0) {
+						System.out.println("Found <0 !");
+					}
+					
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+				}
+			}
+			this.Commint_Matrix_Changes();
+			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			this.Commint_Matrix_Changes();
+
+			
+		}
+		else if(Mode.equals("Sobel_Kernel")) {
+			double Kernel_x[][] = new double[3][3];
+			double Kernel_y[][] = new double[3][3];
+			Image copy_y = new Image(this);
+			Image copy = new Image(this);
+			Kernel_x[0][0] =(double)-1;
+			Kernel_x[0][1] =(double)-2;
+			Kernel_x[0][2] =(double)-1;
+			Kernel_x[1][0] =(double)0;
+			Kernel_x[1][1] =(double)0;
+			Kernel_x[1][2] =(double)0;
+			Kernel_x[2][0] =(double)1;
+			Kernel_x[2][1] =(double)2;
+			Kernel_x[2][2] =(double)1;
+			
+			Kernel_y[0][0] =(double)-1;
+			Kernel_y[0][1] =(double)0;
+			Kernel_y[0][2] =(double)1;
+			Kernel_y[1][0] =(double)-2;
+			Kernel_y[1][1] =(double)0;
+			Kernel_y[1][2] =(double)2;
+			Kernel_y[2][0] =(double)-1;
+			Kernel_y[2][1] =(double)0;
+			Kernel_y[2][2] =(double)1;
+
+			copy_y.Extended_Padding();
+			copy.Extended_Padding();
+			double R_sum =0,G_sum=0,B_sum=0;
+			double R_sum_x =0,G_sum_x=0,B_sum_x=0;
+
+			for(int i =1;i<copy_y.Image_Height-1;i++) {
+				for(int j=1;j<copy_y.Image_Width-1;j++) {
+					//red
+					R_sum += Kernel_y[0][0] * copy_y.Pixel_Matrix[i-1][j-1].r;
+					R_sum += Kernel_y[0][1] * copy_y.Pixel_Matrix[i-1][j].r;
+					R_sum += Kernel_y[0][2] * copy_y.Pixel_Matrix[i-1][j+1].r;
+					R_sum += Kernel_y[1][0] * copy_y.Pixel_Matrix[i][j-1].r;
+					R_sum += Kernel_y[1][1] * copy_y.Pixel_Matrix[i][j].r;
+					R_sum += Kernel_y[1][2] * copy_y.Pixel_Matrix[i][j+1].r;
+					R_sum += Kernel_y[2][0] * copy_y.Pixel_Matrix[i+1][j-1].r;
+					R_sum += Kernel_y[2][1] * copy_y.Pixel_Matrix[i+1][j].r;
+					R_sum += Kernel_y[2][2] * copy_y.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum += Kernel_y[0][0] * copy_y.Pixel_Matrix[i-1][j-1].g;
+					G_sum += Kernel_y[0][1] * copy_y.Pixel_Matrix[i-1][j].g;
+					G_sum += Kernel_y[0][2] * copy_y.Pixel_Matrix[i-1][j+1].g;
+					G_sum += Kernel_y[1][0] * copy_y.Pixel_Matrix[i][j-1].g;
+					G_sum += Kernel_y[1][1] * copy_y.Pixel_Matrix[i][j].g;
+					G_sum += Kernel_y[1][2] * copy_y.Pixel_Matrix[i][j+1].g;
+					G_sum += Kernel_y[2][0] * copy_y.Pixel_Matrix[i+1][j-1].g;
+					G_sum += Kernel_y[2][1] * copy_y.Pixel_Matrix[i+1][j].g;
+					G_sum += Kernel_y[2][2] * copy_y.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum += Kernel_y[0][0] * copy_y.Pixel_Matrix[i-1][j-1].b;
+					B_sum += Kernel_y[0][1] * copy_y.Pixel_Matrix[i-1][j].b;
+					B_sum += Kernel_y[0][2] * copy_y.Pixel_Matrix[i-1][j+1].b;
+					B_sum += Kernel_y[1][0] * copy_y.Pixel_Matrix[i][j-1].b;
+					B_sum += Kernel_y[1][1] * copy_y.Pixel_Matrix[i][j].b;
+					B_sum += Kernel_y[1][2] * copy_y.Pixel_Matrix[i][j+1].b;
+					B_sum += Kernel_y[2][0] * copy_y.Pixel_Matrix[i+1][j-1].b;
+					B_sum += Kernel_y[2][1] * copy_y.Pixel_Matrix[i+1][j].b;
+					B_sum += Kernel_y[2][2] * copy_y.Pixel_Matrix[i+1][j+1].b;
+					
+					
+					
+					//red
+					R_sum_x += Kernel_x[0][0] * copy_y.Pixel_Matrix[i-1][j-1].r;
+					R_sum_x += Kernel_x[0][1] * copy_y.Pixel_Matrix[i-1][j].r;
+					R_sum_x += Kernel_x[0][2] * copy_y.Pixel_Matrix[i-1][j+1].r;
+					R_sum_x += Kernel_x[1][0] * copy_y.Pixel_Matrix[i][j-1].r;
+					R_sum_x += Kernel_x[1][1] * copy_y.Pixel_Matrix[i][j].r;
+					R_sum_x += Kernel_x[1][2] * copy_y.Pixel_Matrix[i][j+1].r;
+					R_sum_x += Kernel_x[2][0] * copy_y.Pixel_Matrix[i+1][j-1].r;
+					R_sum_x += Kernel_x[2][1] * copy_y.Pixel_Matrix[i+1][j].r;
+					R_sum_x += Kernel_x[2][2] * copy_y.Pixel_Matrix[i+1][j+1].r;
+					//green
+					G_sum_x += Kernel_x[0][0] * copy_y.Pixel_Matrix[i-1][j-1].g;
+					G_sum_x += Kernel_x[0][1] * copy_y.Pixel_Matrix[i-1][j].g;
+					G_sum_x += Kernel_x[0][2] * copy_y.Pixel_Matrix[i-1][j+1].g;
+					G_sum_x += Kernel_x[1][0] * copy_y.Pixel_Matrix[i][j-1].g;
+					G_sum_x += Kernel_x[1][1] * copy_y.Pixel_Matrix[i][j].g;
+					G_sum_x += Kernel_x[1][2] * copy_y.Pixel_Matrix[i][j+1].g;
+					G_sum_x += Kernel_x[2][0] * copy_y.Pixel_Matrix[i+1][j-1].g;
+					G_sum_x += Kernel_x[2][1] * copy_y.Pixel_Matrix[i+1][j].g;
+					G_sum_x += Kernel_x[2][2] * copy_y.Pixel_Matrix[i+1][j+1].g;
+					//Blue
+					B_sum_x += Kernel_x[0][0] * copy_y.Pixel_Matrix[i-1][j-1].b;
+					B_sum_x += Kernel_x[0][1] * copy_y.Pixel_Matrix[i-1][j].b;
+					B_sum_x += Kernel_x[0][2] * copy_y.Pixel_Matrix[i-1][j+1].b;
+					B_sum_x += Kernel_x[1][0] * copy_y.Pixel_Matrix[i][j-1].b;
+					B_sum_x += Kernel_x[1][1] * copy_y.Pixel_Matrix[i][j].b;
+					B_sum_x += Kernel_x[1][2] * copy_y.Pixel_Matrix[i][j+1].b;
+					B_sum_x += Kernel_x[2][0] * copy_y.Pixel_Matrix[i+1][j-1].b;
+					B_sum_x += Kernel_x[2][1] * copy_y.Pixel_Matrix[i+1][j].b;
+					B_sum_x += Kernel_x[2][2] * copy_y.Pixel_Matrix[i+1][j+1].b;
+					
+					//clamping
+					
+					
+					copy.Pixel_Matrix[i][j].r = (int) Math.round((Math.sqrt(R_sum_x*R_sum_x +  R_sum*R_sum)));
+					copy.Pixel_Matrix[i][j].g = (int) Math.round((Math.sqrt(G_sum_x*G_sum_x +  G_sum*G_sum)));
+					copy.Pixel_Matrix[i][j].b = (int) Math.round((Math.sqrt(B_sum_x*B_sum_x +  B_sum*B_sum)));
+					copy.Pixel_Matrix[i][j].Clamp_Outliers();
+					
+					R_sum=0;
+					B_sum=0;
+					G_sum=0;
+					R_sum_x=0;
+					B_sum_x=0;
+					G_sum_x=0;
+				}
+			}
+			R_sum=0;
+			B_sum=0;
+			G_sum=0;
+			copy.Commint_Matrix_Changes();
+			copy.Crop_Image(1, 1, copy_y.Image_Height-1, copy_y.Image_Width-1);
+			
+			for(int i =0;i<this.Image_Height;i++) {
+				for(int j =0;j<this.Image_Width;j++) {
+					this.Pixel_Matrix[i][j].r = copy.Pixel_Matrix[i][j].r;
+					this.Pixel_Matrix[i][j].g = copy.Pixel_Matrix[i][j].g;
+					this.Pixel_Matrix[i][j].b = copy.Pixel_Matrix[i][j].b;
+					this.Pixel_Matrix[i][j].Clamp_Outliers();
+				}
+			}
+			this.Commint_Matrix_Changes();
+
+			
+		}
+		
+		
+		
 		
 	}
 	public void Scale_Down_By_Convolution(String Mode) {
@@ -6163,7 +6675,6 @@ public class Image {
 	
 	public void Dithering_Floyd_Steinberg(int Palette_Size) {
 		ArrayList<Point> ACP = this.Get_Average_Color_Palette(Palette_Size,25);
-		Math_Toolbox tlb = new Math_Toolbox();
 		this.Extended_Padding();
 		double minDistance=Double.MAX_VALUE;
 		int pos=0;
@@ -6207,8 +6718,80 @@ public class Image {
 		this.Commint_Matrix_Changes();
 		this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
 	}
+	public void Circle_Packing(int amount_of_circles,int max_circle_size) {
+		class circle{
+			int x,y,r;
+			Pixel Color;
+			circle(){}
+			circle(int x,int y,int r,Pixel Color){
+				this.x=x;
+				this.y=y;
+				this.r=r;
+				this.Color=Color;
+			}
+			public int intersect_check(int x2,int y2, int r2) 
+			{ 
+			    int distSq = (this.x - x2) * (this.x - x2) + 
+			                 (this.y - y2) * (this.y - y2); 
+			    int radSumSq = (this.r + r2) * (this.r + r2); 
+			    if (distSq == radSumSq) 
+			        return 1; 
+			    else if (distSq > radSumSq) 
+			        return -1; 
+			    else
+			        return 0; 
+			} 
+		}
+		Math_Toolbox tlb = new Math_Toolbox();
+			ArrayList<circle> circles = new ArrayList<circle>();
+			
+			for(int i = 0;i<amount_of_circles;i++) {
+				int r = tlb.random_int_in_range(1, max_circle_size);
+				int x = tlb.random_int_in_range(1+r, this.Image_Width-1-r);
+				int y = tlb.random_int_in_range(1+r, this.Image_Height-1-r);
+				Pixel Color = new Pixel(this.Pixel_Matrix[y][x]);
+				circle to_add = new circle(x,y,r,Color);
+				for(int j = 0;j< circles.size();j++) {
+					if(circles.get(j).intersect_check(x, y, r) == 0) {
+						r = tlb.random_int_in_range(1, max_circle_size);
+						x = tlb.random_int_in_range(1+r, this.Image_Width-2-r);
+						y = tlb.random_int_in_range(1+r, this.Image_Height-2-r);
+						Color = new Pixel(this.Pixel_Matrix[y][x]);
+						j=0;
+						to_add.r=r;
+						to_add.x=x;
+						to_add.Color=Color;
+						to_add.y=y;
+					}
+				}
+				circles.add(to_add);
+			}
+			this.Load_Blank_Canvas(this.Image_Height, this.Image_Width, new Pixel(0,0,0));
+			for(int i = 0 ; i<circles.size();i++) {
+				this.Draw_Circle(circles.get(i).x, circles.get(i).y, circles.get(i).r, circles.get(i).Color,"Fill");
+			}
+			
 	
+	
+	}
+	
+
+
+
+
+
+
+
+//end of image class
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -7006,13 +7589,15 @@ class SPlot extends Image{
 		int xxR[] = new int[256];
 		int xxG[] = new int[256];
 		int xxB[] = new int[256];
+		Math_Toolbox tlb = new Math_Toolbox();
 		Arrays.fill(xxR, 0);
 		Arrays.fill(xxG, 0);
 		Arrays.fill(xxB, 0);
 		//ArrayList<Integer> xxG = new ArrayList<Integer>(Collections.nCopies(255, 0));
 		//ArrayList<Integer> xxB = new ArrayList<Integer>(Collections.nCopies(255, 0));
 		int max_y = source.Image_Height*source.Image_Width;
-		int divider = max_y/400;
+		int max_val=Integer.MIN_VALUE;
+		int Multiplyer=1;
 		Color_Palette CSET = new Color_Palette();
 		for(int i =0;i<source.Image_Height;i++) {
 			for(int j =0;j<source.Image_Width;j++) {
@@ -7022,7 +7607,26 @@ class SPlot extends Image{
 
 			}
 		}
-	
+
+		for(int i = 0 ;i<256;i++) {
+			if(xxR[i] > max_val) {
+				max_val = xxR[i];
+			}
+			if(xxG[i] > max_val) {
+				max_val = xxG[i];
+			}
+			if(xxB[i] > max_val) {
+				max_val = xxB[i];
+			}
+		}
+		while(max_val * Multiplyer < max_y) {
+			
+			if((Multiplyer+1)*max_val > max_y ) {
+				break;
+			}else {
+				Multiplyer++;
+			}
+		}
 		
 		Image histo = new Image();
 		histo.Load_Blank_Canvas(600, 755, CSET.White);
@@ -7031,14 +7635,14 @@ class SPlot extends Image{
 		histo.Draw_Square(98,98,502,642,CSET.Black,"Corners");
 		
 		histo.Draw_Line(102, 90, 102, 99, CSET.Black);
-		histo.Draw_Text(102, 40, String.valueOf(max_y), CSET.Black);
 		for(int i = 0; i <= 400; i+=101) {
 			histo.Draw_Line(501-(i), 100 , 501-(i) , 92, CSET.Black);
 
 		}
-		histo.Draw_Text(400, 40, String.valueOf((max_y/100)*25), CSET.Black);
-		histo.Draw_Text(299, 40, String.valueOf((max_y/100)*50), CSET.Black);
-		histo.Draw_Text(198, 40, String.valueOf((max_y/100)*75), CSET.Black);
+		histo.Draw_Text(400, 40, String.valueOf(((max_y/Multiplyer)/100)*25), CSET.Black);
+		histo.Draw_Text(299, 40, String.valueOf(((max_y/Multiplyer)/100)*50), CSET.Black);
+		histo.Draw_Text(198, 40, String.valueOf(((max_y/Multiplyer)/100)*75), CSET.Black);
+		histo.Draw_Text(102, 40, String.valueOf(max_y/Multiplyer), CSET.Black);
 
 		
 		
@@ -7056,8 +7660,8 @@ class SPlot extends Image{
 		if(Channel.equals("Red")) {
 			histo.Draw_Text(90, 345, "RED HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxR[i/2]/divider) , 108 + i, CSET.Red);
-				histo.Draw_Line(499, 107 + i , 499-(xxR[i/2]/divider) , 107 + i, CSET.Red);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Red);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Red);
 
 			}
 			
@@ -7065,16 +7669,15 @@ class SPlot extends Image{
 		else if(Channel.equals("Green")) {
 			histo.Draw_Text(90, 345, "GREEN HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxG[i/2]/divider) , 108 + i, CSET.Green);
-				histo.Draw_Line(499, 107 + i , 499-(xxG[i/2]/divider) , 107 + i, CSET.Green);
-
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Green);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Green);
 			}
 			
 		}else if(Channel.equals("Blue")) {
 			histo.Draw_Text(90, 345, "BLUE HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxB[i/2]/divider) , 108 + i, CSET.Blue);
-				histo.Draw_Line(499, 107 + i , 499-(xxB[i/2]/divider) , 107 + i, CSET.Blue);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Blue);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Blue);
 
 			}
 			
@@ -7082,14 +7685,14 @@ class SPlot extends Image{
 		else if(Channel.equals("RGB")) {
 			histo.Draw_Text(90, 345, "RGB HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxR[i/2]/divider) , 108 + i, CSET.Red);
-				histo.Draw_Line(499, 107 + i , 499-(xxR[i/2]/divider) , 107 + i, CSET.Red);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Red);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Red);
 
-				histo.Draw_Line(499, 108 + i , 499-(xxG[i/2]/divider) , 108 + i, CSET.Green);
-				histo.Draw_Line(499, 107 + i , 499-(xxG[i/2]/divider) , 107 + i, CSET.Green);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Green);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Green);
 
-				histo.Draw_Line(499, 108 + i , 499-(xxB[i/2]/divider) , 108 + i, CSET.Blue);
-				histo.Draw_Line(499, 107 + i , 499-(xxB[i/2]/divider) , 107 + i, CSET.Blue);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Blue);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Blue);
 
 			}
 			
@@ -7111,11 +7714,9 @@ class SPlot extends Image{
 		//ArrayList<Integer> xxG = new ArrayList<Integer>(Collections.nCopies(255, 0));
 		//ArrayList<Integer> xxB = new ArrayList<Integer>(Collections.nCopies(255, 0));
 		int max_y = source.Image_Height*source.Image_Width;
-		int divider = max_y/400;
-		int maxR=tlb.get_array_max(xxR),maxG =tlb.get_array_max(xxG),maxB=tlb.get_array_max(xxB);
-		if(maxR < 255 && maxB <255 && maxG < 255) {
-			
-		}
+		int Multiplyer = 1;
+		int max_val=Integer.MIN_VALUE;
+		
 		Color_Palette CSET = new Color_Palette();
 		for(int i =0;i<source.Image_Height;i++) {
 			for(int j =0;j<source.Image_Width;j++) {
@@ -7126,6 +7727,25 @@ class SPlot extends Image{
 			}
 		}
 	
+		for(int i = 0 ;i<256;i++) {
+			if(xxR[i] > max_val) {
+				max_val = xxR[i];
+			}
+			if(xxG[i] > max_val) {
+				max_val = xxG[i];
+			}
+			if(xxB[i] > max_val) {
+				max_val = xxB[i];
+			}
+		}
+		while(max_val * Multiplyer < max_y) {
+			
+			if((Multiplyer+1)*max_val > max_y ) {
+				break;
+			}else {
+				Multiplyer++;
+			}
+		}
 		
 		Image histo = new Image();
 		histo.Load_Blank_Canvas(600, 755, CSET.White);
@@ -7134,14 +7754,14 @@ class SPlot extends Image{
 		histo.Draw_Square(98,98,502,642,CSET.Black,"Corners");
 		
 		histo.Draw_Line(102, 90, 102, 99, CSET.Black);
-		histo.Draw_Text(102, 40, String.valueOf(max_y), CSET.Black);
 		for(int i = 0; i <= 400; i+=101) {
 			histo.Draw_Line(501-(i), 100 , 501-(i) , 92, CSET.Black);
 
 		}
-		histo.Draw_Text(400, 40, String.valueOf((max_y/100)*25), CSET.Black);
-		histo.Draw_Text(299, 40, String.valueOf((max_y/100)*50), CSET.Black);
-		histo.Draw_Text(198, 40, String.valueOf((max_y/100)*75), CSET.Black);
+		histo.Draw_Text(400, 40, String.valueOf(((max_y/Multiplyer)/100)*25), CSET.Black);
+		histo.Draw_Text(299, 40, String.valueOf(((max_y/Multiplyer)/100)*50), CSET.Black);
+		histo.Draw_Text(198, 40, String.valueOf(((max_y/Multiplyer)/100)*75), CSET.Black);
+		histo.Draw_Text(102, 40, String.valueOf(max_y/Multiplyer), CSET.Black);
 
 		
 		
@@ -7159,8 +7779,8 @@ class SPlot extends Image{
 		if(Channel.equals("Red")) {
 			histo.Draw_Text(90, 345, "RED HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxR[i/2]/divider) , 108 + i, CSET.Red);
-				histo.Draw_Line(499, 107 + i , 499-(xxR[i/2]/divider) , 107 + i, CSET.Red);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Red);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Red);
 
 			}
 			
@@ -7168,16 +7788,15 @@ class SPlot extends Image{
 		else if(Channel.equals("Green")) {
 			histo.Draw_Text(90, 345, "GREEN HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxG[i/2]/divider) , 108 + i, CSET.Green);
-				histo.Draw_Line(499, 107 + i , 499-(xxG[i/2]/divider) , 107 + i, CSET.Green);
-
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Green);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Green);
 			}
 			
 		}else if(Channel.equals("Blue")) {
 			histo.Draw_Text(90, 345, "BLUE HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxB[i/2]/divider) , 108 + i, CSET.Blue);
-				histo.Draw_Line(499, 107 + i , 499-(xxB[i/2]/divider) , 107 + i, CSET.Blue);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Blue);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Blue);
 
 			}
 			
@@ -7185,14 +7804,14 @@ class SPlot extends Image{
 		else if(Channel.equals("RGB")) {
 			histo.Draw_Text(90, 345, "RGB HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
-				histo.Draw_Line(499, 108 + i , 499-(xxR[i/2]/divider) , 108 + i, CSET.Red);
-				histo.Draw_Line(499, 107 + i , 499-(xxR[i/2]/divider) , 107 + i, CSET.Red);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Red);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Red);
 
-				histo.Draw_Line(499, 108 + i , 499-(xxG[i/2]/divider) , 108 + i, CSET.Green);
-				histo.Draw_Line(499, 107 + i , 499-(xxG[i/2]/divider) , 107 + i, CSET.Green);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Green);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Green);
 
-				histo.Draw_Line(499, 108 + i , 499-(xxB[i/2]/divider) , 108 + i, CSET.Blue);
-				histo.Draw_Line(499, 107 + i , 499-(xxB[i/2]/divider) , 107 + i, CSET.Blue);
+				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Blue);
+				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Blue);
 
 			}
 			
