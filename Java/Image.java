@@ -278,10 +278,218 @@ class SIPL_Window extends JFrame{
 			//this.setVisible(true);
 			//this.setLayout(null);
 	}
-	public void close() {
-		//this.dispatchEventToSelf(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	
+}
+
+class Space_Point {
+	String Name;
+	Point Coordinate;
+}
+class Space_Edge {
+	int Index_A;
+	int Index_B;
+	Pixel EdgeColor;
+	
+}
+class Cartesian_Coordinate_System {
+protected boolean Colored;
+
+ public ArrayList<Space_Point> Coordinates;
+ public ArrayList<Space_Edge>  Edges;
+	Cartesian_Coordinate_System() {
+		Coordinates = new  ArrayList<Space_Point>();
+		Edges = new  ArrayList<Space_Edge>();
+
+		Colored = false;
+	};
+	public void Add_Point(double x, double y, double z, String name) {
+		Space_Point temp = new Space_Point();
+		temp.Name = name;
+		temp.Coordinate.x = x;
+		temp.Coordinate.y = y;
+		temp.Coordinate.z = z;
+		Coordinates.add(temp);
 	}
+	public boolean Add_Edge(String nameA,String nameB) {
+		Space_Edge temp = new Space_Edge() ;
+		boolean Aauth = false, Bauth = false;
+		for (int i = 0; i < Coordinates.size();i++) {
+			if (Coordinates.get(i).Name.equals(nameA)) {
+				temp.Index_A = i;
+				Aauth = true;
+				
+			}
+			else if (Coordinates.get(i).Name.equals(nameB)) {
+				temp.Index_B = i;
+				Bauth = true;
+			
+			}
+			if (Aauth == true && Bauth == true) {
+				Edges.add(temp);
+				return true;
+				
+			}
+
+		}
+		return false;
+	}
+	public boolean Add_Edge(String nameA,String nameB,Pixel EdgeColor) {
+		Space_Edge temp = new Space_Edge();
+		Colored = true;
+		boolean Aauth = false, Bauth = false;
+		for (int i = 0; i < Coordinates.size(); i++) {
+			if (Coordinates.get(i).Name.equals(nameA)) {
+				temp.Index_A = i;
+				Aauth = true;
+
+			}
+			else if (Coordinates.get(i).Name.equals(nameB)) {
+				temp.Index_B = i;
+				Bauth = true;
+
+			}
+			if (Aauth == true && Bauth == true) {
+				Edges.add(temp);
+				Edges.get(i).EdgeColor = EdgeColor;
+				return true;
+
+			}
+
+		}
+		return false;
+	}
+	
+
+}
+class SIPL_3D_Window extends JFrame{
+	private static final long serialVersionUID = 1L;
+	BufferedImage IMG;
+	Point Camera = new Point(0,0,0);
+	Point RotationAngle = new Point(0,0,0);
+	Point Teta = new Point(0,0,0);
+	Point E = new Point(0,0,0);
+
+	JLabel label;
+	SIPL_3D_Window(){
+
+	}
+	SIPL_3D_Window(BufferedImage img){
+		this.IMG = img;
+		//Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		label=new JLabel();
+	    label.setIcon((Icon) new ImageIcon(IMG));
+	    this.getContentPane().add(label,BorderLayout.CENTER);
+	    //this.setLocationRelativeTo(null);
+	    this.setSize(IMG.getWidth(), IMG.getHeight());
+		this.setVisible(true);
+		this.setLayout(null);
+	}	
+	public void rotateAZ(double theta,Point Cord) {
+		double sinTheta = Math.sin(theta);
+		double cosTheta = Math.cos(theta);
+		double y = Cord.x;
+		double x = Cord.y;
+		Cord.x = x * cosTheta - y * sinTheta;
+		Cord.y = y * cosTheta + x * sinTheta;
+
+	};
+	public void rotateAX(double theta, Point Cord) {
+		double sinTheta = Math.sin(theta);
+		double cosTheta = Math.cos(theta);
+		double y = Cord.y;
+		double z = Cord.z;
+		double x = Cord.x;
+		Cord.y = y * cosTheta - z * sinTheta;
+		Cord.z = z * cosTheta + y * sinTheta;
+	};
+	public void rotateAY(double theta, Point Cord){
+		double sinTheta = Math.sin(theta);
+		double cosTheta = Math.cos(theta);
+		double x = Cord.x;
+		double z = Cord.z;
+		Cord.x = x * cosTheta + z * sinTheta;
+		Cord.z = z * cosTheta - x * sinTheta;
+	};
+	public Point  point_to_coordinate(Point point) {	
+		Point Result = new Point(0,0,0);
+		double TR = Math.PI / 180;
+		Point ToW = new Point();
+		ToW.x = point.x;
+		ToW.y = point.y;
+		ToW.z = point.z;
+		Matrix RE, A = new Matrix(3, 3), B = new Matrix(3, 3), C = new Matrix(3, 3),D,F,FINAL = new Matrix(3,1),Ppoint = new Matrix(3,1);
+		Matrix Hproj = new Matrix(3, 1), MProj = new Matrix(3, 3);
+
+		this.rotateAX(this.RotationAngle.x*TR, ToW);
+		this.rotateAY(this.RotationAngle.y*TR, ToW);
+		this.rotateAZ(this.RotationAngle.z*TR, ToW);
+
+		Ppoint.Matrix_Body[0][0] = ToW.x - Camera.x;
+		Ppoint.Matrix_Body[1][0] = ToW.y - Camera.y;
+		Ppoint.Matrix_Body[2][0] = ToW.z - Camera.z;
+
+		A.Matrix_Body[0][0] = 1;
+		A.Matrix_Body[0][1] = 0;
+		A.Matrix_Body[0][2] = 0;
+		A.Matrix_Body[1][0] = 0;
+		A.Matrix_Body[1][1] = Math.cos(Teta.x * TR);
+		A.Matrix_Body[1][2] = Math.sin(Teta.x* TR);
+		A.Matrix_Body[2][0] = 0;
+		A.Matrix_Body[2][1] = -Math.sin(Teta.x* TR);
+		A.Matrix_Body[2][2] = Math.cos(Teta.x* TR);
+		
+		B.Matrix_Body[0][0] = Math.cos(Teta.y* TR);
+		B.Matrix_Body[0][1] = 0;
+		B.Matrix_Body[0][2] = -Math.sin(Teta.y* TR);
+		B.Matrix_Body[1][0] = 0;
+		B.Matrix_Body[1][1] = 1;
+		B.Matrix_Body[1][2] = 0;
+		B.Matrix_Body[2][0] = Math.sin(Teta.y* TR);
+		B.Matrix_Body[2][1] = 0;
+		B.Matrix_Body[2][2] = Math.cos(Teta.y* TR);
+
+		C.Matrix_Body[0][0] = Math.cos(Teta.z* TR);
+		C.Matrix_Body[0][1] = Math.sin(Teta.z* TR);
+		C.Matrix_Body[0][2] = 0;
+		C.Matrix_Body[1][0] = -Math.sin(Teta.z* TR);
+		C.Matrix_Body[1][1] = Math.cos(Teta.z* TR);
+		C.Matrix_Body[1][2] = 0;
+		C.Matrix_Body[2][0] = 0;
+		C.Matrix_Body[2][1] = 0;
+		C.Matrix_Body[2][2] = 1;
+
+		A.Dot_Product(B);
+		RE = A;
+		RE.Dot_Product(C);
+		F = RE;
+		F.Dot_Product(Ppoint);
+		FINAL = F;
+		
+
+		MProj.Matrix_Body[0][0] = 1;
+		MProj.Matrix_Body[0][1] = 0;
+		MProj.Matrix_Body[0][2] = E.x / E.z;
+		MProj.Matrix_Body[1][0] = 0;
+		MProj.Matrix_Body[1][1] = 1;
+		MProj.Matrix_Body[1][2] = E.y / E.z;
+		MProj.Matrix_Body[2][0] = 0;
+		MProj.Matrix_Body[2][1] = 0;
+		MProj.Matrix_Body[2][2] = 1 / E.z;
+
+		MProj.Dot_Product(FINAL);
+		Hproj = MProj;
+		Result.x = (FINAL.Matrix_Body[0][0] + E.x)*Camera.z;
+		Result.y = (FINAL.Matrix_Body[1][0] + E.y)*Camera.z;
+		return Result;
+	}
+	public void Refresh_Frame(BufferedImage img) {
+		this.IMG = img;
+		label.setIcon((Icon) new ImageIcon(IMG));
+	    this.setSize(IMG.getWidth(), IMG.getHeight());
+	    this.revalidate();
+	    this.repaint();
+}
+	
 }
 
 class Math_Toolbox{
@@ -422,6 +630,11 @@ class Math_Toolbox{
 		int rand = ThreadLocalRandom.current().nextInt(lower,upper);		
 		return rand;
 	}
+	public double random_double_in_range(double lower,double upper) {
+		double rand = ThreadLocalRandom.current().nextDouble(lower,upper);		
+		return rand;
+	}
+
 	public float Remap(float value, float fromMin, float fromMax, float toMin,  float toMax)
     {
         var fromAbs  =  value - fromMin;
@@ -1932,7 +2145,7 @@ public class Image {
 		tmp.Commint_Matrix_Changes();
 		tmp.Write_Image(save_as);
 	}
-	public void Add_Pixel_Values(Image Image_To_Add) {
+	public void Arithmetic_Addition(Image Image_To_Add) {
 		for(int i =0;i<this.Image_Height;i++) {
 			for(int j=0;j<this.Image_Width;j++) {
 				this.Pixel_Matrix[i][j].r += Image_To_Add.Pixel_Matrix[i][j].r;
@@ -1943,6 +2156,219 @@ public class Image {
 		}
 		this.Commint_Matrix_Changes();
 	}
+	public void Arithmetic_Subtraction(Image Image_To_Subctract) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r -= Image_To_Subctract.Pixel_Matrix[i][j].r;
+				this.Pixel_Matrix[i][j].g -= Image_To_Subctract.Pixel_Matrix[i][j].g;
+				this.Pixel_Matrix[i][j].b -= Image_To_Subctract.Pixel_Matrix[i][j].b;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Multiplication(Image Image_To_Multiply_By) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r *= Image_To_Multiply_By.Pixel_Matrix[i][j].r;
+				this.Pixel_Matrix[i][j].g *= Image_To_Multiply_By.Pixel_Matrix[i][j].g;
+				this.Pixel_Matrix[i][j].b *= Image_To_Multiply_By.Pixel_Matrix[i][j].b;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Division(Image Image_To_Divide_By) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r /= Image_To_Divide_By.Pixel_Matrix[i][j].r;
+				this.Pixel_Matrix[i][j].g /= Image_To_Divide_By.Pixel_Matrix[i][j].g;
+				this.Pixel_Matrix[i][j].b /= Image_To_Divide_By.Pixel_Matrix[i][j].b;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Addition(int int_To_Add) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r += int_To_Add;
+				this.Pixel_Matrix[i][j].g += int_To_Add;
+				this.Pixel_Matrix[i][j].b += int_To_Add;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Subtraction(int int_To_Subctract) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r -= int_To_Subctract;
+				this.Pixel_Matrix[i][j].g -= int_To_Subctract;
+				this.Pixel_Matrix[i][j].b -= int_To_Subctract;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Multiplication(int int_To_Multiply_By) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r *= int_To_Multiply_By;
+				this.Pixel_Matrix[i][j].g *= int_To_Multiply_By;
+				this.Pixel_Matrix[i][j].b *= int_To_Multiply_By;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Division(int int_To_Divide_By) {
+		for(int i =0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r /= int_To_Divide_By;
+				this.Pixel_Matrix[i][j].g /= int_To_Divide_By;
+				this.Pixel_Matrix[i][j].b /= int_To_Divide_By;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Union(Image to_Union) {
+		if(to_Union.Image_Height != this.Image_Height || this.Image_Width != to_Union.Image_Width) {
+			System.out.println("Operation Aborted: Images Are Different In Size");
+			return;
+		}
+		
+		for(int i = 0 ; i < this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = Math.max(this.Pixel_Matrix[i][j].r, to_Union.Pixel_Matrix[i][j].r);
+				this.Pixel_Matrix[i][j].g = Math.max(this.Pixel_Matrix[i][j].g, to_Union.Pixel_Matrix[i][j].g);
+				this.Pixel_Matrix[i][j].b = Math.max(this.Pixel_Matrix[i][j].b, to_Union.Pixel_Matrix[i][j].b);
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_Complement() {
+		for(int i = 0 ; i < this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = 255 - this.Pixel_Matrix[i][j].r ;
+				this.Pixel_Matrix[i][j].g = 255 - this.Pixel_Matrix[i][j].g ;
+				this.Pixel_Matrix[i][j].b = 255 - this.Pixel_Matrix[i][j].b ;
+
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_AND(Image to_AND) {
+		if(to_AND.Image_Height != this.Image_Height || this.Image_Width != to_AND.Image_Width) {
+			System.out.println("Operation Aborted: Images Are Different In Size");
+			return;
+		}
+		int a,b,res;
+		for(int i = 0 ; i < this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				a = this.Pixel_Matrix[i][j].r /255;
+				b= to_AND.Pixel_Matrix[i][j].r /255;				
+				if((b & a) == 1) {
+					this.Pixel_Matrix[i][j].r =255;
+					this.Pixel_Matrix[i][j].g =255;
+					this.Pixel_Matrix[i][j].b =255;
+
+				}else {
+					this.Pixel_Matrix[i][j].r =0;
+					this.Pixel_Matrix[i][j].g =0;
+					this.Pixel_Matrix[i][j].b =0;
+
+				}
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Arithmetic_AND_NOT(Image to_AND) {
+		if(to_AND.Image_Height != this.Image_Height || this.Image_Width != to_AND.Image_Width) {
+			System.out.println("Operation Aborted: Images Are Different In Size");
+			return;
+		}
+		int a,b;
+		for(int i = 0 ; i < this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				a = this.Pixel_Matrix[i][j].r /255;
+				b= to_AND.Pixel_Matrix[i][j].r /255;				
+				if((a & (~b)) == 1) {
+					this.Pixel_Matrix[i][j].r =255;
+					this.Pixel_Matrix[i][j].g =255;
+					this.Pixel_Matrix[i][j].b =255;
+
+				}else {
+					this.Pixel_Matrix[i][j].r =0;
+					this.Pixel_Matrix[i][j].g =0;
+					this.Pixel_Matrix[i][j].b =0;
+
+				}
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	
+
+
+	public void Arithmetic_OR(Image to_OR) {
+		if(to_OR.Image_Height != this.Image_Height || this.Image_Width != to_OR.Image_Width) {
+			System.out.println("Operation Aborted: Images Are Different In Size");
+			return;
+		}
+		int a,b,res;
+		for(int i = 0 ; i < this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				a = this.Pixel_Matrix[i][j].r /255;
+				b= to_OR.Pixel_Matrix[i][j].r /255;				
+				if((b | a) == 1) {
+					this.Pixel_Matrix[i][j].r =255;
+					this.Pixel_Matrix[i][j].g =255;
+					this.Pixel_Matrix[i][j].b =255;
+
+				}else {
+					this.Pixel_Matrix[i][j].r =0;
+					this.Pixel_Matrix[i][j].g =0;
+					this.Pixel_Matrix[i][j].b =0;
+
+				}
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}	
+	public void Arithmetic_XOR(Image to_XOR) {
+		if(to_XOR.Image_Height != this.Image_Height || this.Image_Width != to_XOR.Image_Width) {
+			System.out.println("Operation Aborted: Images Are Different In Size");
+			return;
+		}
+		int a,b;
+		for(int i = 0 ; i < this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				a = this.Pixel_Matrix[i][j].r /255;
+				b= to_XOR.Pixel_Matrix[i][j].r /255;				
+				if((b ^ a) == 1) {
+					this.Pixel_Matrix[i][j].r =255;
+					this.Pixel_Matrix[i][j].g =255;
+					this.Pixel_Matrix[i][j].b =255;
+
+				}else {
+					this.Pixel_Matrix[i][j].r =0;
+					this.Pixel_Matrix[i][j].g =0;
+					this.Pixel_Matrix[i][j].b =0;
+
+				}
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}	
+	
 	public void Commint_Matrix_Changes() {
 		for(int i=0;i<this.Image_Height;i++) {
 			for(int j=0;j<this.Image_Width;j++) {
@@ -2017,6 +2443,8 @@ public class Image {
 	}
 	public void Load_Blank_Canvas(int height,int width,Pixel Background_Color) {
 		this.IMG = new BufferedImage(width,height,BufferedImage.TYPE_3BYTE_BGR);
+		this.Image_Height = height;
+		this.Image_Width =width;
 		this.init_pixel_matrix();
 		this.Image_Load_Wrapper();
 		for(int i=0;i<height;i++) {
@@ -2024,6 +2452,8 @@ public class Image {
 				this.Set_Color(i, j,Background_Color);
 			}
 		}
+		
+		this.Update_Pixel_Matrix();
 	}
 	public void convertToARGB()
 	{
@@ -2292,7 +2722,7 @@ public class Image {
 	
 		if (Mode.equals("Fill")) {
 			
-			int x, y;
+			int x = 0, y;
 			if (center_x + c_radius > Image_Width || center_x - c_radius <0 || center_y + c_radius > Image_Height || center_y - c_radius < 0) {
 				System.out.println("Image_Height Of Image: ");
 				System.out.println("Image_Width Of Image: ");
@@ -2302,7 +2732,7 @@ public class Image {
 			for (y = -c_radius; y <= c_radius; y++)
 				for (x = -c_radius; x <= c_radius; x++)
 					if ((x * x) + (y * y) <= (c_radius * c_radius))
-						//Pixel_Matrix[center_y + y][center_x + x] = color;
+						Pixel_Matrix[center_y + y][center_x + x] = new Pixel(color);
 						this.Set_Color(center_y + y, center_x + x, color);
 		}
 	}
@@ -6262,7 +6692,7 @@ public class Image {
 			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
 			copy.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
 			this.init_pixel_matrix();
-			this.Add_Pixel_Values(copy);
+			this.Arithmetic_Addition(copy);
 			this.Commint_Matrix_Changes();
 
 		}
@@ -6279,7 +6709,6 @@ public class Image {
 			Kernel[2][2] =(double)-1/9;
 
 			this.Extended_Padding();
-			double scaling_factor = (double)1/16;
 			double R_sum =0,G_sum=0,B_sum=0;
 			for(int i =1;i<this.Image_Height-1;i++) {
 				for(int j=1;j<this.Image_Width-1;j++) {
@@ -6348,7 +6777,6 @@ public class Image {
 			Kernel[2][2] =(double)1/9;
 
 			this.Extended_Padding();
-			double scaling_factor = (double)1/16;
 			double R_sum =0,G_sum=0,B_sum=0;
 			for(int i =1;i<this.Image_Height-1;i++) {
 				for(int j=1;j<this.Image_Width-1;j++) {
@@ -6535,7 +6963,6 @@ public class Image {
 
 			
 		}
-		
 		
 		
 		
@@ -6774,12 +7201,87 @@ public class Image {
 	
 	
 	}
+	public void Add_Salt_and_Pepper_Noise(double Salt_Propability,double Pepper_Probability) {
+		double rand = 0;
+		Math_Toolbox tlb = new Math_Toolbox();
+		
+			if(Salt_Propability < Pepper_Probability) {
+			
+				for(int i = 0 ; i < this.Image_Height; i ++) {
+					for(int j = 0 ; j < this.Image_Width; j++) {
+						rand = tlb.random_double_in_range(0.0, 1.0);
+						if(rand <= Salt_Propability) {
+							this.Pixel_Matrix[i][j].r=255;
+							this.Pixel_Matrix[i][j].g=255;
+							this.Pixel_Matrix[i][j].b=255;
+		
+						}
+						else if(rand <= Pepper_Probability) {
+							this.Pixel_Matrix[i][j].r=0;
+							this.Pixel_Matrix[i][j].g=0;
+							this.Pixel_Matrix[i][j].b=0;
+						}
+					}
+				}
+			}
+			else {
+				
+					for(int i = 0 ; i < this.Image_Height; i ++) {
+						for(int j = 0 ; j < this.Image_Width; j++) {
+							rand = tlb.random_double_in_range(0.0, 1.0);
+							 if(rand <= Pepper_Probability) {
+								this.Pixel_Matrix[i][j].r=0;
+								this.Pixel_Matrix[i][j].g=0;
+								this.Pixel_Matrix[i][j].b=0;
+							}
+							 else if(rand <= Salt_Propability) {
+								this.Pixel_Matrix[i][j].r=255;
+								this.Pixel_Matrix[i][j].g=255;
+								this.Pixel_Matrix[i][j].b=255;
+		
+							}
+						}
+					
+				}
+			
+		}
+
+	}
+	public void Image_Averaging(ArrayList<Image> Images) {
+		int a_width = Images.get(0).Image_Width,a_height = Images.get(0).Image_Height;
+		for(int i = 0 ; i< Images.size();i++) {
+			if(Images.get(i).Image_Height != a_height || Images.get(i).Image_Width != a_width) {
+				System.out.println("Not All Images Match In Size: Problomatic Image:" + Images.get(i).F_Path);
+			}
+		}
+		
+		this.Load_Blank_Canvas(a_height, a_width, new Pixel(0,0,0));
+		for(int i = 0 ; i< Images.size();i++) {
+			Image temp = Images.get(i);
+			for(int k = 0 ;k <a_height;k++) {
+				for(int j = 0;j<a_width;j++) {
+					this.Pixel_Matrix[k][j].r += temp.Pixel_Matrix[k][j].r;
+					this.Pixel_Matrix[k][j].g += temp.Pixel_Matrix[k][j].g;
+					this.Pixel_Matrix[k][j].b += temp.Pixel_Matrix[k][j].b;
+
+				}
+			}
+			
+		}
+		
+		this.Arithmetic_Division(Images.size());
+		
+		
+	}
 	
-
-
-
-
-
+	
+	public void Add_Gaussian_Noise(double Mean,double Variance) {
+		
+		double eq_1,eq_2,eq_3;
+		eq_1 = 1D/(Math.sqrt(Variance)*Math.sqrt(2*Math.PI));
+		
+		
+	}
 
 
 //end of image class
