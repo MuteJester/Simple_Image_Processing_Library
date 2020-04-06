@@ -31,6 +31,139 @@ import java.util.Collections;
 
 
 
+class Complex{
+	public double Real;
+	public double Imaginary;
+	public Complex() {
+		this.Real=0;
+		this.Imaginary=0;
+	}
+	public Complex(double Real,double Imaginray) {
+		this.Real=Real;
+		this.Imaginary=Imaginray;
+	}
+	public Complex(Complex Copy) {
+		this.Real=Copy.Real;
+		this.Imaginary=Copy.Imaginary;
+	}
+	public void Conjugate() {
+		this.Imaginary*=-1;
+	}
+	public Complex Add(Complex B) {
+        return new Complex(this.Real + B.Real, this.Imaginary + B.Imaginary);
+	}
+	public Complex Subtract(Complex B) {
+        return new Complex(this.Real - B.Real, this.Imaginary - B.Imaginary);
+
+	}
+	public Complex Multiplication(Complex b) {
+        return new Complex(this.Real * b.Real - this.Imaginary * b.Imaginary,
+                this.Real * b.Imaginary + this.Imaginary * b.Real);
+    }
+
+	public void Multiplication(double b) {
+       this.Real *= b;
+       this.Imaginary *=b;
+    }
+
+	public void Power(int power) {
+		for (int i = 1; i < power; i++) {
+			this.Multiplication(this);
+		}
+	}
+	public void Divide(Complex B) {
+		double divisor = B.Real*B.Real + B.Imaginary*B.Imaginary;
+		Complex t = new Complex(B);
+		t.Conjugate();
+		this.Multiplication(t);
+		this.Real /= divisor;
+		this.Imaginary /= divisor;
+	}
+	public String toString() {
+		if(Imaginary == 0) {
+			return "" + Real;
+		}
+		if(Imaginary > 0) {
+			return " " + Real + " + " + Imaginary + "I";
+		}else {
+			return " " + Real +  Imaginary + "I";
+
+		}
+		
+	}
+    public double Abs() {
+	        if (Math.abs(Real) < Math.abs(Imaginary)) {
+	            if (Imaginary == 0.0) {
+	                return Math.abs(Real);
+	            }
+	            double q = Real / Imaginary;
+	            return Math.abs(Imaginary) * Math.sqrt(1 + q * q);
+	        } else {
+	            if (Real == 0.0) {
+	                return Math.abs(Imaginary);
+	            }
+	            double q = Imaginary / Real;
+	            return Math.abs(Real) * Math.sqrt(1 + q * q);
+	        }
+	    }
+	public Complex Log() {
+	        return new Complex(Math.log(Abs()),
+	        		Math.atan2(Imaginary, Real));
+	    }
+	public static int bitReverse(int n, int bits) {
+	        int reversedN = n;
+	        int count = bits - 1;
+	 
+	        n >>= 1;
+	        while (n > 0) {
+	            reversedN = (reversedN << 1) | (n & 1);
+	            count--;
+	            n >>= 1;
+	        }
+	 
+	        return ((reversedN << count) & ((1 << bits) - 1));
+	    }
+	static void FFT(Complex[] Values) {
+	 
+	        int bits = (int) (Math.log(Values.length) / Math.log(2));
+	        for (int j = 1; j < Values.length / 2; j++) {
+	 
+	            int swapPos = bitReverse(j, bits);
+	            Complex temp = Values[j];
+	            Values[j] = Values[swapPos];
+	            Values[swapPos] = temp;
+	        }
+	 
+	        for (int N = 2; N <= Values.length; N <<= 1) {
+	            for (int i = 0; i < Values.length; i += N) {
+	                for (int k = 0; k < N / 2; k++) {
+	 
+	                    int evenIndex = i + k;
+	                    int oddIndex = i + k + (N / 2);
+	                    Complex even = Values[evenIndex];
+	                    Complex odd = Values[oddIndex];
+	 
+	                    double term = (-2 * Math.PI * k) / (double) N;
+	                    Complex exp = (new Complex(Math.cos(term), Math.sin(term)).Multiplication(odd));
+	 
+	                    Values[evenIndex] = even.Add(exp);
+	                    Values[oddIndex] = even.Subtract(exp);
+	                }
+	            }
+	        }
+	   }
+
+	public Complex Exp() {
+	        double expReal = Math.exp(Real);
+	        return new Complex(expReal *  Math.cos(Imaginary),expReal * Math.sin(Imaginary));
+	    }
+	public Complex Power(Complex x) {
+		  return this.Log().Multiplication(x).Exp();
+		    
+	 }
+	
+}
+
 class Matrix {
 
 	public Matrix(int Rows, int Cols) {
@@ -2313,7 +2446,12 @@ public class Image {
 		}
 		this.Commint_Matrix_Changes();
 	}
+	public void Arithmetic_NOT() {
+
+		this.Arithmetic_Complement();
+	}
 	
+
 
 
 	public void Arithmetic_OR(Image to_OR) {
@@ -2698,22 +2836,22 @@ public class Image {
 			this.Set_Color(center_y + y,center_x + x, color);
 			this.Set_Color(center_y + y,center_x - x, color);
 
-			//Pixel_Matrix[center_y + y][center_x + x] = color;
-			//Pixel_Matrix[center_y + y][center_x - x] = color;
+			Pixel_Matrix[center_y + y][center_x + x] = color;
+			Pixel_Matrix[center_y + y][center_x - x] = color;
 		}
 		for (x = -c_radius; x <= c_radius; x++) {
 			y = (int)(Math.sqrt(r2 - x * x) + 0.5);
 			this.Set_Color(center_y - y,center_x + x, color);
 			this.Set_Color(center_y - y,center_x - x, color);
-			//Pixel_Matrix[center_y - y][center_x + x] = color;
-			//Pixel_Matrix[center_y - y][center_x - x] = color;
+			Pixel_Matrix[center_y - y][center_x + x] = color;
+			Pixel_Matrix[center_y - y][center_x - x] = color;
 		}
 		for (x = -c_radius; x <= c_radius; x++) {
 			y = (int)(Math.sqrt(r2 - x * x) + 0.5);
 			this.Set_Color(center_y - x,center_x + y, color);
 			this.Set_Color(center_y - x,center_x - y, color);
-			//Pixel_Matrix[center_y - x][center_x + y] = color;
-			//Pixel_Matrix[center_y - x][center_x - y] = color;
+			Pixel_Matrix[center_y - x][center_x + y] = color;
+			Pixel_Matrix[center_y - x][center_x - y] = color;
 		}
 
 
@@ -6399,7 +6537,7 @@ public class Image {
 			int GroupB[] = new int[9];
 			Math_Toolbox tlb = new Math_Toolbox();
 			this.Extended_Padding();
-			
+			Image copy = new Image(this);
 			
 			for(int i =1;i<this.Image_Height-1;i++) {
 				for(int j=1;j<this.Image_Width-1;j++) {
@@ -6434,9 +6572,18 @@ public class Image {
 					GroupB[7] = this.Pixel_Matrix[i][j+1].b;
 					GroupB[8] = this.Pixel_Matrix[i][j-1].b;
 					
-					this.Pixel_Matrix[i][j].r = (int)tlb.getMedian(GroupR);
-					this.Pixel_Matrix[i][j].g = (int)tlb.getMedian(GroupG);
-					this.Pixel_Matrix[i][j].b = (int)tlb.getMedian(GroupB);
+					copy.Pixel_Matrix[i][j].r = (int)tlb.getMedian(GroupR);
+					copy.Pixel_Matrix[i][j].g = (int)tlb.getMedian(GroupG);
+					copy.Pixel_Matrix[i][j].b = (int)tlb.getMedian(GroupB);
+					
+
+				}
+			}
+			for(int i =1;i<this.Image_Height-1;i++) {
+				for(int j=1;j<this.Image_Width-1;j++) {
+					this.Pixel_Matrix[i][j].r = copy.Pixel_Matrix[i][j].r;
+					this.Pixel_Matrix[i][j].g = copy.Pixel_Matrix[i][j].g;
+					this.Pixel_Matrix[i][j].b = copy.Pixel_Matrix[i][j].b;
 					
 
 				}
@@ -6764,19 +6911,24 @@ public class Image {
 			this.Commint_Matrix_Changes();
 
 		}
-		else if(Mode.equals("Unsharp")) {
+		else if(Mode.equals("Unsharp_Mask")) {
 			double Kernel[][] = new double[3][3];
-			Kernel[0][0] =(double)1/9;
-			Kernel[0][1] =(double)-2/9;
-			Kernel[0][2] =(double)1/9;
-			Kernel[1][0] =(double)-2/9;
-			Kernel[1][1] =(double)-4/9;
-			Kernel[1][2] =(double)-2/9;
-			Kernel[2][0] =(double)1/9;
-			Kernel[2][1] =(double)-2/9;
-			Kernel[2][2] =(double)1/9;
-
+			Kernel[0][0] =(double)0;
+			Kernel[0][1] =(double)1;
+			Kernel[0][2] =(double)0;
+			Kernel[1][0] =(double)1;
+			Kernel[1][1] =(double)-4;
+			Kernel[1][2] =(double)1;
+			Kernel[2][0] =(double)0;
+			Kernel[2][1] =(double)1;
+			Kernel[2][2] =(double)0;
+			
+			
+			
 			this.Extended_Padding();
+			Image Original = new Image(this);
+			Image Copy  = new Image(this);
+			
 			double R_sum =0,G_sum=0,B_sum=0;
 			for(int i =1;i<this.Image_Height-1;i++) {
 				for(int j=1;j<this.Image_Width-1;j++) {
@@ -6814,21 +6966,30 @@ public class Image {
 					//clamping
 					
 					
-					this.Pixel_Matrix[i][j].r = (int)(((R_sum)) + 128);
-					this.Pixel_Matrix[i][j].g = (int)((G_sum)+ 128);
-					this.Pixel_Matrix[i][j].b = (int)((B_sum)+ 128);
-					this.Pixel_Matrix[i][j].Clamp_Outliers();
-					if(this.Pixel_Matrix[i][j].r < 0 || this.Pixel_Matrix[i][j].g < 0 ||this.Pixel_Matrix[i][j].r < 0) {
-						System.out.println("Found <0 !");
-					}
+					Copy.Pixel_Matrix[i][j].r = (int)(((R_sum)) );
+					Copy.Pixel_Matrix[i][j].g = (int)((G_sum));
+					Copy.Pixel_Matrix[i][j].b = (int)((B_sum));
 					
 					R_sum=0;
 					B_sum=0;
 					G_sum=0;
 				}
 			}
-			this.Commint_Matrix_Changes();
+			
+			Copy.Commint_Matrix_Changes();
+			Original.Arithmetic_Subtraction(Copy);
+			Copy.Write_Image("Masked.png");
+			
+			for(int i = 0;i<this.Image_Height;i++) {
+				for(int j = 0 ;j<this.Image_Width;j++) {
+					this.Pixel_Matrix[i][j] = Original.Pixel_Matrix[i][j];
+				}
+			}
+			
 			this.Crop_Image(1, 1, this.Image_Height-1, this.Image_Width-1);
+			
+			
+			
 			this.Commint_Matrix_Changes();
 
 			
@@ -6951,6 +7112,7 @@ public class Image {
 			copy.Commint_Matrix_Changes();
 			copy.Crop_Image(1, 1, copy_y.Image_Height-1, copy_y.Image_Width-1);
 			
+			
 			for(int i =0;i<this.Image_Height;i++) {
 				for(int j =0;j<this.Image_Width;j++) {
 					this.Pixel_Matrix[i][j].r = copy.Pixel_Matrix[i][j].r;
@@ -6963,6 +7125,7 @@ public class Image {
 
 			
 		}
+		
 		
 		
 		
@@ -7099,7 +7262,6 @@ public class Image {
 			
 		}
 	}
-	
 	public void Dithering_Floyd_Steinberg(int Palette_Size) {
 		ArrayList<Point> ACP = this.Get_Average_Color_Palette(Palette_Size,25);
 		this.Extended_Padding();
@@ -7247,6 +7409,8 @@ public class Image {
 		}
 
 	}
+
+
 	public void Image_Averaging(ArrayList<Image> Images) {
 		int a_width = Images.get(0).Image_Width,a_height = Images.get(0).Image_Height;
 		for(int i = 0 ; i< Images.size();i++) {
@@ -7273,7 +7437,234 @@ public class Image {
 		
 		
 	}
+	public Point Get_Image_Color_Means() {
+		int Histogram_R[] = this.Get_Red_Histogram();
+		int Histogram_G[] = this.Get_Green_Histogram();
+		int Histogram_B[] = this.Get_Blue_Histogram();
+		Point Var = new Point();
+		double R_Mean = 0,G_Mean=0,B_Mean=0;
+		for(int i =0;i<256;i++) {
+			R_Mean += i *((double)Histogram_R[i]/(this.Image_Height*this.Image_Width));
+			G_Mean += i *((double)Histogram_G[i]/(this.Image_Height*this.Image_Width));
+			B_Mean += i *((double)Histogram_B[i]/(this.Image_Height*this.Image_Width));
+
+		}
+		Var.x = R_Mean;
+		Var.y = G_Mean;
+		Var.z = B_Mean;
+
+		
+
+		return Var;
+	}
+	public Point Get_Image_Color_Variance() {
+		int Histogram_R[] = this.Get_Red_Histogram();
+		int Histogram_G[] = this.Get_Green_Histogram();
+		int Histogram_B[] = this.Get_Blue_Histogram();
+		Point Var = new Point();
+		double R_Mean = 0,G_Mean=0,B_Mean=0;
+		double R_Var = 0,G_Var=0,B_Var=0;
+
+		for(int i =0;i<256;i++) {
+			R_Mean += i *((double)Histogram_R[i]/(this.Image_Height*this.Image_Width));
+			G_Mean += i *((double)Histogram_G[i]/(this.Image_Height*this.Image_Width));
+			B_Mean += i *((double)Histogram_B[i]/(this.Image_Height*this.Image_Width));
+
+		}
+		
+		for(int i =0;i<256;i++) {
+			R_Var += ((Histogram_R[i] - R_Mean)*(Histogram_R[i] - R_Mean)) * ((double)Histogram_R[i]/(this.Image_Height*this.Image_Width));
+			G_Var += ((Histogram_G[i] - G_Mean)*(Histogram_G[i] - G_Mean)) * ((double)Histogram_G[i]/(this.Image_Height*this.Image_Width));
+			B_Var += ((Histogram_B[i] - B_Mean)*(Histogram_B[i] - B_Mean)) * ((double)Histogram_B[i]/(this.Image_Height*this.Image_Width));
+
+		}
+		
+		Var.x = R_Var;
+		Var.y = G_Var;
+		Var.z = B_Var;
+
+		
+
+		return Var;
+	}	
+	public Point Get_Image_Color_Variance(int nth_moment) {
+		int Histogram_R[] = this.Get_Red_Histogram();
+		int Histogram_G[] = this.Get_Green_Histogram();
+		int Histogram_B[] = this.Get_Blue_Histogram();
+		Point Var = new Point();
+		double R_Mean = 0,G_Mean=0,B_Mean=0;
+		double R_Var = 0,G_Var=0,B_Var=0;
+
+		for(int i =0;i<256;i++) {
+			R_Mean += i *((double)Histogram_R[i]/(this.Image_Height*this.Image_Width));
+			G_Mean += i *((double)Histogram_G[i]/(this.Image_Height*this.Image_Width));
+			B_Mean += i *((double)Histogram_B[i]/(this.Image_Height*this.Image_Width));
+
+		}
+		
+		for(int i =0;i<256;i++) {
+			R_Var += (Math.pow((Histogram_R[i] - R_Mean),nth_moment)) * ((double)Histogram_R[i]/(this.Image_Height*this.Image_Width));
+			G_Var +=  (Math.pow((Histogram_G[i] - G_Mean),nth_moment)) * ((double)Histogram_G[i]/(this.Image_Height*this.Image_Width));
+			B_Var +=  (Math.pow((Histogram_B[i] - B_Mean),nth_moment)) * ((double)Histogram_B[i]/(this.Image_Height*this.Image_Width));
+
+		}
+		
+		Var.x = R_Var;
+		Var.y = G_Var;
+		Var.z = B_Var;
+
+		
+
+		return Var;
+	}	
+	public void Logarithmic_Transformation() {
+		int max_mag_R=0;
+		int max_mag_G=0;
+		int max_mag_B=0;
+		
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				if(this.Pixel_Matrix[i][j].r > max_mag_R ) {
+					max_mag_R = this.Pixel_Matrix[i][j].r;
+				}
+				if(this.Pixel_Matrix[i][j].g > max_mag_G ) {
+					max_mag_G = this.Pixel_Matrix[i][j].g;
+				}
+				if(this.Pixel_Matrix[i][j].b > max_mag_B ) {
+					max_mag_B = this.Pixel_Matrix[i][j].b;
+				}
+			}
+		}
+		
+		double scaling_R= (double)255/Math.log(1+Math.abs(max_mag_R));
+		double scaling_G= (double)255/Math.log(1+Math.abs(max_mag_G));
+		double scaling_B= (double)255/Math.log(1+Math.abs(max_mag_B));
+		
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = (int) (scaling_R * (Math.log(1 + Math.abs(this.Pixel_Matrix[i][j].r))));
+				this.Pixel_Matrix[i][j].g = (int) (scaling_G * (Math.log(1 + Math.abs(this.Pixel_Matrix[i][j].g))));
+				this.Pixel_Matrix[i][j].b = (int) (scaling_B * (Math.log(1 + Math.abs(this.Pixel_Matrix[i][j].b))));
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+
+	}
+	public void Square_Root_Transformation() {
+			for(int i = 0 ;i<this.Image_Height;i++) {
+				for(int j = 0 ;j <this.Image_Width;j++) {
+					this.Pixel_Matrix[i][j].r = (int)Math.sqrt(this.Pixel_Matrix[i][j].r);
+					this.Pixel_Matrix[i][j].g = (int)Math.sqrt(this.Pixel_Matrix[i][j].g);
+					this.Pixel_Matrix[i][j].b = (int)Math.sqrt(this.Pixel_Matrix[i][j].b);
+
 	
+			}
+		}
+			this.Commint_Matrix_Changes();
+	}
+	public Complex[][]  Fourier_Transform() {
+		Complex Fourier_Matrix[][] = new Complex[this.Image_Height][this.Image_Width];
+		Complex temp = new Complex(1,0);
+		Complex Eval = new Complex(Math.E,0);
+		Complex Epow;
+		Complex Transition;
+		Complex Sum = new Complex(0,0);
+		double val = 0;
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j = 0;j<this.Image_Width;j++) {
+				
+				for(int k = 0;k<this.Image_Height;k++) {
+					for(int l = 0;l<this.Image_Width;l++) {
+						temp.Multiplication(this.Pixel_Matrix[k][l].r);
+						val = 2*Math.PI*((((double)(k*i)/this.Image_Height) + ((double)(j*l)/this.Image_Width)));
+						//System.out.format("k: %d, l:%d ,i:%d j:%d  val :  %f  \n",k,l,i,j,val );
+						Transition = new Complex(val,0);
+						Epow = new Complex(0,-1);
+						Epow = Epow.Multiplication(Transition);
+
+						Eval = Eval.Power(Epow);
+						temp = temp.Multiplication(Eval);
+						
+						Sum=Sum.Add(temp);
+						
+						temp.Real=1;
+						temp.Imaginary=0;
+						Eval.Imaginary=0;
+						Eval.Real=Math.E;
+						val=0;
+						
+					}
+
+				}
+				
+			
+				Fourier_Matrix[i][j] = new Complex(Sum);
+			    Sum.Imaginary=0;
+			    Sum.Real=0;
+
+			}
+		}
+		
+		for(int i = 0; i <this.Image_Height;i++) {
+			for(int j =0;j<this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r =(int) Fourier_Matrix[i][j].Real; 
+				this.Pixel_Matrix[i][j].g =(int) Fourier_Matrix[i][j].Real; 
+				this.Pixel_Matrix[i][j].b =(int) Fourier_Matrix[i][j].Real; 
+
+			}
+		}
+		
+		this.Logarithmic_Transformation();
+		return Fourier_Matrix;
+
+	}
+	public void Negative_Transformation() {
+		for(int i = 0 ;i<this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				this.Pixel_Matrix[i][j].r = 255 - 1 - this.Pixel_Matrix[i][j].r;
+				this.Pixel_Matrix[i][j].g = 255 - 1 - this.Pixel_Matrix[i][j].g;
+				this.Pixel_Matrix[i][j].b = 255 - 1 - this.Pixel_Matrix[i][j].b;
+				this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Power_Law_Transformation(double Gamma) {
+		Math_Toolbox tlb = new Math_Toolbox();
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j = 0 ; j <this.Image_Width;j++) {
+				
+				this.Pixel_Matrix[i][j].r = (int) tlb.Remap((float)Math.pow(Pixel_Matrix[i][j].r, Gamma), 0, (float)Math.pow(255, Gamma), 0, 255);
+				this.Pixel_Matrix[i][j].g = (int) tlb.Remap((float)Math.pow(Pixel_Matrix[i][j].g, Gamma), 0, (float)Math.pow(255, Gamma), 0, 255);
+				this.Pixel_Matrix[i][j].b = (int) tlb.Remap((float)Math.pow(Pixel_Matrix[i][j].b, Gamma), 0, (float)Math.pow(255, Gamma), 0, 255);
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
+	public void Bit_Plane_Slice(int Plane) {
+		int plane = 0;
+		plane = (int)Math.pow(2, Plane);
+		
+		
+		for(int i = 0 ; i<this.Image_Height;i++) {
+			for(int j = 0 ; j<this.Image_Width;j++) {
+				if(((this.Pixel_Matrix[i][j].r  & plane) ==0)) {
+					this.Pixel_Matrix[i][j].r = 0;
+				}
+				if(((this.Pixel_Matrix[i][j].g  & plane)==0)) {
+					this.Pixel_Matrix[i][j].g = 0;
+				}
+				if(((this.Pixel_Matrix[i][j].b  & plane)==0)) {
+					this.Pixel_Matrix[i][j].b= 0;
+				}
+			
+
+			}
+		}
+		this.Commint_Matrix_Changes();
+	}
 	
 	public void Add_Gaussian_Noise(double Mean,double Variance) {
 		
