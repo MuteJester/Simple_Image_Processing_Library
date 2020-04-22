@@ -2107,7 +2107,10 @@ class Color_Palette{
 		Random rand = new Random();
 		return this.Color_Serial_Number[Math.abs(rand.nextInt()) % 137 + 1];
 	}
-	}
+		
+		
+	
+}
 
 
 
@@ -3925,7 +3928,25 @@ public class Image {
 
 				flag = 0;
 				break;
+			case '-':
+				temp = start_x;
+				while (flag != 81) {
 
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (Set.MinusSign[flag] == 1) {
+						this.Set_Color(draw_y, start_x, color);
+
+						//Pixel_Matrix[draw_y][start_x] = color;
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
 
 		
 
@@ -7697,16 +7718,6 @@ class LibCharacters {
 
 	//UpperCase
 	int[] Letter_A;
-	
-	
-	
-	
-	
-
-	
-	
-
-	
 	int[] Letter_B;
 	int[] Letter_C;
 	int[] Letter_D;
@@ -7758,6 +7769,7 @@ class LibCharacters {
 	int[] Semi_Colon;
 	int[] EqualSign;
 	int[] PlusSign;
+	int[] MinusSign;
 	int[] Precent;
 	int[] Astersik;
 	int[] Dot;
@@ -8316,6 +8328,17 @@ class LibCharacters {
 				  0,0,0,0,0,0,0,0,0,
 				  0,0,0,0,0,0,0,0,0
 				};
+		this.MinusSign = new int[]	
+				{ 0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,1,1,1,1,1,1,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0,
+				  0,0,0,0,0,0,0,0,0
+				};
 		this.EqualSign = new int[]	
 				{ 0,0,0,0,0,0,0,0,0,
 				  0,0,0,0,0,0,0,0,0,
@@ -8715,9 +8738,240 @@ class SPlot extends Image{
 		
 		histo.Show_Image();
 	}
+	public void Show_Scatter_Plot(ArrayList<Point> data,String X_Label,String Y_Label) {
+		Image Scatter_Plot = new Image();
+		Color_Palette CSET = new Color_Palette();
+		Math_Toolbox tlb = new Math_Toolbox();
+		double Max_X = Double.MIN_VALUE,Max_Y = Double.MIN_VALUE;
+		double Min_X = Double.MAX_VALUE,Min_Y = Double.MAX_VALUE;
 
-	
+		for(int i = 0 ;i<data.size();i++) {
+			if(data.get(i).x > Max_X) {
+				Max_X = data.get(i).x;
+			}
+			if(data.get(i).x < Min_X) {
+				Min_X = data.get(i).x;
+			}
+			if(data.get(i).y > Max_Y) {
+				Max_Y = data.get(i).y;
+			}
+			if(data.get(i).y < Min_Y) {
+				Min_Y = data.get(i).y;
+			}
+		}
+		Max_X+=Max_X/4;
+		Max_Y+=Max_Y/4;
+		
+		Max_X = Math.round(Max_X);
+		Max_Y = Math.round(Max_Y);
+
+		
+		Scatter_Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+		Scatter_Plot.Draw_Square(75, 100, 575, 725, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Square(74, 99, 576, 726, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Square(73, 98, 577, 727, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Text(325, 750, Y_Label, CSET.Black);
+		Scatter_Plot.Draw_Text(65, 400, X_Label, CSET.Black);
+		double distX = (Math.abs(Min_X)+Math.abs(Max_X))/4;
+		double distY = (Math.abs(Min_Y)+Math.abs(Max_Y))/4;
+
+		Scatter_Plot.Draw_Text(595, 90 + 0 * 78*2,String.format("%.2f",((Min_X))), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 1 * 78*2,String.format("%.2f",((Min_X)+distX*1)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 2 * 78*2,String.format("%.2f",((Min_X)+distX*2)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 3 * 78*2,String.format("%.2f",((Min_X)+distX*3)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 4 * 78*2,String.format("%.2f",((Max_X))), CSET.Black);
+
+		Scatter_Plot.Draw_Text(575 - 0 * 62*2, 40,String.format("%.2f",(Min_Y)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 1 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*1)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 2 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*2)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 3 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*3)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 4 * 62*2, 40,String.format("%.2f",((Max_Y))), CSET.Black);
+
+
+		for(int i = 0 ;i<5;i++) {
+			Scatter_Plot.Draw_Line(575 - 62 * i*2,100,575 - 62 * i*2,90,CSET.Black);
+			
+			Scatter_Plot.Draw_Line(575,100 + i * 78*2 ,575 + 10,100 + i * 78*2,CSET.Black);
+			Scatter_Plot.Draw_Line(575,99 + i * 78*2 ,575 + 10,99 + i * 78*2,CSET.Black);
+
+
+
+		}
+		
+		double tx,ty;
+		Point b;
+		Scatter_Plot.Update_Pixel_Matrix();
+		for(int i = 0 ;i<data.size();i++) {
+			b = data.get(i);
+			tx = tlb.Remap((float)b.x, (float)Min_X, (float)Max_X, 105, 720 );
+			ty = tlb.Remap((float)b.y, (float)(Min_Y), (float)Max_Y, 565, 80);
+			
+			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 3, CSET.Royal_Blue,"Fill");
+			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke);
+
+
+		
+		}
+		
+		Scatter_Plot.Commint_Matrix_Changes();
+
+		
+		
+		Scatter_Plot.Show_Image();
+		
+	}
+	public Image Get_Scatter_Plot(ArrayList<Point> data,String X_Label,String Y_Label) {
+		Image Scatter_Plot = new Image();
+		Color_Palette CSET = new Color_Palette();
+		Math_Toolbox tlb = new Math_Toolbox();
+		double Max_X = Double.MIN_VALUE,Max_Y = Double.MIN_VALUE;
+		double Min_X = Double.MAX_VALUE,Min_Y = Double.MAX_VALUE;
+
+		for(int i = 0 ;i<data.size();i++) {
+			if(data.get(i).x > Max_X) {
+				Max_X = data.get(i).x;
+			}
+			if(data.get(i).x < Min_X) {
+				Min_X = data.get(i).x;
+			}
+			if(data.get(i).y > Max_Y) {
+				Max_Y = data.get(i).y;
+			}
+			if(data.get(i).y < Min_Y) {
+				Min_Y = data.get(i).y;
+			}
+		}
+		Max_X+=Max_X/4;
+		Max_Y+=Max_Y/4;
+		Max_X = Math.round(Max_X);
+		Max_Y = Math.round(Max_Y);
+		Scatter_Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+		Scatter_Plot.Draw_Square(75, 100, 575, 725, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Square(74, 99, 576, 726, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Square(73, 98, 577, 727, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Text(325, 750, Y_Label, CSET.Black);
+		Scatter_Plot.Draw_Text(65, 400, X_Label, CSET.Black);
+		double distX = (Math.abs(Min_X)+Math.abs(Max_X))/4;
+		double distY = (Math.abs(Min_Y)+Math.abs(Max_Y))/4;
+
+		Scatter_Plot.Draw_Text(595, 90 + 0 * 78*2,String.format("%.2f",((Min_X))), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 1 * 78*2,String.format("%.2f",((Min_X)+distX*1)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 2 * 78*2,String.format("%.2f",((Min_X)+distX*2)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 3 * 78*2,String.format("%.2f",((Min_X)+distX*3)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 4 * 78*2,String.format("%.2f",((Max_X))), CSET.Black);
+
+		Scatter_Plot.Draw_Text(575 - 0 * 62*2, 40,String.format("%.2f",(Min_Y)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 1 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*1)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 2 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*2)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 3 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*3)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 4 * 62*2, 40,String.format("%.2f",((Max_Y))), CSET.Black);
+
+
+		for(int i = 0 ;i<5;i++) {
+			Scatter_Plot.Draw_Line(575 - 62 * i*2,100,575 - 62 * i*2,90,CSET.Black);
+			
+			Scatter_Plot.Draw_Line(575,100 + i * 78*2 ,575 + 10,100 + i * 78*2,CSET.Black);
+			Scatter_Plot.Draw_Line(575,99 + i * 78*2 ,575 + 10,99 + i * 78*2,CSET.Black);
+
+
+
+		}
+		double tx,ty;
+		Point b;
+		Scatter_Plot.Update_Pixel_Matrix();
+		for(int i = 0 ;i<data.size();i++) {
+			b = data.get(i);
+			tx = tlb.Remap((float)b.x, (float)Min_X, (float)Max_X, 105, 720 );
+			ty = tlb.Remap((float)b.y, (float)Min_Y, (float)Max_Y, 565, 80);
+			
+			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 3, CSET.Royal_Blue,"Fill");
+			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke);
+
+
+		
+		}
+		
+		Scatter_Plot.Commint_Matrix_Changes();
+
+		
+		
+		return Scatter_Plot;
+		
+	}
+	public void Show_Pie_Plot(double Sizes[],ArrayList<String> Labels) {
+		if(Labels.size() != Sizes.length) {
+			System.out.println("Number Of Labels And Number Of Sizes Do Not Match");
+			return;
+		}
+		int sum_of_sizes = 0;
+		for(int i =0;i<Sizes.length;i++) {
+			sum_of_sizes+=Sizes[i];
+		}
+		if(sum_of_sizes != 100) {
+			System.out.println("Total Sum Of Sizes Has To Be 100");
+			return;
+		}
+		
+		
+		Color_Palette CSET = new Color_Palette();
+		Pixel Colors[] = new Pixel[Sizes.length];
+		Random rand = new Random();
+
+		for(int i =0;i<Sizes.length;i++) {
+			Colors[i] = CSET.Color_Serial_Number[10+i];
+			
+		}
+		Image Pie = new Image();
+		int divider = Sizes.length;
+		
+		Pie.Load_Blank_Canvas(1200,1600,new Pixel(240,240,240));
+		
+		
+		
+		double l_start=0;
+		for(int j = 0 ;j<Sizes.length;j++) {
+			for(double i =l_start;i<=l_start+(Sizes[j]*3.6);i+=0.001) {
+				Pie.Draw_Line(600, 600, 600 +(int)Math.round(400 * Math.sin(Math.toRadians(-i))), 600+(int)Math.round((400 * Math.cos(Math.toRadians(-i)))), Colors[j]);
+			}
+			l_start+=(Sizes[j]*3.6);
+		}
+		
+		Pie.Set_Scale(600, 800);
+		 l_start=0;
+		for(int j = 0 ;j<Sizes.length;j++) {
+				//Pie.Draw_Line(600, 600, 600 +(int)Math.round(400 * Math.sin(Math.toRadians(-i))), 600+(int)Math.round((400 * Math.cos(Math.toRadians(-i)))), Colors[j]);
+			
+			Pie.Draw_Text(300 + (int)(162 *Math.sin(Math.toRadians(-(l_start+(Sizes[j]*3.6)/2)))), 300 + (int)(162 *Math.cos(Math.toRadians(-(l_start+(Sizes[j]*3.6)/2)))),String.format("%.2f", Sizes[j])+" %", CSET.Black);
+			l_start+=(Sizes[j]*3.6);
+
+		}
+		
+		int label_frame_h = 100;
+		int addit = Sizes.length*45;
+		Pie.Draw_Square(label_frame_h-1, 519, label_frame_h + addit -1, 749, new Pixel(50,50,50), "Corners");
+		Pie.Draw_Square(label_frame_h, 520, label_frame_h + addit, 750, new Pixel(10,10,10), "Corners");
+		Pie.Draw_Square(label_frame_h+1, 521, label_frame_h + addit +1, 751, CSET.Black, "Corners");
+		
+		Pie.Update_Pixel_Matrix();
+		for(int i =1;i<=Sizes.length;i++) {
+			Pie.Draw_Circle(545, label_frame_h-20 + i*45 , 8, Colors[i-1],"Fill");
+		}
+		Pie.Commint_Matrix_Changes();
+		for(int i =1;i<=Sizes.length;i++) {
+			Pie.Draw_Circle(545, label_frame_h-20 + i*45 , 9, CSET.Black);
+			Pie.Draw_Circle(545, label_frame_h-20 + i*45 , 8, CSET.Black);
+
+		}
+		Pie.Draw_Text(80, 640, "LABELS", CSET.Black);
+		for(int i =1;i<=Sizes.length;i++) {
+			Pie.Draw_Text(label_frame_h-20 + i*45, 640, Labels.get(i-1), CSET.Black);
+		}
+		Pie.Show_Image();
+		
+	}
+
 }
+
 
 class Draw_Line_Thread implements Runnable{
 	public Image body;
