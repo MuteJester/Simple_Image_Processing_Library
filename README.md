@@ -40,7 +40,7 @@
 * [Getting Started](#getting-started)
   * [Notice](#notice)
   * [Installation](#installation)
-* [Usage Examples](#usage)
+* [Usage](#usage)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -50,19 +50,16 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
+There are more then a few great Image Handlers and Image Processing librarys available on GitHub, however, I didn't find one that really suit my needs, the need to simply drag a file into my project folder and start coding ,a library with straightforward method names so it can be used without searching to much the web or reading a whole insturction manual so I created this simple plug and play library. I want to create an Image Handaling,Processing and Analysis library so efficient and simple that it'll be the last one you ever need.
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+Here's why SIPL:
+* Your time should be focused on algorithms,developing something amazing,not learning shortened method names of a library
+* You shouldn't install a huge amount of external dependencies to your project - SIPL has no external dependencies !
+* You should be able to read any code written using SIPL and clrealy understand whats going on from the method names
 
-There are many great README templates available on GitHub, however, I didn't find one that really suit my needs so I created this enhanced one. I want to create a README template so amazing that it'll be the last one you ever need.
+Of course, for the time being the library is still under development so still it will not serve all projects since your needs may be different then what the library currently supports for you language or even at all . functions and features will be added in the near future. You may also suggest changes by forking this repo and creating a pull request or opening an issue.
 
-Here's why:
-* Your time should be focused on creating something amazing. A project that solves a problem and helps others
-* You shouldn't be doing the same tasks over and over like creating a README from scratch
-* You should element DRY principles to the rest of your life :smile:
 
-Of course, no one template will serve all projects since your needs may be different. So I'll be adding more in the near future. You may also suggest changes by forking this repo and creating a pull request or opening an issue.
-
-A list of commonly used resources that I find helpful are listed in the acknowledgements.
 
 ### Built With
 This section should list any major frameworks that you built your project using. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
@@ -80,11 +77,42 @@ To get a local copy up and running follow these simple example steps.
 
 ### Notice
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-```sh
-npm install npm@latest -g
-```
+* __C++ Version-__
+
+SIPL can be used just by adding to your project all the header files and CPP files located in the __SIPL Core__ folder.
+including only the core of the library will allow you to use all core features and methods without
+the added functionality of the subclasses.
+the main core provides all needed tools for image processing, analysis, and handling.
+SIPL-C++  works best with __.jpg__  format,
+the infrastructure used to load image binary data
+was recently updated for better performance
+as for now, SIPL uses the [stb load/write lib](https://github.com/nothings/stb) to load image data to memory and
+to write processed data back to drive.
+
+visual studio users if getting security error while compiling  
+please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor definitions setting 
+
+
+__!Important!__ all sub-libraries and functionality relay on the Core files always include the core folder first!.
+
+
+* __Java Version-__
+
+SIPL can be used by adding to your projects /src folder  the "Image" java class file located under the __Java__ folder.
+adding the the class file will allow you to use all core features and methods without
+the added functionality of the subclasses.
+the main core provides all needed tools for image processing, analysis, and handling
+
+* __Python Version-__
+SIPL can be used by adding to your projects folder the "SIPL_Python.py" file located under the __Python__ folder.
+adding the the py file will allow you to import all core features and methods without
+the added functionality of the subclasses.
+the main core provides all needed tools for image processing, analysis, and handling
+
+* Detailed tutorials about how to work with SIPL can be found in the wiki tab of this repository 
+
+
+
 
 ### Installation
 1. Download The Corresponding Files From The Repository Folder Of Required Language 
@@ -96,7 +124,7 @@ npm install npm@latest -g
 
 
 <!-- USAGE EXAMPLES -->
-## Usage Examples
+## Usage
 
 
 #### Face Detection (Real-Time Parametric)
