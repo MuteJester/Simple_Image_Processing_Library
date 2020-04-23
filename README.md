@@ -81,7 +81,7 @@ To get a local copy up and running follow these simple example steps.
 ### Notice
 
 * __C++ Version-__
-
+  ```sh
   SIPL can be used just by adding to your project all the header files and CPP files located in the __SIPL Core__ folder.
   including only the core of the library will allow you to use all core features and methods without
   the added functionality of the subclasses.
@@ -94,24 +94,27 @@ To get a local copy up and running follow these simple example steps.
 
   visual studio users if getting security error while compiling  
   please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor definitions setting 
-
+ ```
 
 __!Important!__ all sub-libraries and functionality relay on the Core files always include the core folder first!.
 
 
 * __Java Version-__
+  ```sh
 
   SIPL can be used by adding to your projects /src folder  the "Image" java class file located under the __Java__ folder.
   adding the the class file will allow you to use all core features and methods without
   the added functionality of the subclasses.
   the main core provides all needed tools for image processing, analysis, and handling
-
+    ```
 
 * __Python Version-__
+  ```sh
   SIPL can be used by adding to your projects folder the "SIPL_Python.py" file located under the __Python__ folder.
   adding the the py file will allow you to import all core features and methods without
   the added functionality of the subclasses.
   the main core provides all needed tools for image processing, analysis, and handling
+  ```
 
 Detailed tutorials about how to work with SIPL can be found in the [wiki](https://github.com/MuteJester/Simple_Image_Processing_Library/wiki) tab of this repository 
 
