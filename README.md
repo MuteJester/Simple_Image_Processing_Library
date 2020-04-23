@@ -36,12 +36,12 @@
 ## Table of Contents
 
 * [About the Project](#about-the-project)
-  * [Built With](#built-with)
+  * [Built Using](#built-using)
 * [Getting Started](#getting-started)
   * [Notice](#notice)
   * [Installation](#installation)
 * [Usage](#usage)
-* [Roadmap](#roadmap)
+* [Current Features](#current-features)
 * [Contributing](#contributing)
 * [License](#license)
 * [Contact](#contact)
@@ -56,16 +56,16 @@ Here's why SIPL:
 * Your time should be focused on algorithms,developing something amazing,not learning shortened method names of a library
 * You shouldn't install a huge amount of external dependencies to your project - SIPL has no external dependencies !
 * You should be able to read any code written using SIPL and clrealy understand whats going on from the method names
+* You have an understanding on how to use SIPL on one language ? , you know how to use SIPL on all supported languages !
 
 Of course, for the time being the library is still under development so still it will not serve all projects since your needs may be different then what the library currently supports for you language or even at all . functions and features will be added in the near future. You may also suggest changes by forking this repo and creating a pull request or opening an issue.
 
 
 
-### Built With
-This section should list any major frameworks that you built your project using. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
-* [Bootstrap](https://getbootstrap.com)
-* [JQuery](https://jquery.com)
-* [Laravel](https://laravel.com)
+### Built Using
+* [Visual Studio](https://visualstudio.microsoft.com/)
+* [Eclipse](https://www.eclipse.org/)
+* [Pycharm](https://www.jetbrains.com/pycharm/)
 
 
 
@@ -109,7 +109,7 @@ adding the the py file will allow you to import all core features and methods wi
 the added functionality of the subclasses.
 the main core provides all needed tools for image processing, analysis, and handling
 
-* Detailed tutorials about how to work with SIPL can be found in the wiki tab of this repository 
+Detailed tutorials about how to work with SIPL can be found in the [wiki](https://github.com/MuteJester/Simple_Image_Processing_Library/wiki) tab of this repository 
 
 
 
@@ -138,22 +138,68 @@ SIPL Offers A Real-Time face detection algorithm which is parametric ,meaning th
 SIPL Offers A Quick Algorithm For Image Color Segmentation Using K Means, useful for color variance reduction
 
 
+#### Figure Detection
+<img src="Examples/OD%20example%201.jpg" alt="Logo" width="250" height="250">
+SIPL Offers A Real-Time figure detection algorithm which is parametric like the face detection algorithm ,meaning it will detect figures by user given parameters , different parameters will result in different results !
+
 
 * _For more Detailed Instructions, please refer to the [User Instructions](https://github.com/MuteJester/Simple_Image_Processing_Library/wiki/)_
 
 
+## Current Features
+ some features may be under development for some languages (java version has all the features stated at all time) 
+ ### Basic Image Handling
+  * __Loading/Creating/Writing Images__
+  * __Cropping/Scaling__
+  * __Single Pixel Modification__
+  * __Spatial Rotation__
+  * __Image View (Using SIPL's Local GUI Window)__
+ ### Drawing Functionality 
+  * __Shape Drawing (Cirlce,Rectangle,Triangle) - Fill/No-Fill__
+  * __Line Drawing__
+  * __Text Drawing__
+ ### Processing Functionality 
+  * __Thresholding__
+  * __Color Flooring__
+  * __Edge_Detection__
+  * __Kernel Convolution__
+  * __Image Convolution__
+  * __Feature_Matching__
+  * __Average Palette Detection__
+  * __Image Segmentation__
+  * __Image Paddings__
+  * __Dithering__
+  * __Circle Packing__
+  * __Channel Controlling__
+  * __Color Space Conversions__
+  * __Noise Addition/Creation__
+  * __Bit Plane Slicing__
+  ### Image Transformations
+  * __Power/Log /Negative Transformations__
+  * __Fourier Transformation__
+  ### Histogram Functionality
+  * __Localy View / Export Channel Histogram__
+  * __Histogram Equalization__
+  * __Histogram Correction (Linear,Power,Log)__
+    ### Image Arithmetics
+  * __Addition__
+  * __Subtraction__
+  * __Multiplication__
+  * __Division__
+  * __Logic Operations (OR,AND,XOR,NOT,AND-NOT)__
+  * __Set Operations (Union,Complement,Intersection)__
 
-<!-- ROADMAP -->
-## Roadmap
+  
 
-See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a list of proposed features (and known issues).
+  
+
 
 
 
 <!-- CONTRIBUTING -->
 ## Contributing
 
-Contributions are what make the open-source community such a powerful place to create new ideas, inspire, and make progress. Any contributions you make are **greatly appreciated**.
+Contributions are what make the open-source community such a powerful place to create new ideas, inspire, and make progress. Any contributions / ideas / requests  you make are **greatly appreciated**.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
