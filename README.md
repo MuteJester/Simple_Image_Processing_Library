@@ -22,11 +22,14 @@
     <a href="https://github.com/MuteJester/Simple_Image_Processing_Library/wiki"><strong>Explore the docs »</strong></a>
     <br />
     <br />
+    <a href="https://github.com/MuteJester/Coding_Challenges_Using_SIPL">Created Using SIPL</a>
+    ·
     <a href="https://github.com/MuteJester/Simple_Image_Processing_Library/wiki">View Demo</a>
     ·
     <a href="https://github.com/MuteJester/Simple_Image_Processing_Library/issues">Report Bug</a>
     ·
     <a href="https://github.com/MuteJester/Simple_Image_Processing_Library/issues">Request Feature</a>
+ 
   </p>
 </p>
 
@@ -174,6 +177,8 @@ SIPL Offers A Real-Time figure detection algorithm which is parametric like the 
   * __Color Space Conversions__
   * __Noise Addition/Creation__
   * __Bit Plane Slicing__
+  * __Blob Farming__
+  * __Difference Measurement__
   ### Image Transformations
   * __Power/Log /Negative Transformations__
   * __Fourier Transformation__
@@ -188,13 +193,24 @@ SIPL Offers A Real-Time figure detection algorithm which is parametric like the 
   * __Division__
   * __Logic Operations (OR,AND,XOR,NOT,AND-NOT)__
   * __Set Operations (Union,Complement,Intersection)__
-
+  ### Plotting Templates Supported
+  * __Scatter Plot__
+  * __Bar Plot__
+  * __Pie Plot__
+  * __Histogram__
   
-
+  ### Mathematical Utilities 
+  * __Complex Number Handling__
+  * __Matrix Handaling__
+  * __Complex Matrix Operations__
+  * __Statistical Calculations__
+  * __Random Number/Color/Sequance Generation__
+    * __Linear Calculations (Distances/Interpolation..)__
+  ### Library Local GUI
+  * __Frame Refreshing (For Game/ Video / Animation Creation)__
+  * __3D Ploting And Interaction__
+  * __Image Viewing__
   
-
-
-
 
 <!-- CONTRIBUTING -->
 ## Contributing
