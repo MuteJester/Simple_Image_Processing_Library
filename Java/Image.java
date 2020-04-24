@@ -176,23 +176,37 @@ class Matrix {
 			this.Rows = Rows;
 			this.Cols = Cols;
 		}
-	public Matrix(int N, String Type) {
-		Matrix_Body = new  double[N][N]; 
-			for (int i = 0; i < N; i++) {
-				for (int j = 0; j < N; j++) {
+	public Matrix(int R,int C, String Type) {
+		if(Type.equals("Identity")) {
+			Matrix_Body = new double[R][C]; 
+			for (int i = 0; i < R; i++) {
+				for (int j = 0; j < C; j++) {
 					Matrix_Body[i][j] = 0;
 					if (i == j) {
 						Matrix_Body[i][j] = 1;
 					}
 				}
 			}
-			this.Rows = N;
-			this.Cols = N;
+			this.Rows = R;
+			this.Cols = C;
+		}
+		
 		}
 	public Matrix(double matrix[][],int rows,int cols) {
 		this.Matrix_Body=matrix;
 		this.Rows=rows;
 		this.Cols=cols;
+	}
+	public Matrix(Matrix Copy) {
+		this.Cols=Copy.Cols;
+		this.Rows=Copy.Rows;
+		Matrix_Body = new double[Rows][Cols]; 
+		for(int i =0;i<Rows;i++) {
+			for(int j=0;j<Cols;j++) {
+				this.Matrix_Body[i][j] = Copy.Matrix_Body[i][j];
+			}
+		}
+
 	}
 	public void Fill_With_Random_Values() {
 		Random r = new Random();
@@ -218,157 +232,323 @@ class Matrix {
 			}
 		}
 	}
-	   public void Matrix_Set(Matrix B) {
-			this.Rows = B.Rows;
-			this.Cols = B.Cols;
-			this.Matrix_Body = B.Matrix_Body;
+    public void Matrix_Set(Matrix B) {
+		this.Rows = B.Rows;
+		this.Cols = B.Cols;
+		this.Matrix_Body = B.Matrix_Body;
+		for (int i = 0; i < Rows; i++) {
+			for (int j = 0; j < Cols; j++) {
+				Matrix_Body[i][j] = B.Matrix_Body[i][j];
+			}
+		}
+
+	}
+	public void Add(Matrix B) {
+		if (Rows != B.Rows || Cols != B.Cols) {
+			return;
+		}
+		else {
 			for (int i = 0; i < Rows; i++) {
 				for (int j = 0; j < Cols; j++) {
-					Matrix_Body[i][j] = B.Matrix_Body[i][j];
-				}
-			}
-
-		}
-		public void Add(Matrix B) {
-			if (Rows != B.Rows || Cols != B.Cols) {
-				return;
-			}
-			else {
-				for (int i = 0; i < Rows; i++) {
-					for (int j = 0; j < Cols; j++) {
-						Matrix_Body[i][j] += B.Matrix_Body[i][j];
-					}
+					Matrix_Body[i][j] += B.Matrix_Body[i][j];
 				}
 			}
 		}
-		public void Subtract(Matrix B) {
-			if (Rows != B.Rows || Cols != B.Cols) {
-				return;
-			}
-			else {
-				for (int i = 0; i < Rows; i++) {
-					for (int j = 0; j < Cols; j++) {
-						Matrix_Body[i][j] -= B.Matrix_Body[i][j];
-					}
-				}
-			}
+	}
+	public void Subtract(Matrix B) {
+		if (Rows != B.Rows || Cols != B.Cols) {
+			return;
 		}
-		public void Dot_Product(Matrix B) {
-			if (Cols != B.Rows) {
-				return;
-
-			}
-			else {
-				double sum = 0;
-				Matrix temp = new Matrix(Rows, B.Cols);
-				for (int i = 0; i < Rows; i++) {
-					for (int j = 0; j < B.Cols; j++) {
-						for (int k = 0; k < Cols; k++) {
-							sum += Matrix_Body[i][k] * B.Matrix_Body[k][j];
-
-						}
-						temp.Matrix_Body[i][j] = sum;
-						sum = 0;
-					}
-				}
-				 this.Matrix_Body= temp.Matrix_Body;
-				 this.Rows = temp.Rows;
-				 this.Cols = temp.Cols;
-			}
-		}
-		public void Matrix_Transpose() {
-
-
-			Matrix temp = new Matrix(Cols, Rows);
-
-
-
-			for (int i = 0; i < Cols; i++) {
-				for (int j = 0; j < Rows; j++) {
-					temp.Matrix_Body[i][j] = Matrix_Body[j][i];
-				}
-			}
-			this.Matrix_Body = temp.Matrix_Body;
-			this.Rows = temp.Rows;
-			this.Cols = temp.Cols;
-		}
-		public void Multiply_By_Scalar(int scalar) {
+		else {
 			for (int i = 0; i < Rows; i++) {
 				for (int j = 0; j < Cols; j++) {
-					Matrix_Body[i][j] *= scalar;
+					Matrix_Body[i][j] -= B.Matrix_Body[i][j];
 				}
 			}
 		}
-		public Matrix Hadamard_Product(Matrix Mul_By) {
-			if (Cols != Mul_By.Rows || Rows != Mul_By.Rows) {
-				return new Matrix(1,1);
-
-			}
-			else {
-				Matrix Result = new Matrix(Rows, Cols);
-				double sum = 0;
-
-				for (int i = 0; i < Rows; i++) {
-					for (int j = 0; j < Mul_By.Cols; j++) {
-						Result.Matrix_Body[i][j] = Matrix_Body[i][j] * Mul_By.Matrix_Body[i][j];
-					}
-				}
-				return Result;
-
-			}
+	}
+	public void Divide(double divide_by) {
+		for(int i=0;i<this.Rows;i++) {
+			for(int j=0;j<this.Cols;j++)
+				this.Matrix_Body[i][j]/=divide_by;
 		}
-		public Matrix Kronecker_Product(Matrix Mul_By) {
-			Matrix Kronecker = new Matrix(Rows*Mul_By.Rows, Cols*Mul_By.Cols);
-			int startRow, startCol;
+	}
+	public Matrix Dot_Product(Matrix B) {
+		if (Cols != B.Rows) {
+			return null;
+
+		}
+		else {
+			Matrix Res = new Matrix(this);
+			double sum = 0;
+			Matrix temp = new Matrix(Rows, B.Cols);
 			for (int i = 0; i < Rows; i++) {
-				for (int j = 0; j < Cols; j++) {
-					startRow = i * Mul_By.Rows;
-					startCol = j * Mul_By.Cols;
-					for (int k = 0; k < Mul_By.Rows; k++) {
-						for (int l = 0; l < Mul_By.Cols; l++) {
-							Kronecker.Matrix_Body[startRow + k][startCol + l] = Matrix_Body[i][j] * Mul_By.Matrix_Body[k][l];
-						}
+				for (int j = 0; j < B.Cols; j++) {
+					for (int k = 0; k < Cols; k++) {
+						sum += Res.Matrix_Body[i][k] * B.Matrix_Body[k][j];
+
 					}
+					temp.Matrix_Body[i][j] = sum;
+					sum = 0;
 				}
 			}
-			return Kronecker;
-		}
-		public void Horizontal_Matrix_Concatenation(Matrix To_HConcat) {
-			if (this.Rows != To_HConcat.Rows)
-				return;
+			Res.Matrix_Body= temp.Matrix_Body;
+			Res.Rows = temp.Rows;
+			Res.Cols = temp.Cols;
+			return Res;
 
-			int  i, j, k, l = 0;
-			Matrix ConcatH = new Matrix(Rows, Cols + To_HConcat.Cols);
-
-			for (i = 0; i < Rows; i++) {
-				for (j = 0; j < Cols; j++) {
-					ConcatH.Matrix_Body[i][l] = Matrix_Body[i][j];
-					l++;
-				}
-				for (k = 0; k < To_HConcat.Cols; k++) {
-					ConcatH.Matrix_Body[i][l] = To_HConcat.Matrix_Body[i][k];
-					l++;
-				}
-				l = 0;
-			}
-			this.Matrix_Body = ConcatH.Matrix_Body;
-			this.Rows =ConcatH.Rows;
-			this.Cols = ConcatH.Cols;
 		}
-
-		public void print_Matrix() {
-			for (int i = 0; i < Rows; i++) {
-				for (int j = 0; j < Cols; j++) {
-					System.out.print(Matrix_Body[i][j]);
-					System.out.print(" ");
-				}
-				System.out.print('\n');
-			}
-		}
+	}
+	public Matrix Get_Doolittle_Matirx() {
+		Matrix Azero = new Matrix(this);
 		
-		//members
-		public double Matrix_Body[][];
-		public int Rows, Cols;
+		
+		return Azero;
+	}
+	public Matrix Get_Upper_Matrix() {
+		if(this.Rows!=this.Cols) {
+			System.out.println("Matrix Needs To Be NxN");
+			return null;
+		}
+		Matrix Upper = new Matrix(this);
+		
+		for(int i=0;i<this.Rows;i++) {
+			for(int j=0;j<i;j++) {
+				Upper.Matrix_Body[i][j]=0;
+			}
+		}
+		return Upper;
+		
+	}
+	public Matrix Get_Lower_Matrix() {
+		if(this.Rows!=this.Cols) {
+			System.out.println("Matrix Needs To Be NxN");
+			return null;
+		}
+		Matrix Lower = new Matrix(this);
+		
+		for(int i=0;i<this.Rows;i++) {
+			for(int j=i+1;j<Cols;j++) {
+				Lower.Matrix_Body[i][j]=0;
+			}
+		}
+		return Lower;
+		
+	}
+	public double[] Get_Diagonal() {
+		if(this.Rows!=this.Cols) {
+			System.out.println("Matrix Needs To Be NxN");
+			return null;
+		}
+		double dig[] = new double[this.Cols];
+		for(int i =0;i<this.Rows;i++) {
+			dig[i]=this.Matrix_Body[i][i];
+		}
+		return dig;
+	}
+	public Matrix[] LU_Decomposition() {
+		if(this.Cols!=this.Rows) {
+			System.out.println("Matrix Needs To Be NxN");
+			return null;
+		}
+		 Matrix LU = new Matrix(this);
+	      double pivot[] = new double[this.Cols];
+	      for (int i = 0; i < this.Cols; i++) {
+	         pivot[i] = i;
+	      }
+	      int pivsign = 1;
+	      double[] LUrowi;
+	      double[] LUcolj = new double[this.Cols];
+
+	      // Outer loop.
+
+	      for (int j = 0; j < this.Cols; j++) {
+	         for (int i = 0; i < this.Cols; i++) {
+	            LUcolj[i] = LU.Matrix_Body[i][j];
+	         }
+
+	         for (int i = 0; i < this.Cols; i++) {
+	            LUrowi = LU.Matrix_Body[i];
+	            int kmax = Math.min(i,j);
+	            double s = 0.0;
+	            for (int k = 0; k < kmax; k++) {
+	               s += LUrowi[k]*LUcolj[k];
+	            }
+
+	            LUrowi[j] = LUcolj[i] -= s;
+	         }
+	         
+	         int p = j;
+	         for (int i = j+1; i < this.Cols; i++) {
+	            if (Math.abs(LUcolj[i]) > Math.abs(LUcolj[p])) {
+	               p = i;
+	            }
+	         }
+	         if (p != j) {
+	            for (int k = 0; k < this.Cols; k++) {
+	               double t = LU.Matrix_Body[p][k];
+	               LU.Matrix_Body[p][k] = LU.Matrix_Body[j][k];
+	               LU.Matrix_Body[j][k]= t;
+	            }
+	            double k = pivot[p];
+	            pivot[p] = pivot[j];
+	            pivot[j] = k;
+	            pivsign = -pivsign;
+	         }
+	         if (j < this.Cols & LU.Matrix_Body[j][j] != 0.0) {
+	            for (int i = j+1; i < this.Cols; i++) {
+	               LU.Matrix_Body[i][j] /= LU.Matrix_Body[j][j];
+	            }
+	         }
+	      }
+	     
+	     
+		Matrix[] LUP = new Matrix[3];
+		Matrix Lower = LU.Get_Lower_Matrix();
+		for(int i=0;i<this.Cols;i++) {
+			Lower.Matrix_Body[i][i]=1;
+		}
+		Matrix pivot_mat = new Matrix(1,pivot.length);
+		for(int i=0;i<pivot.length;i++) {
+			pivot_mat.Matrix_Body[0][i] = pivot[i];
+		}
+		LUP[0] = Lower;
+		LUP[1] = LU.Get_Upper_Matrix();
+		LUP[2] = pivot_mat;
+		
+		return LUP;
+
+		
+	}
+	public void QR_Decomposition() {
+		
+	}
+	public double Get_Determinant() {
+		if(this.Cols!=this.Rows) {
+			System.out.println("Matrix Needs To Be NxN");
+			return 0;
+		}
+		Matrix LU[] = this.LU_Decomposition();
+
+	    double det = LU[1].Matrix_Body[0][0];
+
+	    for (int i = 1; i < this.Cols; i++)
+	        det *= LU[1].Matrix_Body[i][i];
+
+	    if ((LU[2].Matrix_Body[0][this.Cols-1] - this.Cols-1) % 2 == 0)
+	        return det; 
+	    else
+	        return -det;
+	
+	}
+	public void Matrix_Transpose() {
+
+
+		Matrix temp = new Matrix(Cols, Rows);
+
+
+
+		for (int i = 0; i < Cols; i++) {
+			for (int j = 0; j < Rows; j++) {
+				temp.Matrix_Body[i][j] = Matrix_Body[j][i];
+			}
+		}
+		this.Matrix_Body = temp.Matrix_Body;
+		this.Rows = temp.Rows;
+		this.Cols = temp.Cols;
+	}
+	public void Multiply_By_Scalar(int scalar) {
+		for (int i = 0; i < Rows; i++) {
+			for (int j = 0; j < Cols; j++) {
+				Matrix_Body[i][j] *= scalar;
+			}
+		}
+	}
+	public void Multiply_By_Scalar(double scalar) {
+		for (int i = 0; i < Rows; i++) {
+			for (int j = 0; j < Cols; j++) {
+				Matrix_Body[i][j] *= scalar;
+			}
+		}
+	}
+
+	public Matrix Hadamard_Product(Matrix Mul_By) {
+		if (Cols != Mul_By.Rows || Rows != Mul_By.Rows) {
+			return new Matrix(1,1);
+
+		}
+		else {
+			Matrix Result = new Matrix(Rows, Cols);
+			double sum = 0;
+
+			for (int i = 0; i < Rows; i++) {
+				for (int j = 0; j < Mul_By.Cols; j++) {
+					Result.Matrix_Body[i][j] = Matrix_Body[i][j] * Mul_By.Matrix_Body[i][j];
+				}
+			}
+			return Result;
+
+		}
+	}
+	public Matrix Kronecker_Product(Matrix Mul_By) {
+		Matrix Kronecker = new Matrix(Rows*Mul_By.Rows, Cols*Mul_By.Cols);
+		int startRow, startCol;
+		for (int i = 0; i < Rows; i++) {
+			for (int j = 0; j < Cols; j++) {
+				startRow = i * Mul_By.Rows;
+				startCol = j * Mul_By.Cols;
+				for (int k = 0; k < Mul_By.Rows; k++) {
+					for (int l = 0; l < Mul_By.Cols; l++) {
+						Kronecker.Matrix_Body[startRow + k][startCol + l] = Matrix_Body[i][j] * Mul_By.Matrix_Body[k][l];
+					}
+				}
+			}
+		}
+		return Kronecker;
+	}
+	public void Horizontal_Matrix_Concatenation(Matrix To_HConcat) {
+		if (this.Rows != To_HConcat.Rows)
+			return;
+
+		int  i, j, k, l = 0;
+		Matrix ConcatH = new Matrix(Rows, Cols + To_HConcat.Cols);
+
+		for (i = 0; i < Rows; i++) {
+			for (j = 0; j < Cols; j++) {
+				ConcatH.Matrix_Body[i][l] = Matrix_Body[i][j];
+				l++;
+			}
+			for (k = 0; k < To_HConcat.Cols; k++) {
+				ConcatH.Matrix_Body[i][l] = To_HConcat.Matrix_Body[i][k];
+				l++;
+			}
+			l = 0;
+		}
+		this.Matrix_Body = ConcatH.Matrix_Body;
+		this.Rows =ConcatH.Rows;
+		this.Cols = ConcatH.Cols;
+	}
+
+	public void print_Matrix() {
+		for (int i = 0; i < Rows; i++) {
+			System.out.print("[");
+			for (int j = 0; j < Cols; j++) {
+				if(j <Cols-1) {
+				System.out.print(Matrix_Body[i][j]+" | ");
+				System.out.print(" ");
+				}else {
+					System.out.print(Matrix_Body[i][j]);
+
+				}
+			}
+			System.out.print("]");
+			System.out.print('\n');
+		}
+	}
+	
+	//members
+	public double Matrix_Body[][];
+	public int Rows, Cols;
 
 	}
 
@@ -388,7 +568,7 @@ class SIPL_Window extends JFrame{
 	    label.setIcon((Icon) new ImageIcon(IMG));
 	    this.getContentPane().add(label,BorderLayout.CENTER);
 	    //this.setLocationRelativeTo(null);
-	    this.setSize(IMG.getWidth(), IMG.getHeight());
+	    this.setSize(IMG.getWidth()+50, IMG.getHeight()+50);
 		this.setVisible(true);
 		this.setLayout(null);
 		this.isopen = true;
@@ -411,6 +591,15 @@ class SIPL_Window extends JFrame{
 			//this.setVisible(true);
 			//this.setLayout(null);
 	}
+	public void Refresh_Frame(BufferedImage img,int width,int height) {
+		this.IMG = img;
+		label.setIcon((Icon) new ImageIcon(IMG));
+	    this.setSize(width, height);
+	    this.revalidate();
+	    this.repaint();
+		//this.setVisible(true);
+		//this.setLayout(null);
+}
 	
 }
 
@@ -759,11 +948,11 @@ class Math_Toolbox{
 		}
 		return max;
 	}
-	public int random_int_in_range(int lower,int upper) {
+	public static int random_int_in_range(int lower,int upper) {
 		int rand = ThreadLocalRandom.current().nextInt(lower,upper);		
 		return rand;
 	}
-	public double random_double_in_range(double lower,double upper) {
+	public static double random_double_in_range(double lower,double upper) {
 		double rand = ThreadLocalRandom.current().nextDouble(lower,upper);		
 		return rand;
 	}
@@ -782,7 +971,46 @@ class Math_Toolbox{
        
         return to;
     }	
-		
+	// Get a random numbers between min and max
+    public static float RandomFloat(float min, float max) {
+        float a = (float) Math.random();
+        float num = min + (float) Math.random() * (max - min);
+        if(a < 0.5)
+            return num;
+        else
+            return -num;
+    }
+    
+    // Sigmoid function
+    public static double Sigmoid(double x) {
+        return (float) (1/(1+Math.pow(Math.E, -x)));
+    }
+    
+    // Derivative of the sigmoid function
+    public static double SigmoidDerivative(double x) {
+        return Sigmoid(x)*(1-Sigmoid(x));
+    }
+    
+    public static double squaredError(double output,double target) {
+    	return (float) (0.5*Math.pow(2,(target-output)));
+    }
+    
+    public static double sumSquaredError(double[] outputs,double[] targets) {
+    	double sum = 0;
+    	for(int i=0;i<outputs.length;i++) {
+    		sum += squaredError(outputs[i],targets[i]);
+    	}
+    	return sum;
+    }
+
+    public static double Rectified(double x) {
+    	if(x >= 0) {
+    		return x;
+    	}else {
+    		return 0;
+    	}
+    }
+
 }
 class Point{
 	
@@ -1010,6 +1238,7 @@ class LabPixel{
 		this.B=b;
 
 	}
+
 	public LabPixel(int l,int a,int b,int i,int j) {
 		this.L=l;
 		this.A=a;
@@ -2292,12 +2521,12 @@ public class Image {
 		}
 		this.Commint_Matrix_Changes();
 	}
-	public void Arithmetic_Subtraction(Image Image_To_Subctract) {
+	public void Arithmetic_Subtraction(Image Image_To_Subtract) {
 		for(int i =0;i<this.Image_Height;i++) {
 			for(int j=0;j<this.Image_Width;j++) {
-				this.Pixel_Matrix[i][j].r -= Image_To_Subctract.Pixel_Matrix[i][j].r;
-				this.Pixel_Matrix[i][j].g -= Image_To_Subctract.Pixel_Matrix[i][j].g;
-				this.Pixel_Matrix[i][j].b -= Image_To_Subctract.Pixel_Matrix[i][j].b;
+				this.Pixel_Matrix[i][j].r -= Image_To_Subtract.Pixel_Matrix[i][j].r;
+				this.Pixel_Matrix[i][j].g -= Image_To_Subtract.Pixel_Matrix[i][j].g;
+				this.Pixel_Matrix[i][j].b -= Image_To_Subtract.Pixel_Matrix[i][j].b;
 				this.Pixel_Matrix[i][j].Clamp_Outliers();
 			}
 		}
@@ -2453,10 +2682,6 @@ public class Image {
 
 		this.Arithmetic_Complement();
 	}
-	
-
-
-
 	public void Arithmetic_OR(Image to_OR) {
 		if(to_OR.Image_Height != this.Image_Height || this.Image_Width != to_OR.Image_Width) {
 			System.out.println("Operation Aborted: Images Are Different In Size");
@@ -2870,11 +3095,14 @@ public class Image {
 				return;
 		
 			}
-			for (y = -c_radius; y <= c_radius; y++)
-				for (x = -c_radius; x <= c_radius; x++)
-					if ((x * x) + (y * y) <= (c_radius * c_radius))
+			for (y = -c_radius; y <= c_radius; y++) {
+				for (x = -c_radius; x <= c_radius; x++) {
+					if ((x * x) + (y * y) <= (c_radius * c_radius)) {
 						Pixel_Matrix[center_y + y][center_x + x] = new Pixel(color);
 						this.Set_Color(center_y + y, center_x + x, color);
+					}
+				}
+			}
 		}
 	}
 	public void Draw_Text(int center_y,int center_x,String text, Pixel color) {
@@ -8421,6 +8649,7 @@ class SPlot extends Image{
 		for(int i = 0;i<400 && j <data.size();i+=spaces) {
 				Pixel rc = CSET.Get_Random_Color();
 				rc.r=30;
+			histo.Draw_Line(499, 109 + i , 499-(int)(data.get(j)/divider) , 109 + i, rc);
 			histo.Draw_Line(499, 108 + i , 499-(int)(data.get(j)/divider) , 108 + i, rc);
 			histo.Draw_Line(499, 107 + i , 499-(int)(data.get(j)/divider) , 107 + i, rc);
 			j++;		
@@ -8898,6 +9127,58 @@ class SPlot extends Image{
 		return Scatter_Plot;
 		
 	}
+	public Image Get_Scatter_Plot(String X_Label,String Y_Label,double Max_X_Value,double Max_Y_Value) {
+		Image Scatter_Plot = new Image();
+		Color_Palette CSET = new Color_Palette();
+		Math_Toolbox tlb = new Math_Toolbox();
+		double Max_X = Max_X_Value;
+		double Max_Y = Max_Y_Value;
+		double Min_X = 0;
+		double Min_Y = 0;
+		
+		Max_X+=Max_X/4;
+		Max_Y+=Max_Y/4;
+		Max_X = Math.round(Max_X);
+		Max_Y = Math.round(Max_Y);
+		Scatter_Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+		Scatter_Plot.Draw_Square(75, 100, 575, 725, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Square(74, 99, 576, 726, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Square(73, 98, 577, 727, CSET.Black, "Corners");
+		Scatter_Plot.Draw_Text(325, 750, Y_Label, CSET.Black);
+		Scatter_Plot.Draw_Text(65, 400, X_Label, CSET.Black);
+		double distX = (Math.abs(Min_X)+Math.abs(Max_X))/4;
+		double distY = (Math.abs(Min_Y)+Math.abs(Max_Y))/4;
+
+		Scatter_Plot.Draw_Text(595, 90 + 0 * 78*2,String.format("%.2f",((Min_X))), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 1 * 78*2,String.format("%.2f",((Min_X)+distX*1)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 2 * 78*2,String.format("%.2f",((Min_X)+distX*2)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 3 * 78*2,String.format("%.2f",((Min_X)+distX*3)), CSET.Black);
+		Scatter_Plot.Draw_Text(595, 99 + 4 * 78*2,String.format("%.2f",((Max_X))), CSET.Black);
+
+		Scatter_Plot.Draw_Text(575 - 0 * 62*2, 40,String.format("%.2f",(Min_Y)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 1 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*1)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 2 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*2)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 3 * 62*2, 40,String.format("%.2f",((Min_Y)+distY*3)), CSET.Black);
+		Scatter_Plot.Draw_Text(575 - 4 * 62*2, 40,String.format("%.2f",((Max_Y))), CSET.Black);
+
+
+		for(int i = 0 ;i<5;i++) {
+			Scatter_Plot.Draw_Line(575 - 62 * i*2,100,575 - 62 * i*2,90,CSET.Black);
+			
+			Scatter_Plot.Draw_Line(575,100 + i * 78*2 ,575 + 10,100 + i * 78*2,CSET.Black);
+			Scatter_Plot.Draw_Line(575,99 + i * 78*2 ,575 + 10,99 + i * 78*2,CSET.Black);
+
+
+
+		}
+		Scatter_Plot.Update_Pixel_Matrix();
+
+		
+		
+		return Scatter_Plot;
+		
+	}
+
 	public void Show_Pie_Plot(double Sizes[],ArrayList<String> Labels) {
 		if(Labels.size() != Sizes.length) {
 			System.out.println("Number Of Labels And Number Of Sizes Do Not Match");
