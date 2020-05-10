@@ -179,6 +179,8 @@ SIPL Offers A Real-Time figure detection algorithm which is parametric like the 
   * __Bit Plane Slicing__
   * __Blob Farming__
   * __Difference Measurement__
+  * __Connected Components Labeling__
+
   ### Image Transformations
   * __Power/Log /Negative Transformations__
   * __Fourier Transformation__
