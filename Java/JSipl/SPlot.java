@@ -334,7 +334,7 @@ public class SPlot extends Image {
 			histo.Draw_Text(520, 108 + i, String.valueOf(i/2), CSET.Black);
 		}
 		
-		if(Channel.equals("Red")) {
+		if(Channel.equals("R")) {
 			histo.Draw_Text(90, 345, "RED HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
 				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxR[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Red);
@@ -343,14 +343,14 @@ public class SPlot extends Image {
 			}
 			
 		}
-		else if(Channel.equals("Green")) {
+		else if(Channel.equals("G")) {
 			histo.Draw_Text(90, 345, "GREEN HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
 				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Green);
 				histo.Draw_Line(499, 107 + i , 499-(int)tlb.Remap(xxG[i/2], 0, max_y, 0, 399*Multiplyer) , 107 + i, CSET.Green);
 			}
 			
-		}else if(Channel.equals("Blue")) {
+		}else if(Channel.equals("B")) {
 			histo.Draw_Text(90, 345, "BLUE HISTOGRAM", CSET.Black);
 			for(int i =0;i<512;i+=2) {
 				histo.Draw_Line(499, 108 + i , 499-(int)tlb.Remap(xxB[i/2], 0, max_y, 0, 399*Multiplyer) , 108 + i, CSET.Blue);

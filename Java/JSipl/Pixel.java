@@ -161,5 +161,14 @@ public class Pixel {
 		Point xyz = this.LABtoXYZ(lab);
 		this.XYZtoRGB(xyz);
 	}
+	public boolean Equals(Pixel Source) {
+		if(this.r != Source.r || this.g != Source.g || this.b != Source.b) {
+			return false;
+		}else {
+			return true;
+		}
+	}
+
+
 
 }

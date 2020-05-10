@@ -21,12 +21,12 @@ public class SIPL_Window extends JFrame{
 		this.IMG = img;
 		//Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		label=new JLabel();
-	    label.setIcon((Icon) new ImageIcon(IMG));
+		label = new JLabel((new ImageIcon(IMG)));
+		this.setLayout( new BorderLayout());
 	    this.getContentPane().add(label,BorderLayout.CENTER);
 	    //this.setLocationRelativeTo(null);
-	    this.setSize(IMG.getWidth()+50, IMG.getHeight()+50);
+	    this.setSize(IMG.getWidth()+100, IMG.getHeight()+100);
 		this.setVisible(true);
-		this.setLayout(null);
 		this.isopen = true;
 	}
 	public void start_window() {
@@ -40,8 +40,8 @@ public class SIPL_Window extends JFrame{
 	
 	public void Refresh_Frame(BufferedImage img) {
 			this.IMG = img;
-			label.setIcon((Icon) new ImageIcon(IMG));
-		    this.setSize(IMG.getWidth(), IMG.getHeight());
+			label = new JLabel((new ImageIcon(IMG)));
+		    this.setSize(IMG.getWidth()+100, IMG.getHeight()+100);
 		    this.revalidate();
 		    this.repaint();
 			//this.setVisible(true);

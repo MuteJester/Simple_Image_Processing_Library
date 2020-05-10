@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Collections;
+import java.util.Hashtable;
 
 
 
@@ -90,17 +91,45 @@ public class Image {
 				this.Image_Load_Wrapper();
 			}else {
 			this.F_Path = FilePath;
-			this.IMG = ImageIO.read(Image.class.getResource(FilePath));
+			//this.IMG = ImageIO.read(Image.class.getResource(FilePath));
+			this.IMG = ImageIO.read(new File(FilePath));
+
 			this.Image_Load_Wrapper();
 			}
 		}catch(IOException e) {
 			System.out.println("Error");
+		}catch(IllegalArgumentException E) {
+			System.out.println("Error In File Load Please Make Sure File Path Is Valid");
+			System.exit(0);
 		}
 		
 		
 	
 	}
-	public void Crop_Image(int left_corner_y,int left_corner_x,int right_corner_y,int right_corner_x) {
+	public static Image[] Load_Folder(String FolderPath) throws IOException {
+		File folder = new File(FolderPath);
+		File[] listOfFiles = folder.listFiles();
+		int n_of_images=0;
+		
+		for (int i = 0; i < listOfFiles.length; i++) {
+		  if (listOfFiles[i].isFile()) {
+				n_of_images++;
+		  }
+		}
+		Image[] Images = new Image[n_of_images];
+		int z =0;
+		for (int i = 0; i < listOfFiles.length; i++) {
+			  if (listOfFiles[i].isFile()) {
+				  Images[z] = new Image(); 
+				  System.out.println("Loaded - /"+listOfFiles[i].getName());
+				  Images[z].Load_Image(FolderPath+"/"+listOfFiles[i].getName());
+				  z++;
+			  }
+			}
+		
+		return Images;
+	}
+    public void Crop_Image(int left_corner_y,int left_corner_x,int right_corner_y,int right_corner_x) {
 		int width = right_corner_x - left_corner_x;
 		int height = right_corner_y-left_corner_y;
 		Image tmp = new Image();
@@ -5560,10 +5589,84 @@ public class Image {
 		this.Commint_Matrix_Changes();
 	}
 	
-	public void Add_Gaussian_Noise(double Mean,double Variance) {
+	public void Add_Gaussian_Noise(double Variance) {
 		
-		double eq_1,eq_2,eq_3;
-		eq_1 = 1D/(Math.sqrt(Variance)*Math.sqrt(2*Math.PI));
+		double RDV=0;
+		Random rd = new Random();
+		double SD = Math.sqrt(Variance);
+		for(int i=0;i<this.Image_Height;i++) {
+			for(int j=0;j<this.Image_Width;j++) {
+				RDV = (SD*(rd.nextGaussian())); 
+			      this.Pixel_Matrix[i][j].r +=RDV;	
+			      this.Pixel_Matrix[i][j].g +=RDV;		      
+			      this.Pixel_Matrix[i][j].b +=RDV;		      
+			      this.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		this.Commint_Matrix_Changes();
+		
+	}
+	public void Connected_Components_Labeling() {
+		this.Extended_Padding();
+		this.Grayscale(1);
+		this.Thresholding(1);
+		Hashtable<Integer,Integer> Labels = new Hashtable<Integer,Integer>();
+		Matrix States = new Matrix(this.Image_Height,this.Image_Width);
+		int last_label =0;
+		Color_Palette CSET = new Color_Palette();
+		
+		for(int i =1;i<this.Image_Height-1;i++) {
+			for(int j =1 ; j<this.Image_Width-1;j++) {
+				if(!this.Pixel_Matrix[i][j].Equals(CSET.Black)) {
+					if(States.Matrix_Body[i-1][j] == 0 && States.Matrix_Body[i][j-1] == 0) {
+						last_label++;
+						Labels.put(last_label, last_label);
+						States.Matrix_Body[i][j] = last_label;
+					}	
+					else {
+							if(States.Matrix_Body[i-1][j] == 0 && States.Matrix_Body[i][j-1]!=0) {
+								
+								States.Matrix_Body[i][j] = Labels.get((int)States.Matrix_Body[i][j-1]);			
+							}
+							else if(States.Matrix_Body[i-1][j] != 0 && States.Matrix_Body[i][j-1]==0) {
+								States.Matrix_Body[i][j] =  Labels.get((int)States.Matrix_Body[i-1][j]);				
+
+							}else {
+								
+								if(States.Matrix_Body[i][j-1] <= States.Matrix_Body[i-1][j]) {
+									States.Matrix_Body[i][j] = States.Matrix_Body[i][j-1];			
+									Labels.put((int)States.Matrix_Body[i-1][j],Labels.get((int)States.Matrix_Body[i][j-1]));
+								}else {
+									States.Matrix_Body[i][j] = States.Matrix_Body[i-1][j];			
+									Labels.put((int)States.Matrix_Body[i][j-1],Labels.get((int)States.Matrix_Body[i-1][j]));
+								}
+								
+							}
+				}
+			}
+		}
+		
+		
+		}
+			
+		for(int i = 1;i<this.Image_Height-1;i++) {
+			for(int j =1;j<this.Image_Width-1;j++) {
+				if (States.Matrix_Body[i][j]!=0) {
+					States.Matrix_Body[i][j] = Labels.get((int)States.Matrix_Body[i][j]);
+				}
+			}
+		}
+		
+		for(int i = 1;i<this.Image_Height-1;i++) {
+			for(int j =1;j<this.Image_Width-1;j++) {
+				if(States.Matrix_Body[i][j]!=0) {
+					this.Pixel_Matrix[i][j] = CSET.Color_Serial_Number[(int)States.Matrix_Body[i][j]%134 + 2];
+				}
+			}
+		}
+		this.Commint_Matrix_Changes();
+		
+		
 		
 		
 	}

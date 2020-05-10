@@ -473,7 +473,70 @@ public void Multiply_By_Scalar(double scalar) {
 		}
 	}
 }
+public static Matrix[] Image_Brakedown(Image Source) {
+	Matrix[] RGB = new Matrix[3];
+	RGB[0] = new Matrix(Source.Image_Height,Source.Image_Width);
+	RGB[1] = new Matrix(Source.Image_Height,Source.Image_Width);
+	RGB[2] = new Matrix(Source.Image_Height,Source.Image_Width);
+	for(int i =0;i<Source.Image_Height;i++) {
+		for(int j=0;j<Source.Image_Width;j++) {
+			RGB[0].Matrix_Body[i][j] =Source.Pixel_Matrix[i][j].r;
+			RGB[1].Matrix_Body[i][j] =Source.Pixel_Matrix[i][j].g;
+			RGB[2].Matrix_Body[i][j] =Source.Pixel_Matrix[i][j].b;
+		}
+	}
 
+	return RGB;
+	
+}
+public static Image Construct_Image(Matrix[] RGB_Matrices) {
+	if(RGB_Matrices[0].Cols != RGB_Matrices[1].Cols || RGB_Matrices[0].Cols != RGB_Matrices[2].Cols ||
+			RGB_Matrices[0].Rows != RGB_Matrices[1].Rows ||RGB_Matrices[0].Rows != RGB_Matrices[2].Rows ) {
+		System.out.println("ERROR - ALL Matrices Must Be The Same Size !");
+		return new Image();
+		
+	}
+	Image img = new Image();
+	img.Load_Blank_Canvas(RGB_Matrices[0].Rows, RGB_Matrices[0].Cols, new Pixel(255,255,255));
+	for(int i=0;i<img.Image_Height;i++) {
+		for(int j=0;j<img.Image_Width;j++) {
+			img.Pixel_Matrix[i][j].r = (int)RGB_Matrices[0].Matrix_Body[i][j];
+			img.Pixel_Matrix[i][j].g= (int)RGB_Matrices[1].Matrix_Body[i][j];
+			img.Pixel_Matrix[i][j].b = (int)RGB_Matrices[2].Matrix_Body[i][j];
+
+		}
+	}
+	img.Commint_Matrix_Changes();
+	return img;
+	
+}
+
+public static Image Construct_Image(Matrix Grayscale_Matrix) {
+	Image img = new Image();
+	img.Load_Blank_Canvas(Grayscale_Matrix.Rows, Grayscale_Matrix.Cols, new Pixel(255,255,255));
+	for(int i=0;i<img.Image_Height;i++) {
+		for(int j=0;j<img.Image_Width;j++) {
+			img.Pixel_Matrix[i][j].r = (int)Grayscale_Matrix.Matrix_Body[i][j];
+			img.Pixel_Matrix[i][j].g= (int)Grayscale_Matrix.Matrix_Body[i][j];
+			img.Pixel_Matrix[i][j].b = (int)Grayscale_Matrix.Matrix_Body[i][j];
+
+		}
+	}
+	img.Commint_Matrix_Changes();
+	return img;
+	
+}
+public static double[] Flatten(Matrix Target) {
+	double flattened[] = new double[Target.Rows*Target.Cols];
+	int aux=0;
+	for(int i=0;i<Target.Rows;i++) {
+		for(int j =0;j<Target.Cols;j++) {
+			flattened[aux] = Target.Matrix_Body[i][j];
+			aux++;
+		}
+	}
+	return flattened;
+}
 public Matrix Hadamard_Product(Matrix Mul_By) {
 	if (Cols != Mul_By.Rows || Rows != Mul_By.Rows) {
 		return new Matrix(1,1);
@@ -481,7 +544,6 @@ public Matrix Hadamard_Product(Matrix Mul_By) {
 	}
 	else {
 		Matrix Result = new Matrix(Rows, Cols);
-		double sum = 0;
 
 		for (int i = 0; i < Rows; i++) {
 			for (int j = 0; j < Mul_By.Cols; j++) {
