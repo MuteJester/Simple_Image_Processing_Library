@@ -81,6 +81,8 @@ To get a local copy up and running follow these simple example steps.
 ### Notice
 
 * __C++ Version-__
+  
+  __Version 1.0__
   SIPL can be used just by adding to your project all the header files and CPP files located in the __SIPL Core__ folder.
   including only the core of the library will allow you to use all core features and methods without
   the added functionality of the subclasses.
@@ -90,6 +92,22 @@ To get a local copy up and running follow these simple example steps.
   was recently updated for better performance
   as for now, SIPL uses the [stb load/write lib](https://github.com/nothings/stb) to load image data to memory and
   to write processed data back to drive.
+  
+    __Version 2.0__
+    Faster,Memory Efficient,And Much More User Friendly , SIPL 2.0 Released(30/5/2020) !
+    keep in mind instructions for version 1.0 slightly different becuase of updates and upgrades that were made in the 
+    core structure.
+    The SIPL Pixel Matrix Logic is still the same only method names and calls changed.
+    
+    To Use Version 2.0 all you need is to drag and drop the SIPL_CPP header files from [Here](https://github.com/MuteJester/Simple_Image_Processing_Library/tree/master/SIPL(C%2B%2B)%202.0)
+    to your project folder ,and include __ONLY__  Cpp_SIPL.h, and you are ready to code!
+
+    
+    the infrastructure used to load image binary data
+    still uses the [stb load/write lib](https://github.com/nothings/stb) to load image data to memory and
+    to write processed data back to drive.
+    
+
 
   visual studio users if getting security error while compiling  
   please add  ___CRT_SECURE_NO_WARNINGS__ to your preprocessor definitions setting 
