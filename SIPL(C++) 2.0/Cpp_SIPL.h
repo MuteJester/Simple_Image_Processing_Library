@@ -29,6 +29,8 @@
 
 #define S_HOLLOW 1118
 #define S_FILL 1119
+#define S_AA_FILL 1111
+#define S_AA_HOLLOW 1110
 #define S_CORNERS 1120
 #define S_CHECKERED 1121
 #define S_AA_LINE 1122
@@ -46,6 +48,9 @@
 #define S_RED_HISTOGRAM 1234
 #define S_RGB_HISTOGRAM 1235
 #define S_GRID 1236
+#define S_JPG 1237
+#define S_PNG 1238
+
 
 
 
@@ -53,51 +58,31 @@
 #define radiansToDegrees(angleRadians) ((angleRadians) * 180.0 / std::_Pi)
 
 
-#ifndef POINT_STRUCTRE_THOTH
 
-
-class Point {
+template<class p_type> class Point {
 public:
-	double x, y, z;
-	 Point() {
+	p_type x, y, z;
+
+	Point() {
 		x = y = z = 0;
 	}
-	 Point(double X, double Y, double Z) {
-		x = X;
-		y = Y;
-		z = Z;
+	Point(p_type x, p_type y) {
+		this->x = x;
+		this->y = y;
+		this->z = 0;
 	}
-	 Point(Point const &copy) {
-		this->x = copy.x;
-		this->y = copy.y;
-		this->z = copy.z;
+	Point(p_type x, p_type y, p_type z) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
 	}
-	 void Add(Point B) {
-		this->x += B.x;
-		this->y += B.y;
-		this->z += B.z;
+	double get_Distance(Point<p_type> const &point_B) {
+		return sqrt(((point_B.x - this->x)*(point_B.x - this->x)) + ((point_B.y - this->y)*(point_B.y - this->y)) + ((point_B.z - this->z)*(point_B.z - this->z)));
 	}
-	 double Distance(Point B) {
-		double distance;
-		distance = std::sqrt((B.x - this->x)*(B.x - this->x) + (B.y - this->y)*(B.y - this->y) + (B.z - this->z)*(B.z - this->z));
-		return distance;
+	static double get_Squared_Distance(Point<p_type> const &point_A, Point<p_type> const &point_B) {
+		return (SQUARE_IT((point_B.x - point_A.x)) + SQUARE_IT((point_B.y - point_A.y)) + SQUARE_IT((point_B.z - point_A.z)));
 	}
-	 void Divide_All(int Divider) {
-		this->x /= Divider;
-		this->y /= Divider;
-		this->z /= Divider;
-
-	}
-	 friend std::ostream &operator<<(std::ostream &out, Point const &pnt);
-
-	 double X_Linear_Interpolation(Point B, double y_value) {
-		return (((y_value - this->y)*(B.x - this->x)) / (B.y - this->y) + this->x);
-
-	}
-	 double Y_Linear_Interpolation(Point B, double x_value) {
-		return (x_value - this->x)*(B.y - this->y) / (B.x - this->x) + this->y;
-	}
-	 Point lerp(Point B, double amount) {
+	Point<p_type> lerp(Point<p_type>  B, double amount) {
 		Point ret;
 		ret.x = this->x + (B.x - this->x)*amount;
 		ret.y = this->y + (B.y - this->y)*amount;
@@ -105,15 +90,85 @@ public:
 
 		return ret;
 	}
+	void Divide_All(int Divider) {
+		this->x /= Divider;
+		this->y /= Divider;
+		this->z /= Divider;
+
+	}
+	friend std::ostream &operator<<(std::ostream &out, Point const &pnt);
+
+	double X_Linear_Interpolation(Point B, double y_value) {
+		return (((y_value - this->y)*(B.x - this->x)) / (B.y - this->y) + this->x);
+
+	}
+	double Y_Linear_Interpolation(Point B, double x_value) {
+		return (x_value - this->x)*(B.y - this->y) / (B.x - this->x) + this->y;
+	}
+	double get_Slope(Point<p_type> const &point_B) {
+		return (point_B.y - this->y) / (point_B.x - this->x);
+	}
+	double get_Magnitude() {
+		return sqrt((SQUARE_IT(this->x)) + (SQUARE_IT(this->y)) + (SQUARE_IT(this->z)));
+	}
 
 };
-
-#endif // !1
-
-std::ostream &operator<<(std::ostream &out, Point const &pnt) {
-	out << "[ " << pnt.x << " , " << pnt.y << " , " << pnt.z << " ]\n";
+template<class p_type> double X_Linear_Interpolation(Point<p_type> const &A, Point<p_type> const &B, p_type y_value) {
+	return (((y_value - A.y)*(B.x - A.x)) / (B.y - A.y) + A.x);
+}
+template<class p_type> double Y_Linear_Interpolation(Point<p_type> const &A, Point<p_type> const &B, p_type x_value) {
+	return (double)(x_value - A.x)*(B.y - A.y) / (B.x - A.x) + A.y;
+}
+void Quadratic_Equation(double const &a, double const &b, double const &c, double &result_root_a, double &result_root_b) {
+	result_root_a = (-b + std::sqrt(((b*b) - 4 * a*c))) / 2 * a;
+	result_root_b = ((-b - std::sqrt(((b*b) - 4 * a*c)))) / 2 * a;
+}
+template<class p_type> double Point_Dot_Product(Point<p_type> const &A, Point<p_type> const &B) {
+	return A.x*B.x + A.y*B.y + A.z*B.z;
+}
+template<class p_type> std::ostream &operator<<(std::ostream &out, Point< p_type> const &body) {
+	out << "[ " << body.x << ", " << body.y << ", " << body.z << " ]";
 	return out;
 }
+template<class p_type> std::ostream &operator<<(std::ostream &out, std::vector<Point< p_type> > const &body) {
+	for (int i = 0; i < body.size(); i++) {
+		out << body[i] << std::endl;
+	}
+	return out;
+}
+template<class p_type> bool operator<(Point<p_type> const &A, Point<p_type> const &B) {
+	if (A.x < B.x || A.y < B.y || A.x < B.x) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+template<class p_type> Point<p_type> Get_Smallest_Point_In_Vector(std::vector<Point<p_type> > const & Points) {
+	Point<p_type> cur_min = Points[0];
+	for (int i = 1; i < Points.size(); i++) {
+		if (Points[i] < cur_min) {
+			cur_min = Points[i];
+		}
+	}
+	return cur_min;
+}
+template<class p_type> Point<p_type> Get_Largest_Point_In_Vector(std::vector<Point<p_type> > const & Points) {
+	Point<p_type> cur_max = Points[0];
+	for (int i = 1; i < Points.size(); i++) {
+		if (!(Points[i] < cur_max)) {
+			cur_max = Points[i];
+		}
+	}
+	return cur_max;
+}
+
+inline double Squared_Point_Distance(Point<double> first, Point<double> second) {
+	return (first.x - second.x)*(first.x - second.x) + (first.y - second.y)*(first.y - second.y) + (first.z - second.z)*(first.z - second.z);
+}
+
+
+
 
 
 
@@ -341,6 +396,14 @@ public:
 		A = 255;
 		analysis = 0;
 	}
+	 Pixel(int r, int g, int b,int a) {
+		 this->r = r;
+		 this->b = b;
+		 this->g = g;
+		 A =  a;
+		 analysis = 0;
+	 }
+
 	 Pixel(int r, int g, int b, int i, int j) {
 		this->r = r;
 		this->b = b;
@@ -396,6 +459,15 @@ public:
 		 Res.Clamp_Outliers();
 		 return Res;
 	 }
+	 Pixel operator+(Pixel const &amount) {
+		 Pixel Res;
+		 Res.r = this->r + amount.r;
+		 Res.g = this->g + amount.g;
+		 Res.b = this->b + amount.b;
+		 Res.Clamp_Outliers();
+		 return Res;
+	 }
+
 	 Pixel operator-(int const &amount) {
 		 Pixel Res;
 		 Res.r = this->r - amount;
@@ -433,8 +505,7 @@ public:
 		this->j = j;
 	}
 	 friend std::ostream &operator<<(std::ostream &out, Pixel const &pix);
-
-	  void Clamp_Outliers() {
+	 void Clamp_Outliers() {
 		 if (this->r > 255 || this->r < 0) {
 			 if (this->r > 255) {
 				 this->r = 255;
@@ -456,6 +527,14 @@ public:
 			 }
 			 else {
 				 this->b = 0;
+			 }
+		 }
+		 if (A > 255 || A < 0) {
+			 if (this->A > 255) {
+				 this->A = 255;
+			 }
+			 else {
+				 this->A = 0;
 			 }
 		 }
 	 }
@@ -482,10 +561,15 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &out, Pixel const &pix) {
-	 out <<  "( " << pix.r << ", " << pix.g << ", " << pix.b << ")\n";
+	 out <<  "( R:" << pix.r << ", G:" << pix.g << ", B:" << pix.b << " , A:"<< pix.A <<")\n";
 	 return out;
 }
-
+Pixel TRI(Pixel const &color, Pixel const &bottom, double const &alpha) {
+	int r = (int)std::round((color.r*alpha) + (bottom.r * (1 - alpha)));
+	int g = (int)std::round((color.g*alpha) + (bottom.g * (1 - alpha)));
+	int b = (int)std::round((color.b*alpha) + (bottom.b * (1 - alpha)));
+	return Pixel(r, g, b);
+}
 LabPixel RGB_to_LAB(Pixel RGB) {
 
 	double r, g, b, X, Y, Z, xr, yr, zr;
@@ -557,8 +641,8 @@ LabPixel RGB_to_LAB(Pixel RGB) {
 	LabPixel result(lab[0], lab[1], lab[2]);
 	return result;
 }
-Point LABtoXYZ(LabPixel lab) {
-	Point xyz;
+Point<double> LABtoXYZ(LabPixel lab) {
+	Point<double> xyz;
 
 	float y = ((float)lab.L + (float)16.0) / (float)116.0;
 	float x = (float)lab.A / (float)500.0 + y;
@@ -588,7 +672,7 @@ Point LABtoXYZ(LabPixel lab) {
 
 	return xyz;
 }
-Pixel XYZtoRGB(Point XYZ) {
+Pixel XYZtoRGB(Point<double> XYZ) {
 	float x = (float)XYZ.x, y = (float)XYZ.y, z = (float)XYZ.z;
 	std::vector<int> rgb(3, 0);
 
@@ -621,10 +705,11 @@ Pixel XYZtoRGB(Point XYZ) {
 }
 
 Pixel LAB_to_RGB(LabPixel lab) {
-	Point xyz = LABtoXYZ(lab);
+	Point<double> xyz = LABtoXYZ(lab);
 	return XYZtoRGB(xyz);
 
 }
+typedef std::pair<std::pair<double, double>, Pixel > ScatterDot;
 
 
 
@@ -2038,12 +2123,28 @@ class TypeForm {
 
 public:
 	int *A, *B, *C, *D, *E, *F, *G, *H, *I, *J, *K, *L, *M, *N, *O, *P, *Q, *R, *S, *T, *U, *V, *W, *X, *Y, *Z;
+	int *a, *b, *c, *d, *e, *f, *g, *h, *i, *j, *k, *l, *m, *n, *o, *p, *q, *r, *s, *t, *u, *v, *w, *x, *y, *z;
 	int *One, *Two, *Three, *Four, *Five, *Six, *Seven, *Eight,*Nine, *Zero;
 	int *exclamation_point, *question_mark, *Right_Braket, *Left_Braket,
 		*Ampersand, *Precent, *Comma, *Square_Braket_Left, *Square_Braket_Right, *Colon,
 		*Semi_Colon, *EqualSign, *PlusSign, *MinusSign, *Astersik, *Dot;
 
 	TypeForm() {
+		b = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+
+		//
+
+
 		A = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 1, 1, 1, 0, 0, 0,
@@ -2053,6 +2154,17 @@ public:
 			0, 1, 1, 1, 1, 1, 1, 1, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		a = new int[81]
+		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 1, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		B = new int[81]
@@ -2066,6 +2178,17 @@ public:
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		b = new int[81]
+		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		C = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
@@ -2075,6 +2198,17 @@ public:
 			0, 1, 1, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 1, 0, 0, 1, 1, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		c = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 1, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		D = new int[81]
@@ -2088,6 +2222,17 @@ public:
 			0, 1, 1, 1, 1, 1, 1, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		d = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 1, 1, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		E = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 1, 1, 1, 1, 0, 0,
@@ -2097,6 +2242,17 @@ public:
 			0, 1, 1, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		e = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		F = new int[81]
@@ -2110,6 +2266,17 @@ public:
 			0, 1, 1, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		f = new int[81]
+		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 1, 1, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 1, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		G = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
@@ -2119,6 +2286,17 @@ public:
 			0, 1, 1, 0, 1, 1, 1, 1, 0,
 			0, 1, 1, 0, 0, 1, 1, 1, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		g = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		H = new int[81]
@@ -2132,6 +2310,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		h = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		I = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 1, 1, 0, 0, 0,
@@ -2141,6 +2330,17 @@ public:
 			0, 0, 0, 0, 1, 1, 0, 0, 0,
 			0, 0, 0, 0, 1, 1, 0, 0, 0,
 			0, 0, 0, 0, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		i = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		J = new int[81]
@@ -2154,6 +2354,17 @@ public:
 			0, 0, 1, 1, 1, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		j = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 1, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 1, 1, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		K = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
@@ -2163,6 +2374,17 @@ public:
 			0, 1, 1, 0, 1, 1, 0, 0, 0,
 			0, 1, 1, 0, 0, 1, 1, 0, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+			k = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 0, 1, 0, 0, 0,
+			0, 0, 0, 1, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 1, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		L = new int[81]
@@ -2176,6 +2398,17 @@ public:
 			0, 1, 1, 1, 1, 1, 1, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		l = new int[81]
+		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		M = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
@@ -2185,6 +2418,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		m = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 1, 0, 1, 0, 0,
+			0, 0, 1, 0, 1, 0, 1, 0, 0,
+			0, 0, 1, 0, 1, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		N = new int[81]
@@ -2198,6 +2442,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		n = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		O = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
@@ -2207,6 +2462,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		o = new int[81]
+		{  0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		P = new int[81]
@@ -2220,6 +2486,17 @@ public:
 			0, 1, 1, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		p = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		Q = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
@@ -2229,6 +2506,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
 			0, 0, 0, 0, 0, 1, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		q = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		R = new int[81]
@@ -2242,6 +2530,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		r = new int[81]
+		{  0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 1, 1, 0, 0, 0,
+			0, 0, 1, 1, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		S = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 1, 1, 1, 1, 1, 0,
@@ -2251,6 +2550,17 @@ public:
 			0, 0, 0, 0, 0, 1, 1, 0, 0,
 			0, 0, 0, 0, 0, 1, 1, 0, 0,
 			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		s = new int[81]
+		{  0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		T = new int[81]
@@ -2264,6 +2574,17 @@ public:
 			0, 0, 0, 1, 1, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		t = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		U = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
@@ -2273,6 +2594,17 @@ public:
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 1, 1, 1, 0, 1, 1, 1, 0,
 			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		u = new int[81]
+		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 1, 1, 0, 0,
+			0, 0, 0, 1, 1, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		V = new int[81]
@@ -2286,6 +2618,17 @@ public:
 			0, 0, 0, 1, 1, 1, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		v = new int[81]
+		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 0, 1, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		W = new int[81]
 				{ 0,0,0,0,0,0,0,0,0,
 				  0,1,1,0,0,0,1,1,0,
@@ -2297,6 +2640,17 @@ public:
 				  0,1,1,0,0,0,1,1,0,
 				  0,0,0,0,0,0,0,0,0
 				};
+		w = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 1, 0, 1, 0, 0,
+			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 1, 0, 1, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		X = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
@@ -2306,6 +2660,17 @@ public:
 			0, 0, 1, 1, 0, 1, 1, 0, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
 			0, 1, 1, 0, 0, 0, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		x = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 1, 0, 1, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 0, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		Y = new int[81]
@@ -2319,6 +2684,17 @@ public:
 			0, 0, 0, 0, 1, 1, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
+		y = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 0, 0, 1, 0, 0, 0,
+			0, 0, 1, 0, 0, 1, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 1, 0, 0, 0,
+			0, 0, 1, 1, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
 		Z = new int[81]
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 1, 1, 1, 1, 1, 1, 1, 0,
@@ -2328,6 +2704,17 @@ public:
 			0, 0, 0, 1, 1, 0, 0, 0, 0,
 			0, 0, 1, 1, 0, 0, 0, 0, 0,
 			0, 1, 1, 1, 1, 1, 1, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		z = new int[81]
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 1, 0, 0, 0,
+			0, 0, 0, 0, 1, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 0, 0, 0,
+			0, 0, 1, 1, 1, 1, 1, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0
 		};
 		Zero = new int[81]
@@ -2644,6 +3031,32 @@ public:
 		delete[] X;
 		delete[] Y;
 		delete[] Z;
+		delete[] a;
+		delete[] b;
+		delete[] c;
+		delete[] d;
+		delete[] e;
+		delete[] f;
+		delete[] g;
+		delete[] h;
+		delete[] i;
+		delete[] j;
+		delete[] k;
+		delete[] l;
+		delete[] m;
+		delete[] n;
+		delete[] o;
+		delete[] p;
+		delete[] q;
+		delete[] r;
+		delete[] s;
+		delete[] t;
+		delete[] u;
+		delete[] v;
+		delete[] w;
+		delete[] x;
+		delete[] y;
+		delete[] z;
 		delete[] One;
 		delete[] Two;
 		delete[] Three;
@@ -2679,7 +3092,8 @@ public:
 
 //misc
 
-double squared_3Point_distance(Point first, Point second) {
+
+double squared_3Point_distance(Point<double> first, Point<double> second) {
 	return (first.x - second.x)*(first.x - second.x) + (first.y - second.y)*(first.y - second.y) + (first.z - second.z)*(first.z - second.z);
 }
 double Color_DistanceSq(Pixel a, Pixel b) {
@@ -2839,6 +3253,13 @@ abs(xK - xPre);
 		return to;
 	}
 
+	std::string GetPointTwoPrecision(double number) {
+		std::ostringstream streamObj;
+		streamObj << std::fixed;
+		streamObj << std::setprecision(2);
+		streamObj << ((number));
+		return streamObj.str();
+	}
 	//
 
 
@@ -2928,6 +3349,7 @@ private:
 	int pos_X, pos_Y;
 	unsigned short MODE = 0;
 	void init_pixel_matrix() {
+
 		
 		 for (int i = 0; i < this->Image_Height; i++) {
 			 this->Pixel_Matrix.push_back(std::vector<Pixel>());
@@ -2936,17 +3358,35 @@ private:
 			 }
 		 }
 
-		 int j = 0, k = 0, clock = 0;
-		 for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
-			 if (clock == Image_Width) {
-				 j++;
-				 k = 0;
-				 clock = 0;
+		 if (this->channel == 3) {
+
+			 int j = 0, k = 0, clock = 0;
+			 for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
+				 if (clock == Image_Width) {
+					 j++;
+					 k = 0;
+					 clock = 0;
+				 }
+				 // Pixel_Matrix[j][k].index_range = i;
+				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				 k++;
+				 clock++;
 			 }
-			// Pixel_Matrix[j][k].index_range = i;
-			 Pixel_Matrix[j][k] = this->Get_Color(j, k);
-			 k++;
-			 clock++;
+		 }
+		 else {
+
+			 int j = 0, k = 0, clock = 0;
+			 for (int i = 0; i < Image_Width*Image_Height * 4; i += 4) {
+				 if (clock == Image_Width) {
+					 j++;
+					 k = 0;
+					 clock = 0;
+				 }
+				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				 k++;
+				 clock++;
+			 }
+
 		 }
 
 	}
@@ -2982,11 +3422,11 @@ private:
 
 		 }
 	 }
-	std::vector<Point> K_Means(const std::vector<Point>& data, size_t k, size_t number_of_iterations) {
+	std::vector<Point<double> > K_Means(const std::vector<Point<double> >& data, size_t k, size_t number_of_iterations) {
 		static std::random_device seed; //seed for psudo random engine 
 		static std::mt19937 random_number_generator(seed()); //merssene twisster using the PR seed
 		std::uniform_int_distribution<std::size_t> indices(0, data.size() - 1);
-		std::vector<Point> means(k);
+		std::vector<Point<double> > means(k);
 
 		for (auto& cluster : means) {
 			cluster = data[indices(random_number_generator)];
@@ -3011,7 +3451,7 @@ private:
 			}
 
 			// Sum up and count points for each cluster.
-			std::vector<Point> new_means(k);
+			std::vector<Point<double> > new_means(k);
 			std::vector<size_t> counts(k, 0);
 
 			for (size_t point = 0; point < data.size(); ++point) {
@@ -3036,58 +3476,25 @@ private:
 		return means;
 
 	}
+	void AAsetPixel4(int centerX, int centerY, int deltaX, int deltaY, Pixel const &Color, double alpha) {
+		//assert((centerX + deltaX) > this->Image_Width);
+		if ((centerX + deltaX) > this->Image_Width - 1 || (centerX - deltaX) < 0 || (centerY + deltaY) > this->Image_Height - 1 ||
+			(centerY + deltaY) < 0) {
+			std::cout << "OUT OF BOUNDS WHEN DRAWING CIRCLE\n";
+			return;
+		}
 	
-	 /*void Blob_Framing(int distance_treshold, Pixel frame_color) {
-		 Color_Palette CSET = new Color_Palette();
-		 ArrayList<Blob> Blobs = new ArrayList<Blob>();
-
-		 Blob temp = new Blob(0, 0, distance_treshold);
-		 boolean detected = false;
-		 for (int i = 0; i < Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-
-				 if (this->Pixel_Matrix[i][j].analysis == 42) {
-
-					 for (int k = 0; k < (int)Blobs.size(); ++k) {
-						 if (Blobs.get(k).Near(i, j) == true) {
-							 Blobs.get(k).add(i, j);
-							 detected = true;
-
-							 break;
-
-						 }
-
-					 }
-
-					 if (detected == false) {
-						 temp.SetProps(i, j);
-						 Blobs.add(new Blob(temp));
-					 }
-
-					 detected = false;
-
-				 }
-			 }
-		 }
-
-		 for (int k = 0; k < (int)Blobs.size(); k++) {
-			 if (Blobs.get(k).Size() < distance_treshold) {
-
-				 Blobs.remove(k);
-			 }
-
-		 }
-
-		 for (int k = 0; k < (int)Blobs.size(); ++k) {
-
-			 Draw_Square(Blobs.get(k).Downright_X, Blobs.get(k).Downright_Y, Blobs.get(k).Upleft_X, Blobs.get(k).Upleft_Y, frame_color, "Corners");
-			 //Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = new Pixel(CSET.Yellow);
-			 //Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = new Pixel(CSET.Green);
+		this->Set_Color(centerY + deltaY, centerX + deltaX, TRI(Color, this->Get_Color(centerY + deltaY, centerX + deltaX), alpha));
+		this->Pixel_Matrix[centerY + deltaY][centerX + deltaX] = TRI(Color, this->Pixel_Matrix[centerY + deltaY][centerX + deltaX], alpha);
+		this->Set_Color(centerY + deltaY, centerX - deltaX, TRI(Color, this->Get_Color(centerY + deltaY, centerX - deltaX), alpha));
+		this->Pixel_Matrix[centerY + deltaY][centerX - deltaX] = TRI(Color, this->Pixel_Matrix[centerY + deltaY][centerX - deltaX], alpha);
+		this->Set_Color(centerY - deltaY, centerX + deltaX, TRI(Color, this->Get_Color(centerY - deltaY, centerX + deltaX), alpha));
+		this->Pixel_Matrix[centerY - deltaY][centerX + deltaX] = TRI(Color, this->Pixel_Matrix[centerY - deltaY][centerX + deltaX], alpha);
+		this->Set_Color(centerY - deltaY, centerX - deltaX, TRI(Color, this->Get_Color(centerY - deltaY, centerX - deltaX), alpha));
+		this->Pixel_Matrix[centerY - deltaY][centerX - deltaX] = TRI(Color, this->Pixel_Matrix[centerY - deltaY][centerX - deltaX], alpha);
 
 
-
-		 }
-	 }*/
+	}
 public:
 
 
@@ -3110,29 +3517,65 @@ public:
 		
 	} 
 	 void Set_Color(int i, int j, Pixel color) {
-		int pos = ((Image_Width * 3)*(i)+3 * (j));
-		this->image_data[pos] = color.r;
-		this->image_data[pos+1] = color.g;
-		this->image_data[pos+2] = color.b;
+		 if (channel == 3) {
+			 int pos = ((Image_Width * 3)*(i)+3 * (j));
+			 this->image_data[pos] = color.r;
+			 this->image_data[pos + 1] = color.g;
+			 this->image_data[pos + 2] = color.b;
+		 }
+		 else {
+			 int pos = ((Image_Width * 4)*(i)+4 * (j));
+			 this->image_data[pos] = color.r;
+			 this->image_data[pos + 1] = color.g;
+			 this->image_data[pos + 2] = color.b;
+			 this->image_data[pos + 3] = color.A;
+
+		 }
 
 
 	}
 	 Pixel Get_Color(int i, int j) {
-		 int pos = ((Image_Width * 3)*(i)+3 * (j));
-		 Pixel res((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2]);
+		 Pixel res;
+		 if (channel == 3) {
+			 int pos = ((Image_Width * 3)*(i)+3 * (j));
+			 res = Pixel((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2]);
+		 }
+		 else {
+			 int pos = ((Image_Width * 4)*(i)+4 * (j));
+			 res = Pixel((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2], (int)image_data[pos + 3]);
+
+		 }
 		 return res;
 	 }
 	 void Load_Image(std::string FilePath){
-	
-		 this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, 3);
-		 this->im_size = Image_Width * Image_Height;
-		 if (this->image_data == NULL) {
-			 std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+
+		 if (FilePath.find(".jpg") != std::string::npos) {
+
+			 this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, 3);
+
+			 this->im_size = Image_Width * Image_Height;
+			 if (this->image_data == NULL) {
+				 std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+			 }
+			 else {
+				 this->init_pixel_matrix();
+				 std::cout << "\n" << FilePath << " File Loaded Succsesfully\n";
+
+			 }
 		 }
-		 else {
-			 this->init_pixel_matrix();
-			 std::cout << "\nFile Loaded Succsesfully\n";
-			 
+		 else if (FilePath.find(".png") != std::string::npos) {
+
+			 this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, STBI_rgb_alpha);
+
+			 this->im_size = Image_Width * Image_Height;
+			 if (this->image_data == NULL) {
+				 std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+			 }
+			 else {
+				 this->init_pixel_matrix();
+				 std::cout << "\n"<< FilePath<<" File Loaded Succsesfully\n";
+
+			 }
 		 }
 
 	}
@@ -3415,47 +3858,93 @@ public:
 		}
 	}
 	 void Update_Pixel_Matrix() {
-		 int j = 0, k = 0, clock = 0;
-		 for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
-			 if (clock == Image_Width) {
-				 j++;
-				 k = 0;
-				 clock = 0;
+		 if (channel == 3) {
+			 int j = 0, k = 0, clock = 0;
+			 for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
+				 if (clock == Image_Width) {
+					 j++;
+					 k = 0;
+					 clock = 0;
+				 }
+				 // Pixel_Matrix[j][k].index_range = i;
+				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				 k++;
+				 clock++;
 			 }
-			 // Pixel_Matrix[j][k].index_range = i;
-			 Pixel_Matrix[j][k] = this->Get_Color(j, k);
-			 k++;
-			 clock++;
+		 }
+		 else {
+			 int j = 0, k = 0, clock = 0;
+			 for (int i = 0; i < Image_Width*Image_Height * 4; i += 4) {
+				 if (clock == Image_Width) {
+					 j++;
+					 k = 0;
+					 clock = 0;
+				 }
+				 // Pixel_Matrix[j][k].index_range = i;
+				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				 k++;
+				 clock++;
+			 }
 		 }
 	}
 	 void Write_Image(std::string Filename) {
 
-		 if (channel > 3) {
-			 channel = 3;
-		 }
-		 stbi_write_jpg((Filename).c_str(), this->Image_Width, Image_Height, channel, image_data, 100);
+		 if (channel == 3) {
+			 stbi_write_jpg((Filename).c_str(), this->Image_Width, Image_Height, channel, image_data, 100);
+			 std::cout << "\nJpg File Saved Succsfully As: " << Filename << std::endl;
 
-		 std::cout << "\nFile Saved Succsfully As: " << Filename << std::endl;
+		 }
+		 else if (channel == 4) {
+			 stbi_write_png((Filename).c_str(), Image_Width, Image_Height, channel, image_data, this->Image_Width*sizeof(int));
+			 std::cout << "\nPng File Saved Succsfully As: " << Filename << std::endl;
+
+
+		 }
+
 
 	 }
-	 void Load_Blank_Canvas(int height, int width, Pixel const &Background_Color) {
+	 void Load_Blank_Canvas(int height, int width, Pixel const &Background_Color,int mode = S_JPG) {
 
-		 this->channel = 3;
-		 this->Image_Width = width;
-		 this->Image_Height = height;
-		 if (image_data != nullptr) {
+		 if (mode == S_JPG) {
+			 this->channel = 3;
+			 this->Image_Width = width;
+			 this->Image_Height = height;
+			 if (image_data != nullptr) {
 
-			 stbi_image_free(image_data);
+				 stbi_image_free(image_data);
+			 }
+			 this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
+
+			 for (int i = 0; i < height; i++) {
+				 for (int j = 0; j < width; j++) {
+					 this->Set_Color(i, j, Background_Color);
+				 }
+			 }
+
+			 this->init_pixel_matrix();
+
 		 }
-		 this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
+		 else if (mode == S_PNG) {
+			 this->channel = 4;
+			 this->Image_Width = width;
+			 this->Image_Height = height;
+			 if (image_data != nullptr) {
 
-		for (int i = 0; i < height; i++) {
-			for (int j = 0; j < width; j++) {
-				this->Set_Color(i, j, Background_Color);
-			}
-		}
+				 stbi_image_free(image_data);
+			 }
+			 this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(int));
 
-		this->init_pixel_matrix();
+			 for (int i = 0; i < height; i++) {
+				 for (int j = 0; j < width; j++) {
+					 this->Set_Color(i, j, Background_Color);
+				 }
+			 }
+
+			 this->init_pixel_matrix();
+
+
+
+		 }
 	}
 	 void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x) {
 		 int width = right_corner_x - left_corner_x;
@@ -3555,81 +4044,122 @@ public:
 			 this->Update_Pixel_Matrix();
 		 }
 		 else if (Mode == S_AA_LINE) {
-			 bool step = (std::abs(target_Y - start_Y) > std::abs(target_X - start_X));
-			 int start_x = start_X;
-			 int start_y = start_Y;
-			 int  target_x = target_X;
-			 int  target_y = target_Y;
+			 
+			int x0 = start_X;
+			int y0 = start_Y;
+			int x1 = target_X;
+			int y1 = target_Y;
 
-			 if (step) {
-				 std::swap(start_x, start_y);
-				 std::swap(target_x, target_y);
+			 const bool steep = abs(y1 - y0) > abs(x1 - x0);
+			 if (steep) {
+				 std::swap(x0, y0);
+				 std::swap(x1, y1);
 			 }
-			 if (start_x > target_x) {
-				 std::swap(start_x, target_x);
-				 std::swap(start_y, target_y);
-			 }
-			 double dx = target_x - start_x;
-			 double dy = target_y - start_y;
-			 double gradient;
-			 if (dx == 0) {
-				 gradient = 1;
-			 }
-			 else {
-				 gradient = dy / dx;
+			 if (x0 > x1) {
+				 std::swap(x0, x1);
+				 std::swap(y0, y1);
 			 }
 
-			 double xend = AAround(start_x);
-			 double yend = start_y + gradient * (xend - start_x);
-			 double xgap = AArfpart(start_x + 0.5);
-			 double xpx11 = xend;
-			 double ypx11 = AAipart(yend);
-			 if (step) {
-				 this->Set_Color((int)ypx11, (int)xpx11, color*(AArfpart(yend)*xgap));
-				 this->Set_Color((int)(ypx11 + 1), (int)xpx11, color*(AAfpart(yend)*xgap));
-			 }
-			 else {
-				 this->Set_Color((int)xpx11, (int)ypx11, color*(AArfpart(yend)*xgap));
-				 this->Set_Color((int)xpx11, (int)(ypx11+1), color*(AAfpart(yend)*xgap));
-			 }
-			 double intery = yend + gradient;
+			 const float dx = (float)x1 - x0;
+			 const float dy = (float)y1 - y0;
+			 const float gradient = (dx == 0) ? 1 : dy / dx;
 
-			 xend = AAround(target_x);
-			 yend = target_y + gradient * (xend - target_x);
-			 xgap = AAfpart(target_x + 0.5);
-			 double xpx12 = xend;
-			 double ypx12 = AAipart(yend);
-			 if (step) {
-				 this->Set_Color((int)ypx12, (int)xpx12, color * AArfpart(yend) *xgap);
-				 this->Set_Color((int)(ypx12+1), (int)xpx12, color * AAfpart(yend) *xgap);
+			 int xpx11;
+			 float intery;
+			 {
+				 const float xend = (float)round(x0);
+				 const float yend = y0 + gradient * (xend - x0);
+				 const float xgap = (float)AArfpart(x0 + 0.5);
+				 xpx11 = int(xend);
+				 const int ypx11 = (int)AAipart(yend);
+				 if (steep) {
 
-			 }
-			 else {
-				 this->Set_Color((int)xpx12, (int)ypx12, color * AArfpart(yend) *xgap);
-				 this->Set_Color((int)xpx12, (int)(ypx12+1), color * AAfpart(yend) *xgap);
+					 Pixel Col = TRI(color, this->Get_Color(ypx11, xpx11), (AArfpart(yend) * xgap));
+
+					 Set_Color(ypx11, xpx11, Col);
+					 this->Pixel_Matrix[ypx11][xpx11] = Col;
+
+					 Col = TRI(color, this->Get_Color(ypx11 + 1, xpx11), (AArfpart(yend) * xgap));
+					 Set_Color(ypx11 + 1, xpx11, Col);
+					 this->Pixel_Matrix[ypx11+1][xpx11] = Col;
+
+				 }
+				 else {
+					 Pixel Col = TRI(color, this->Get_Color(xpx11, ypx11), (AArfpart(yend) * xgap));
+
+					 Set_Color(xpx11, ypx11, Col);
+					 this->Pixel_Matrix[xpx11][ypx11] = Col;
+
+					 Col = TRI(color, this->Get_Color(xpx11, ypx11+1), (AArfpart(yend) * xgap));
+					 Set_Color(xpx11,ypx11+1, Col);
+					 this->Pixel_Matrix[xpx11][ypx11+1] = Col;
+
+				 }
+				 intery = yend + gradient;
 			 }
 
-			 if (step) {
-				 for (double x = xpx11 + 1; x < xpx12 - 1; x++) {
-					 this->Set_Color((int)AAipart(intery), (int)x, color*AArfpart(intery));
-					 this->Set_Color((int)AAipart(intery) + 1, (int)x, color*AAfpart(intery));
+			 int xpx12;
+			 {
+				 const float xend = (float)round(x1);
+				 const float yend = y1 + gradient * (xend - x1);
+				 const float xgap = (float)AArfpart(x1 + 0.5);
+				 xpx12 = int(xend);
+				 const int ypx12 = (int)AAipart(yend);
+				 if (steep) {
+					 Pixel Col = TRI(color, this->Get_Color(ypx12, xpx12), (AArfpart(yend) * xgap));
+
+					 Set_Color(ypx12, xpx12, Col);
+					 Col = TRI(color, this->Get_Color(ypx12+1, xpx12), (AArfpart(yend) * xgap));
+					 Set_Color(ypx12 + 1, xpx12, Col);
+				 }
+				 else {
+
+					 Pixel Col = TRI(color, this->Get_Color(xpx12, ypx12), (AArfpart(yend) * xgap));
+
+					 Set_Color(xpx12, ypx12, Col);
+					 this->Pixel_Matrix[xpx12][ypx12] = Col;
+
+					 Col = TRI(color, this->Get_Color(xpx12, ypx12+1), (AArfpart(yend) * xgap));
+					 Set_Color(xpx12, ypx12 + 1, Col);
+					 this->Pixel_Matrix[xpx12][ypx12+1] = Col;
+
+				 }
+			 }
+
+			 if (steep) {
+				 for (int x = xpx11 + 1; x < xpx12; x++) {
+					 
+					 Pixel Col = TRI(color, this->Get_Color((int)AAipart(intery),x),(AArfpart(intery)));
+					 Set_Color((int)AAipart(intery), x, Col);
+					 this->Pixel_Matrix[(int)AAipart(intery)][x] = Col;
+
+					 Col = TRI(color, this->Get_Color((int)AAipart(intery)+1, x), (AAfpart(intery)));
+					 Set_Color((int)AAipart(intery) + 1, x, Col);
+					 this->Pixel_Matrix[(int)AAipart(intery)+1][x] = Col;
 
 					 intery += gradient;
 				 }
 			 }
 			 else {
-				 for (double x = xpx11 + 1;x < xpx12 - 1; x++) {
-					
-					 this->Set_Color((int)x, (int)AAipart(intery), color*AArfpart(intery));
-					 this->Set_Color((int)x, (int)AAipart(intery) + 1, color*AAfpart(intery));
+				 for (int x = xpx11 + 1; x < xpx12; x++) {
+					 Pixel Col = TRI(color, this->Get_Color(x, (int)AAipart(intery)), (AArfpart(intery)));
+					 Set_Color(x, (int)AAipart(intery), Col);
+					 this->Pixel_Matrix[x][(int)AAipart(intery)] = Col;
+					 Col = TRI(color, this->Get_Color(x, (int)AAipart(intery))+1, (AAfpart(intery)));
+					 Set_Color(x, (int)AAipart(intery) + 1,Col);
+					 this->Pixel_Matrix[x][(int)AAipart(intery)+1] = Col;
+
 					 intery += gradient;
 				 }
 			 }
 			 this->Update_Pixel_Matrix();
 		 }
+
+
+
 	}
 
-	 void Draw_Circle(int center_x, int center_y, int c_radius, Pixel color, int Mode = S_FILL) {
+	 void Draw_Circle(int center_x, int center_y, int c_radius, Pixel color, int Mode = S_HOLLOW) {
 
 		if (Mode == S_FILL) {
 
@@ -3680,6 +4210,51 @@ public:
 				Pixel_Matrix[center_y - x][center_x + y] = color;
 				Pixel_Matrix[center_y - x][center_x - y] = color;
 			}
+		}
+		else if (Mode == S_AA_HOLLOW) {
+			if (center_x + c_radius >= this->Image_Width || center_x - c_radius <= 0 || center_y + c_radius >= this->Image_Height || center_y - c_radius <= 0) {
+				std::cout << "Line Out Of Image Range\nDraw Action Aborted\n";
+				return;
+
+			}
+			int x=0, y=0;
+				double radiusX = c_radius;
+				double radiusY = c_radius;
+				double radiusX2 = radiusX * radiusX;
+				double radiusY2 = radiusY * radiusY;
+				int maxTransparency = 255;
+				double quarter = (double)std::roundf((float)radiusX2 / (float)std::sqrt(radiusX2 + radiusY2));
+				for (double y = 0; y <= quarter; y+=0.5) {
+					double x = radiusX * std::sqrt(1 - y * y / radiusY2);
+					double error =  x - std::floor(x);
+					int transparency = (int)std::round(error * maxTransparency);
+					int alpha = transparency;
+					int alpha2 = maxTransparency - transparency;
+
+					this->AAsetPixel4((int)center_x, (int)center_y, (int)std::floor(x), (int)y,color,(double)alpha/255);
+					this->AAsetPixel4((int)center_x, (int)center_y, (int)std::floor(x)-1, (int)y, color, (double)alpha2 / 255);
+				}
+				quarter = std::round(radiusX2 / std::sqrt(radiusX2 + radiusY2));
+				for (double x = 0; x <= quarter; x+=0.5) {
+					double y = radiusY * std::sqrt(1 - x * x / radiusX2);
+					double error = y - std::floor(y);
+					float transparency = std::roundf((float)error * (float)maxTransparency);
+					int alpha = (int)transparency;
+					int alpha2 = (int)(maxTransparency - transparency);
+
+			
+					this->AAsetPixel4((int)center_x, (int)center_y, (int)x, (int)std::floor(y), color, (double)alpha / 255);
+					this->AAsetPixel4((int)center_x, (int)center_y, (int)x, (int)std::floor(y) -1, color, (double)alpha2 / 255);
+				}
+
+			
+				
+			
+		}
+		else if (Mode == S_AA_FILL) {
+			this->Draw_Circle(center_x, center_y, c_radius - 1, color, S_FILL);
+			this->Draw_Circle(center_x, center_y, c_radius, color, S_AA_HOLLOW);
+
 		}
 	}
 	 
@@ -4414,6 +4989,541 @@ public:
 						start_x = temp;
 					}
 					if (TYPELOADF.Z[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'a':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.a[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'b':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.b[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'c':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.c[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'd':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.d[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'e':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.e[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'f':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.f[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'g':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.g[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'h':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.h[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'i':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.i[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'j':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.j[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'k':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.k[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'l':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.l[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'm':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.m[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'n':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.n[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'o':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.o[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'p':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.p[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'q':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.q[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+			case 'r':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.r[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 's':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.S[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 't':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.t[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'u':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.u[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'v':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.v[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'w':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.w[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+
+				break;
+
+			case 'x':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.x[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'y':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.y[flag] == 1) {
+						this->Set_Color(draw_y, start_x, color);
+						Pixel_Matrix[draw_y][start_x] = color;
+
+					}
+					start_x++;
+					flag++;
+				}
+
+				flag = 0;
+				break;
+
+
+			case 'z':
+				temp = start_x;
+				while (flag != 81) {
+
+					if ((flag + 1) % 9 == 0) {
+						draw_y++;
+						start_x = temp;
+					}
+					if (TYPELOADF.z[flag] == 1) {
 						this->Set_Color(draw_y, start_x, color);
 						Pixel_Matrix[draw_y][start_x] = color;
 
@@ -6225,19 +7335,19 @@ public:
 
 
 	}
-	 double Pixel_Dataframe_Difference(Pixel Pix, Point DF_point) {
+	 double Pixel_Dataframe_Difference(Pixel Pix, Point<double> DF_point) {
 		double distance;
 		distance = ((DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b));
 		return std::sqrt(distance);
 	} 
 	 void Image_Segmentation(int k, int iterations) {
 
-		std::vector<Point> image_ThreeD_Mat;
-		std::vector<Point> Result;
+		std::vector<Point<double> > image_ThreeD_Mat;
+		std::vector<Point<double> > Result;
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				image_ThreeD_Mat.push_back(Point(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g,
+				image_ThreeD_Mat.push_back(Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g,
 					this->Pixel_Matrix[i][j].b));
 			}
 		}
@@ -6246,7 +7356,7 @@ public:
 
 
 		double best_dist;
-		Point temp;
+		Point<double> temp;
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
@@ -6367,14 +7477,14 @@ public:
 		int H, W, lx;
 		Color_Palette CSET;
 		Pixel palette_sample;
-		std::vector<Point> imData, Means;
+		std::vector<Point<double> > imData, Means;
 		Image palette_image;
 
 
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				imData.push_back( Point(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
+				imData.push_back( Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
 			}
 		}
 
@@ -6436,12 +7546,12 @@ public:
 
 
 	}
-	 std::vector<Point> Get_Average_Color_Palette(int palette_size, int number_of_iterations) {
-		 std::vector<Point> imData;
+	 std::vector<Point<double> > Get_Average_Color_Palette(int palette_size, int number_of_iterations) {
+		 std::vector<Point<double> > imData;
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				imData.push_back( Point(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
+				imData.push_back( Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
 			}
 		}
 
@@ -6450,9 +7560,9 @@ public:
 
 	}
 
-	void Set_Colors_Using_Average_Palette(std::vector<Point> Average_Colors) {
+	void Set_Colors_Using_Average_Palette(std::vector<Point<double> > Average_Colors) {
 		double best_dist;
-		Point temp;
+		Point<double> temp;
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
@@ -6529,8 +7639,8 @@ public:
 	 Pixel Dominant_Color_Via_Line(int start_y, int start_x, int target_y, int target_x) {
 		double dx, sx, dy, sy, err, e2;
 		Pixel Dom_Color;
-		std::vector<Point> Points;
-		std::vector<Point > Res;
+		std::vector<Point<double> > Points;
+		std::vector<Point<double> > Res;
 		double x0 = (double)start_y, x1 = (double)target_y, y0 = (double)start_x, y1 = (double)target_x;
 		dx = (double)std::abs(target_y - start_y);
 		sx = (double)(start_y < target_y ? 1 : -1);
@@ -6540,13 +7650,13 @@ public:
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
 				//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
-				Points.push_back(Point(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
+				Points.push_back(Point<double>(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
 					Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b));
 				break;
 			}
 
 			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
-			Points.push_back(Point(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
+			Points.push_back(Point<double>(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
 				Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b));
 			
 			e2 = 2 * err;
@@ -6642,10 +7752,10 @@ public:
 
 	}
 
-	 std::vector<Point> GetCoordinateFrame(int start_y, int start_x, int target_y, int target_x) {
+	 std::vector<Point<double> > GetCoordinateFrame(int start_y, int start_x, int target_y, int target_x) {
 		double dx, sx, dy, sy, err, e2;
 
-		std::vector<Point> Points;
+		std::vector<Point<double> > Points;
 		double x0 = (double)start_y, x1 = (double)target_y, y0 = (double)start_x, y1 = (double)target_x;
 		dx = (double)(std::abs(target_y - start_y));
 		sx = (double)(start_y < target_y ? 1 : -1);
@@ -6654,11 +7764,11 @@ public:
 		err = dx + dy;  //error value
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
-				Points.push_back( Point((int)x0, (int)y0, 0));
+				Points.push_back( Point<double>((int)x0, (int)y0, 0));
 				break;
 			}
 
-			Points.push_back( Point((int)x0, (int)y0, 0));
+			Points.push_back( Point<double>((int)x0, (int)y0, 0));
 
 			e2 = 2 * err;
 			if (e2 >= dy) {
@@ -6831,7 +7941,7 @@ public:
 		float treshold = 45;
 		int validation_level = 0;
 		int n_valid_bounty = 10;
-		Point left_eye, right_eye;
+		Point<double> left_eye, right_eye;
 		left_eye.x = right_eye.x = 0;
 		left_eye.y = right_eye.y = 0;
 		Pixel black;
@@ -8102,7 +9212,7 @@ public:
 		}
 	}
 	 void Dithering_Floyd_Steinberg(int Palette_Size) {
-		std::vector<Point> ACP = this->Get_Average_Color_Palette(Palette_Size, 25);
+		std::vector<Point<double> > ACP = this->Get_Average_Color_Palette(Palette_Size, 25);
 		this->Extended_Padding();
 		double minDistance = std::numeric_limits<double>::max();
 		int pos = 0;
@@ -8111,7 +9221,7 @@ public:
 				Pixel oldpixel = this->Pixel_Matrix[i][j];
 				Pixel newpixel;
 				for (int k = 0; k < Palette_Size; k++) {
-					double distance = ACP[k].Distance(Point(oldpixel.r, oldpixel.g, oldpixel.b));
+					double distance = ACP[k].get_Distance(Point<double>(oldpixel.r, oldpixel.g, oldpixel.b));
 					if (minDistance > distance) {
 						minDistance = distance;
 						//System.out.println(distance);
@@ -8276,11 +9386,11 @@ public:
 
 
 	}
-	 Point Get_Image_Color_Means() {
+	 Point<double> Get_Image_Color_Means() {
 		std::vector<int> Histogram_R = this->Get_Red_Histogram();
 		std::vector<int> Histogram_G = this->Get_Green_Histogram();
 		std::vector<int> Histogram_B = this->Get_Blue_Histogram();
-		Point Var ;
+		Point<double> Var ;
 		double R_Mean = 0, G_Mean = 0, B_Mean = 0;
 		for (int i = 0; i < 256; i++) {
 			R_Mean += i * ((double)Histogram_R[i] / (this->Image_Height*this->Image_Width));
@@ -8296,11 +9406,11 @@ public:
 
 		return Var;
 	}
-	 Point Get_Image_Color_Variance() {
+	 Point<double> Get_Image_Color_Variance() {
 		 std::vector<int> Histogram_R = this->Get_Red_Histogram();
 		 std::vector<int> Histogram_G = this->Get_Green_Histogram();
 		 std::vector<int> Histogram_B = this->Get_Blue_Histogram();
-		Point Var;
+		Point<double> Var;
 		double R_Mean = 0, G_Mean = 0, B_Mean = 0;
 		double R_Var = 0, G_Var = 0, B_Var = 0;
 
@@ -8326,11 +9436,11 @@ public:
 
 		return Var;
 	}
-	 Point Get_Image_Color_Variance(int nth_moment) {
+	 Point<double> Get_Image_Color_Variance(int nth_moment) {
 		 std::vector<int> Histogram_R = this->Get_Red_Histogram();
 		 std::vector<int> Histogram_G = this->Get_Green_Histogram();
 		 std::vector<int> Histogram_B = this->Get_Blue_Histogram();
-		Point Var;
+		Point<double> Var;
 		double R_Mean = 0, G_Mean = 0, B_Mean = 0;
 		double R_Var = 0, G_Var = 0, B_Var = 0;
 
@@ -8597,18 +9707,1034 @@ public:
 	 }
 	 
 
+	 Matrix<double> Flatten() {
+		 Matrix<double> res(3, this->Image_Height*this->Image_Width);
+		 int index = 0;
+		 for (int i = 0; i < this->Image_Height; i++) {
+			 for (int j = 0; j < this->Image_Width; j++) {
+				 res[0][index] = this->Pixel_Matrix[i][j].r;
+				 res[1][index] = this->Pixel_Matrix[i][j].g;
+				 res[2][index] = this->Pixel_Matrix[i][j].b;
+				 index++;
+			 }
+		 }
+		 return res;
+	 }
+
+
+	 Image Slice(int y0, int x0, int x1, int y1) {
+		 Image res;
+		 res.Load_Blank_Canvas(std::abs(y1 - y0), std::abs(x1 - x0), Pixel(0, 0, 0));
+		 // std::cout << "W: " << std::abs(x1 - x0) << std::endl;
+
+		 int di = 0, dj = 0;
+		 for (int i = y0; i < y1; i++) {
+			 for (int j = x0; j < x1; j++) {
+				 res.Pixel_Matrix[di][dj] = this->Pixel_Matrix[i][j];
+				 res.Set_Color(di, dj, this->Get_Color(i, j));
+				 dj++;
+			 }
+			 di++;
+			 dj = 0;
+		 }
+		 return res;
+
+	 }
+
+	 Image MaxPooling(int filter_height, int filter_width, int stride) {
+		 Image output;
+
+		 this->Zero_Padding();
+		 output.Load_Blank_Canvas(this->Image_Height / (filter_height), (this->Image_Width / (filter_width)), Pixel(0, 0, 0));
+		 //std::cout << "H: " << this->Image_Height / (filter_height + stride) << " ,W : " << this->Image_Width / (filter_width+stride) << std::endl;
+
+		 Pixel max(0, 0, 0);
+
+		 int ddi = 0, ddj = 0;
+
+		 for (int i = 1; i < this->Image_Height - 1; i += stride) {
+			 for (int j = 1; j < this->Image_Width - 1; j += stride) {
+
+
+
+				 for (int di = i; di < i + filter_height; di++) {
+					 for (int dj = j; dj < (j + filter_width); dj++) {
+
+						 if (this->Pixel_Matrix[di][dj] > max) {
+							 max = this->Pixel_Matrix[di][dj];
+						 }
+
+					 }
+
+				 }
+
+
+				 output.Pixel_Matrix[ddi][ddj] = max;
+				 ddj++;
+				 max.r = max.g = max.b = 0;
+			 }
+			 ddi++;
+			 ddj = 0;
+
+		 }
+
+		 output.Commint_Matrix_Changes();
+		 return output;
+	 }
+	 private:
+		 Pixel get_Larget_Pixel(Image  &img) {
+
+			 Pixel max(0, 0, 0);
+
+			 for (int i = 0; i < img.Image_Height; i++) {
+				 for (int j = 0; j < img.Image_Width; j++) {
+					 if (img[i][j] > max) {
+						 max = img[i][j];
+					 }
+				 }
+			 }
+			 return max;
+
+
+
+		 }
 	 
 };
 
+Image Matrix_To_Graysacle(Matrix<double> &source) {
+	Image Res;
+	Res.Load_Blank_Canvas(source.Rows, source.Cols, Pixel(0, 0, 0));
+	for (int i = 0; i < source.Rows; i++) {
+		for (int j = 0; j < source.Cols; j++) {
+			Res[i][j].r = (int)source[i][j];
+			Res[i][j].g = (int)source[i][j];
+			Res[i][j].b = (int)source[i][j];
+
+		}
+	}
+	Res.Commint_Matrix_Changes();
+
+	return Res;
+}
+Image Matrix_To_Graysacle(std::vector<std::vector<double> > &source) {
+	Image Res;
+	Res.Load_Blank_Canvas((int)source.size(), (int)source[0].size(), Pixel(0, 0, 0));
+	for (int i = 0; i < source.size(); i++) {
+		for (int j = 0; j < source[0].size(); j++) {
+			Res[i][j].r = (int)source[i][j];
+			Res[i][j].g = (int)source[i][j];
+			Res[i][j].b = (int)source[i][j];
+
+		}
+	}
+	Res.Commint_Matrix_Changes();
+	return Res;
+}
 
 
-class SPlot :public Image {
-public:
-	 double Last_Known_Max_X;
-	 double Last_Known_Max_Y;
-	 double Last_Known_Min_X;
-	 double Last_Known_Min_Y;
-	void Write_Bar_Plot(std::vector<int> data,std::vector<std::string> Categories) {
+
+
+
+namespace SPlot {
+	class Scatter_Plot {
+	private:
+		Image Plot;
+		std::vector<std::pair<std::pair<double, double>, Pixel > > Data;
+		double Max_X, Max_Y, Min_Y, Min_X;
+		std::string x_label, y_label;
+		Color_Palette CSET;
+		int mode;
+	public:
+		Scatter_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		Scatter_Plot(std::vector<double> x_Values, std::vector<double> y_Values, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < x_Values.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (x_Values[i] > Max_X) {
+					Max_X = x_Values[i];
+				}
+				if (x_Values[i] < Min_X) {
+					Min_X = x_Values[i];
+				}
+				if (y_Values[i] > Max_Y) {
+					Max_Y = y_Values[i];
+				}
+				if (y_Values[i] < Min_Y) {
+					Min_Y = y_Values[i];
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		Scatter_Plot(std::vector<ScatterDot > data, std::string X_Label, std::string Y_Label) {
+			Data = data;
+			x_label = X_Label;
+			y_label = Y_Label;
+			mode = S_DEFAULT;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (Data[i].first.first > Max_X) {
+					Max_X = Data[i].first.first;
+				}
+				if (Data[i].first.first < Min_X) {
+					Min_X = Data[i].first.first;
+				}
+				if (Data[i].first.second > Max_Y) {
+					Max_Y = Data[i].first.second;
+				}
+				if (Data[i].first.second < Min_Y) {
+					Min_Y = Data[i].first.second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+		}
+		Scatter_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label, Pixel const &color) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], color));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		void Save_Plot(std::string File_Name) {
+
+			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Text(325, 750, y_label, CSET.Black);
+			Plot.Draw_Text(65, 400, x_label, CSET.Black);
+			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
+			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+
+			std::ostringstream streamObj;
+			streamObj << std::fixed;
+			streamObj << std::setprecision(2);
+
+			Plot.Draw_Text(595, 90 + 0 * 78 * 2, GetPointTwoPrecision(Min_X), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 1 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 1)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 2 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 2)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 3 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 3)), CSET.Black);
+
+
+
+			Plot.Draw_Text(595, 99 + 4 * 78 * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 0 * 62 * 2, 40, GetPointTwoPrecision(Min_Y), CSET.Black);
+
+			Plot.Draw_Text(575 - 1 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 1)), CSET.Black);
+
+			Plot.Draw_Text(575 - 2 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 2)), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 3 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 3)), CSET.Black);
+
+			Plot.Draw_Text(575 - 4 * 62 * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
+
+			if (mode == S_GRID) {
+
+				for (int i = 0; i < 5; i++) {
+					Plot.Draw_Line(575 - 62 * i * 2, 90, 575 - 62 * i * 2, 725, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 75, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+
+			}
+			else if (mode == S_DEFAULT) {
+				for (int i = 0; i < 5; i++) {
+
+					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+			}
+
+			double tx, ty;
+			std::pair<double, double> b;
+			Plot.Update_Pixel_Matrix();
+			for (int i = 0; i < Data.size(); i++) {
+				b = Data[i].first;
+				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+			}
+
+			Plot.Write_Image(File_Name);
+		}
+		void Add_Point(double const &x, double const &y, Pixel const &color) {
+			for (int i = 0; i < Data.size(); i++) {
+				if (x > Max_X) {
+					Max_X = x;
+				}
+				if (x < Min_X) {
+					Min_X = x;
+				}
+				if (y > Max_Y) {
+					Max_Y = y;
+				}
+				if (y < Min_Y) {
+					Min_Y = y;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			Data.push_back(ScatterDot(std::pair<double, double>(x, y), color));
+		}
+		Image Get_Image() {
+			return Plot;
+		}
+		void Set_Mode(int Mode) {
+			this->mode = Mode;
+		}
+	};
+
+	class Stem_Plot {
+	private:
+		Image Plot;
+		std::vector<std::pair<std::pair<double, double>, Pixel > > Data;
+		double Max_X, Max_Y, Min_Y, Min_X;
+		std::string x_label, y_label;
+		Color_Palette CSET;
+		int mode;
+	public:
+		Stem_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		Stem_Plot(std::vector<double> x_Values, std::vector<double> y_Values, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < x_Values.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (x_Values[i] > Max_X) {
+					Max_X = x_Values[i];
+				}
+				if (x_Values[i] < Min_X) {
+					Min_X = x_Values[i];
+				}
+				if (y_Values[i] > Max_Y) {
+					Max_Y = y_Values[i];
+				}
+				if (y_Values[i] < Min_Y) {
+					Min_Y = y_Values[i];
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		Stem_Plot(std::vector<ScatterDot > data, std::string X_Label, std::string Y_Label) {
+			Data = data;
+			x_label = X_Label;
+			y_label = Y_Label;
+			mode = S_DEFAULT;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (Data[i].first.first > Max_X) {
+					Max_X = Data[i].first.first;
+				}
+				if (Data[i].first.first < Min_X) {
+					Min_X = Data[i].first.first;
+				}
+				if (Data[i].first.second > Max_Y) {
+					Max_Y = Data[i].first.second;
+				}
+				if (Data[i].first.second < Min_Y) {
+					Min_Y = Data[i].first.second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+		}
+		Stem_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label, Pixel const &color) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], color));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		void Save_Plot(std::string File_Name) {
+
+			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Text(325, 750, y_label, CSET.Black);
+			Plot.Draw_Text(65, 400, x_label, CSET.Black);
+			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
+			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+
+			std::ostringstream streamObj;
+			streamObj << std::fixed;
+			streamObj << std::setprecision(2);
+
+			Plot.Draw_Text(595, 90 + 0 * 78 * 2, GetPointTwoPrecision(Min_X), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 1 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 1)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 2 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 2)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 3 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 3)), CSET.Black);
+
+
+
+			Plot.Draw_Text(595, 99 + 4 * 78 * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 0 * 62 * 2, 40, GetPointTwoPrecision(Min_Y), CSET.Black);
+
+			Plot.Draw_Text(575 - 1 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 1)), CSET.Black);
+
+			Plot.Draw_Text(575 - 2 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 2)), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 3 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 3)), CSET.Black);
+
+			Plot.Draw_Text(575 - 4 * 62 * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
+
+			if (mode == S_GRID) {
+
+				for (int i = 0; i < 5; i++) {
+					Plot.Draw_Line(575 - 62 * i * 2, 90, 575 - 62 * i * 2, 725, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 75, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+
+			}
+			else if (mode == S_DEFAULT) {
+				for (int i = 0; i < 5; i++) {
+
+					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+			}
+
+		
+			Plot.Draw_Line(327, 100, 327, 725, CSET.Black);
+			Plot.Draw_Line(326, 100, 326, 725, CSET.Black);
+
+			double tx, ty;
+			std::pair<double, double> b;
+			Plot.Update_Pixel_Matrix();
+			for (int i = 0; i < Data.size(); i++) {
+				b = Data[i].first;
+				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+				Plot.Draw_Line((int)ty, (int)tx, 326, (int)tx, CSET.Dark_Cyan);
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+
+			}
+			
+			Plot.Write_Image(File_Name);
+		}
+		void Add_Point(double const &x, double const &y, Pixel const &color) {
+			for (int i = 0; i < Data.size(); i++) {
+				if (x > Max_X) {
+					Max_X = x;
+				}
+				if (x < Min_X) {
+					Min_X = x;
+				}
+				if (y > Max_Y) {
+					Max_Y = y;
+				}
+				if (y < Min_Y) {
+					Min_Y = y;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			Data.push_back(ScatterDot(std::pair<double, double>(x, y), color));
+		}
+		Image Get_Image() {
+			return Plot;
+		}
+		void Set_Mode(int Mode) {
+			this->mode = Mode;
+		}
+	};
+
+	class Line_Plot {
+	private:
+		Image Plot;
+		std::vector<std::pair<std::pair<double, double>, Pixel > > Data;
+		double Max_X, Max_Y, Min_Y, Min_X;
+		std::string x_label, y_label;
+		Color_Palette CSET;
+		int mode;
+		std::vector<int> seperators;
+	public:
+		Line_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		Line_Plot(std::vector<double> x_Values, std::vector<double> y_Values, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < x_Values.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (x_Values[i] > Max_X) {
+					Max_X = x_Values[i];
+				}
+				if (x_Values[i] < Min_X) {
+					Min_X = x_Values[i];
+				}
+				if (y_Values[i] > Max_Y) {
+					Max_Y = y_Values[i];
+				}
+				if (y_Values[i] < Min_Y) {
+					Min_Y = y_Values[i];
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		Line_Plot(std::vector<ScatterDot > data, std::string X_Label, std::string Y_Label) {
+			Data = data;
+			x_label = X_Label;
+			y_label = Y_Label;
+			mode = S_DEFAULT;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (Data[i].first.first > Max_X) {
+					Max_X = Data[i].first.first;
+				}
+				if (Data[i].first.first < Min_X) {
+					Min_X = Data[i].first.first;
+				}
+				if (Data[i].first.second > Max_Y) {
+					Max_Y = Data[i].first.second;
+				}
+				if (Data[i].first.second < Min_Y) {
+					Min_Y = Data[i].first.second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+		}
+		Line_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label, Pixel const &color) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], color));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+		void Save_Plot(std::string File_Name) {
+
+			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Text(325, 750, y_label, CSET.Black);
+			Plot.Draw_Text(65, 400, x_label, CSET.Black);
+			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
+			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+
+			std::ostringstream streamObj;
+			streamObj << std::fixed;
+			streamObj << std::setprecision(2);
+
+			Plot.Draw_Text(595, 90 + 0 * 78 * 2, GetPointTwoPrecision(Min_X), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 1 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 1)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 2 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 2)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 3 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 3)), CSET.Black);
+
+
+
+			Plot.Draw_Text(595, 99 + 4 * 78 * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 0 * 62 * 2, 40, GetPointTwoPrecision(Min_Y), CSET.Black);
+
+			Plot.Draw_Text(575 - 1 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 1)), CSET.Black);
+
+			Plot.Draw_Text(575 - 2 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 2)), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 3 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 3)), CSET.Black);
+
+			Plot.Draw_Text(575 - 4 * 62 * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
+
+			if (mode == S_GRID) {
+
+				for (int i = 0; i < 5; i++) {
+					Plot.Draw_Line(575 - 62 * i * 2, 90, 575 - 62 * i * 2, 725, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 75, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+
+			}
+			else if (mode == S_DEFAULT) {
+				for (int i = 0; i < 5; i++) {
+
+					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+			}
+
+			double tx, ty,tx2,ty2;
+			std::pair<double, double> b,b2;
+			Plot.Update_Pixel_Matrix();
+			for (int i = 0; i < Data.size()-1; i++) {
+				b = Data[i].first;
+				b2 = Data[i+1].first;
+
+				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+				tx2 = Remap((float)b2.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+
+				if (i == seperators[0]) {
+					seperators.erase(seperators.begin());
+				}
+				else {
+					Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)ty2, Data[i].second, S_AA_LINE);
+				}
+
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+			}
+			b = Data[Data.size() - 1].first;
+			tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+			ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+			Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, S_AA_FILL);
+			Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+
+			Plot.Write_Image(File_Name);
+		}
+		void Add_Point(double const &x, double const &y, Pixel const &color) {
+			seperators.push_back((int)(this->Data.size()-1));
+			for (int i = 0; i < Data.size(); i++) {
+				if (x > Max_X) {
+					Max_X = x;
+				}
+				if (x < Min_X) {
+					Min_X = x;
+				}
+				if (y > Max_Y) {
+					Max_Y = y;
+				}
+				if (y < Min_Y) {
+					Min_Y = y;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			Data.push_back(ScatterDot(std::pair<double, double>(x, y), color));
+		}
+		void Add_Point(std::vector<std::pair<double, double> > new_points, Pixel const &color) {
+			seperators.push_back((int)(this->Data.size()-1));
+			for (int i = 0; i < new_points.size(); i++) {
+				if (new_points[i].first > Max_X) {
+					Max_X = new_points[i].first;
+				}
+				if (new_points[i].first < Min_X) {
+					Min_X = new_points[i].first;
+				}
+				if (new_points[i].second > Max_Y) {
+					Max_Y = new_points[i].second;
+				}
+				if (new_points[i].second < Min_Y) {
+					Min_Y = new_points[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			for (int i = 0; i < new_points.size(); i++) {
+				Data.push_back(ScatterDot(new_points[i], color));
+
+			}
+		}
+
+		Image Get_Image() {
+			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Text(325, 750, y_label, CSET.Black);
+			Plot.Draw_Text(65, 400, x_label, CSET.Black);
+			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
+			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+
+			std::ostringstream streamObj;
+			streamObj << std::fixed;
+			streamObj << std::setprecision(2);
+
+			Plot.Draw_Text(595, 90 + 0 * 78 * 2, GetPointTwoPrecision(Min_X), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 1 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 1)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 2 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 2)), CSET.Black);
+
+			Plot.Draw_Text(595, 99 + 3 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 3)), CSET.Black);
+
+
+
+			Plot.Draw_Text(595, 99 + 4 * 78 * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 0 * 62 * 2, 40, GetPointTwoPrecision(Min_Y), CSET.Black);
+
+			Plot.Draw_Text(575 - 1 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 1)), CSET.Black);
+
+			Plot.Draw_Text(575 - 2 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 2)), CSET.Black);
+
+
+			Plot.Draw_Text(575 - 3 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 3)), CSET.Black);
+
+			Plot.Draw_Text(575 - 4 * 62 * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
+
+			if (mode == S_GRID) {
+
+				for (int i = 0; i < 5; i++) {
+					Plot.Draw_Line(575 - 62 * i * 2, 90, 575 - 62 * i * 2, 725, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 75, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+
+			}
+			else if (mode == S_DEFAULT) {
+				for (int i = 0; i < 5; i++) {
+
+					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
+
+					Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+
+
+
+				}
+			}
+
+			double tx, ty, tx2, ty2;
+			std::pair<double, double> b, b2;
+			Plot.Update_Pixel_Matrix();
+			for (int i = 0; i < Data.size() - 1; i++) {
+				b = Data[i].first;
+				b2 = Data[i + 1].first;
+
+				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+				tx2 = Remap((float)b2.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+
+
+				Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)ty2, Data[i].second, S_AA_LINE);
+
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+			}
+			b = Data[Data.size() - 1].first;
+			tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+			ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+			Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, S_AA_FILL);
+			Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+
+			return Plot;
+		}
+		void Set_Mode(int Mode) {
+			this->mode = Mode;
+		}
+	};
+
+
+
+
+	void Save_Bar_Plot(std::vector<int> data, std::vector<std::string> Categories, std::string file_name) {
 		Color_Palette CSET;
 		double max_y = getMax(data);
 		int spaces = 400 / (int)data.size();
@@ -8633,7 +10759,7 @@ public:
 
 		}
 
-		
+
 		histo.Draw_Text(400, 40, std::to_string((max_y / 100) * 25), CSET.Black);
 		histo.Draw_Text(299, 40, std::to_string((max_y / 100) * 50), CSET.Black);
 		histo.Draw_Text(198, 40, std::to_string((max_y / 100) * 75), CSET.Black);
@@ -8673,10 +10799,9 @@ public:
 
 
 
-		std::string sa = "BarPlot.png";
-		histo.Write_Image(sa);
+		histo.Write_Image(file_name);
 	}
-	void Save_Histogram(Image source, int Channel, std::string output_name) {		
+	void Save_Histogram(Image source, int Channel, std::string output_name, std::string file_name) {
 		std::vector<int> xxR(256, 0);
 		std::vector<int> xxG(256, 0);
 		std::vector<int> xxB(256, 0);
@@ -8746,7 +10871,7 @@ public:
 			histo.Draw_Text(520, 108 + i, std::to_string(i / 2), CSET.Black);
 		}
 
-		if (Channel ==   S_RED_HISTOGRAM) {
+		if (Channel == S_RED_HISTOGRAM) {
 			histo.Draw_Text(90, 345, "RED HISTOGRAM", CSET.Black);
 			for (int i = 0; i < 512; i += 2) {
 				histo.Draw_Line(499, 108 + i, 499 - (int)Remap(xxR[i / 2], 0, max_y, 0, 399 * Multiplyer), 108 + i, CSET.Red);
@@ -8791,410 +10916,11 @@ public:
 
 
 
-		histo.Write_Image("SIPL_Histogram.jpg");
+		histo.Write_Image(file_name);
 	}
-	void Save_Scatter_Plot(std::vector<Point> data, std::string X_Label, std::string Y_Label) {
-		Image Scatter_Plot;
-		Color_Palette CSET;
-		double Max_X = std::numeric_limits<double>::min(),
-			Max_Y = std::numeric_limits<double>::min();
-		double Min_X = std::numeric_limits<double>::max(),
-			Min_Y = std::numeric_limits<double>::max();
-
-		for (int i = 0; i < data.size(); i++) {
-			if (data[i].x > Max_X) {
-				Max_X = data[i].x;
-			}
-			if (data[i].x < Min_X) {
-				Min_X = data[i].x;
-			}
-			if (data[i].y > Max_Y) {
-				Max_Y = data[i].y;
-			}
-			if (data[i].y < Min_Y) {
-				Min_Y = data[i].y;
-			}
-		}
-		Max_X += Max_X / 1000;
-		Max_Y += Max_Y / 1000;
-
-		Max_X = std::round(Max_X);
-		Max_Y = std::round(Max_Y);
-
-
-		Scatter_Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-		Scatter_Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Text(325, 750, Y_Label, CSET.Black);
-		Scatter_Plot.Draw_Text(65, 400, X_Label, CSET.Black);
-		double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
-		double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
-
-		std::ostringstream streamObj;
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-
-		streamObj << (Min_X);
-		Scatter_Plot.Draw_Text(595, 90 + 0 * 78 * 2, streamObj.str(), CSET.Black);
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 1);
-		Scatter_Plot.Draw_Text(595, 99 + 1 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 2);
-
-		Scatter_Plot.Draw_Text(595, 99 + 2 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 3);
-		Scatter_Plot.Draw_Text(595, 99 + 3 * 78 * 2,streamObj.str(), CSET.Black);
-
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Max_X));
-		Scatter_Plot.Draw_Text(595, 99 + 4 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y));
-		Scatter_Plot.Draw_Text(575 - 0 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 1);
-		Scatter_Plot.Draw_Text(575 - 1 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 2);
-		Scatter_Plot.Draw_Text(575 - 2 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 3);
-		Scatter_Plot.Draw_Text(575 - 3 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << (Max_Y);
-		Scatter_Plot.Draw_Text(575 - 4 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-
-		for (int i = 0; i < 5; i++) {
-			Scatter_Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
-
-			Scatter_Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
-			Scatter_Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
-
-
-
-		}
-
-		double tx, ty;
-		Point b;
-		Scatter_Plot.Update_Pixel_Matrix();
-		for (int i = 0; i < data.size(); i++) {
-			b = data[i];
-			tx = Remap((float)b.x, (float)Min_X, (float)Max_X, 105, 720);
-			ty = Remap((float)b.y, (float)(Min_Y), (float)Max_Y, 565, 80);
-
-			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 3, CSET.Royal_Blue,S_FILL);
-			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke);
-
-
-
-		}
-
-		Scatter_Plot.Commint_Matrix_Changes();
-
-
-
-		Scatter_Plot.Write_Image("SIPL_SCATTER_PLOT.jpg");
-
-	}
-	Image Get_Scatter_Plot(std::vector<Point> data, std::string X_Label, std::string Y_Label,int Mode = S_DEFAULT) {
-		Image Scatter_Plot;
-		Color_Palette CSET;
-		double Max_X = std::numeric_limits<double>::min(),
-			Max_Y = std::numeric_limits<double>::min();
-		double Min_X = std::numeric_limits<double>::max(),
-			Min_Y = std::numeric_limits<double>::max();
-
-		for (int i = 0; i < data.size(); i++) {
-			if (data[i].x > Max_X) {
-				Max_X = data[i].x;
-			}
-			if (data[i].x < Min_X) {
-				Min_X = data[i].x;
-			}
-			if (data[i].y > Max_Y) {
-				Max_Y = data[i].y;
-			}
-			if (data[i].y < Min_Y) {
-				Min_Y = data[i].y;
-			}
-		}
-		Max_X += Max_X / 1000;
-		Max_Y += Max_Y / 1000;
-
-		Max_X = std::round(Max_X);
-		Max_Y = std::round(Max_Y);
-
-
-		Scatter_Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-		Scatter_Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Text(325, 750, Y_Label, CSET.Black);
-		Scatter_Plot.Draw_Text(65, 400, X_Label, CSET.Black);
-		double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
-		double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
-
-		std::ostringstream streamObj;
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-
-		streamObj << (Min_X);
-		Scatter_Plot.Draw_Text(595, 90 + 0 * 78 * 2, streamObj.str(), CSET.Black);
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 1);
-		Scatter_Plot.Draw_Text(595, 99 + 1 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 2);
-
-		Scatter_Plot.Draw_Text(595, 99 + 2 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 3);
-		Scatter_Plot.Draw_Text(595, 99 + 3 * 78 * 2, streamObj.str(), CSET.Black);
-
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Max_X));
-		Scatter_Plot.Draw_Text(595, 99 + 4 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y));
-		Scatter_Plot.Draw_Text(575 - 0 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 1);
-		Scatter_Plot.Draw_Text(575 - 1 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 2);
-		Scatter_Plot.Draw_Text(575 - 2 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 3);
-		Scatter_Plot.Draw_Text(575 - 3 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << (Max_Y);
-		Scatter_Plot.Draw_Text(575 - 4 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-
-	
-
-		if (Mode == S_GRID) {
-
-			for (int i = 0; i < 5; i++) {
-				Scatter_Plot.Draw_Line(575 - 62 * i * 2, 90, 575 - 62 * i * 2, 725, CSET.Black);
-
-				Scatter_Plot.Draw_Line(575, 100 + i * 78 * 2, 75, 100 + i * 78 * 2, CSET.Black);
-				Scatter_Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
-
-
-
-			}
-
-		}
-		else if (Mode == S_DEFAULT) {
-			for (int i = 0; i < 5; i++) {
-				Scatter_Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
-
-				Scatter_Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
-				Scatter_Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
-
-
-
-			}
-		}
-
-		double tx, ty;
-		Point b;
-		Scatter_Plot.Update_Pixel_Matrix();
-
-		for (int i = 0; i < data.size(); i++) {
-			b = data[i];
-			tx = Remap((double)b.x, (double)Min_X, (double)Max_X, 105, 720);
-			ty = Remap((double)b.y, (double)(Min_Y), (double)Max_Y, 565, 80);
-			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,S_FILL);
-			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 3, CSET.Royal_Blue, S_FILL);
-			Scatter_Plot.Draw_Circle((int)tx, (int)ty, 1, CSET.Forest_Green, S_FILL);
-
-
-
-
-		}
-
-
-
-
-		return Scatter_Plot;
-
-	}
-	Image Get_Scatter_Plot(std::string X_Label, std::string Y_Label, double Max_X_Value, double Max_Y_Value) {
-		Image Scatter_Plot;
-		Color_Palette CSET;
-		double Max_X = Max_X_Value;
-		double Max_Y = Max_Y_Value;
-		double Min_X = 0;
-		double Min_Y = 0;
-
-		Max_X += Max_X / 4;
-		Max_Y += Max_Y / 4;
-		Max_X = std::round(Max_X);
-		Max_Y = std::round(Max_Y);
-		Scatter_Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-		Scatter_Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
-		Scatter_Plot.Draw_Text(325, 750, Y_Label, CSET.Black);
-		Scatter_Plot.Draw_Text(65, 400, X_Label, CSET.Black);
-		double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
-		double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
-
-		std::ostringstream streamObj;
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-
-		streamObj << (Min_X);
-		Scatter_Plot.Draw_Text(595, 90 + 0 * 78 * 2, streamObj.str(), CSET.Black);
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 1);
-		Scatter_Plot.Draw_Text(595, 99 + 1 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 2);
-
-		Scatter_Plot.Draw_Text(595, 99 + 2 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_X)+distX * 3);
-		Scatter_Plot.Draw_Text(595, 99 + 3 * 78 * 2, streamObj.str(), CSET.Black);
-
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Max_X));
-		Scatter_Plot.Draw_Text(595, 99 + 4 * 78 * 2, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y));
-		Scatter_Plot.Draw_Text(575 - 0 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 1);
-		Scatter_Plot.Draw_Text(575 - 1 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 2);
-		Scatter_Plot.Draw_Text(575 - 2 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((Min_Y)+distY * 3);
-		Scatter_Plot.Draw_Text(575 - 3 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-
-		streamObj = std::ostringstream();
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << (Max_Y);
-		Scatter_Plot.Draw_Text(575 - 4 * 62 * 2, 40, streamObj.str(), CSET.Black);
-
-
-		for (int i = 0; i < 5; i++) {
-			Scatter_Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
-
-			Scatter_Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
-			Scatter_Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
-
-
-
-		}
-		Scatter_Plot.Update_Pixel_Matrix();
-
-
-
-		return Scatter_Plot;
-
-	}
-	void Add_Point_Scatter_Plot(Image Plot, int Radius, Pixel Color, double X_pos, double Y_pos) {
-		double tx, ty;
-		Color_Palette CSET;
-		Plot.Update_Pixel_Matrix();
-		tx = Remap((double)X_pos, (double)this->Last_Known_Min_X, (double)this->Last_Known_Max_X, 105, 720);
-		ty = Remap((double)Y_pos, (double)this->Last_Known_Min_Y, (double)this->Last_Known_Max_Y, 565, 80);
-
-		Plot.Draw_Circle((int)tx, (int)ty, Radius + 1, CSET.White_Smoke, S_FILL);
-		Plot.Draw_Circle((int)tx, (int)ty, Radius, Color, S_FILL);
-
-		Plot.Commint_Matrix_Changes();
-	}
-	void Save_Pie_Plot(std::vector<double> Sizes, std::vector<std::string> Labels) {
+	void Save_Pie_Plot(std::vector<double> Sizes, std::vector<std::string> Labels, std::string file_name) {
 		if (Labels.size() != Sizes.size()) {
-			std::cout<<("Number Of Labels And Number Of Sizes Do Not Match\n");
+			std::cout << ("Number Of Labels And Number Of Sizes Do Not Match\n");
 			return;
 		}
 		double sum_of_sizes = 0;
@@ -9202,14 +10928,14 @@ public:
 			sum_of_sizes += Sizes[i];
 		}
 		if (sum_of_sizes != 100) {
-			std::cout<<("Total Sum Of Sizes Has To Be 100\n");
+			std::cout << ("Total Sum Of Sizes Has To Be 100\n");
 			return;
 		}
 
 
 		Color_Palette CSET;
 		std::vector<Pixel> Colors(Sizes.size());
-		
+
 
 		for (int i = 0; i < Sizes.size(); i++) {
 			Colors[i] = CSET.Color_Serial_Number[10 + i];
@@ -9218,7 +10944,7 @@ public:
 		Image Pie;
 		int divider = (int)Sizes.size();
 
-		Pie.Load_Blank_Canvas(1200, 1600,  Pixel(240, 240, 240));
+		Pie.Load_Blank_Canvas(1200, 1600, Pixel(240, 240, 240));
 
 
 
@@ -9248,8 +10974,8 @@ public:
 
 		int label_frame_h = 100;
 		int addit = (int)Sizes.size() * 45;
-		Pie.Draw_Square(label_frame_h - 1, 519, label_frame_h + addit - 1, 749,  Pixel(50, 50, 50), S_CORNERS);
-		Pie.Draw_Square(label_frame_h, 520, label_frame_h + addit, 750,  Pixel(10, 10, 10), S_CORNERS);
+		Pie.Draw_Square(label_frame_h - 1, 519, label_frame_h + addit - 1, 749, Pixel(50, 50, 50), S_CORNERS);
+		Pie.Draw_Square(label_frame_h, 520, label_frame_h + addit, 750, Pixel(10, 10, 10), S_CORNERS);
 		Pie.Draw_Square(label_frame_h + 1, 521, label_frame_h + addit + 1, 751, CSET.Black, S_CORNERS);
 
 		Pie.Update_Pixel_Matrix();
@@ -9266,9 +10992,8 @@ public:
 		for (int i = 1; i <= Sizes.size(); i++) {
 			Pie.Draw_Text(label_frame_h - 20 + i * 45, 640, Labels[i - 1], CSET.Black);
 		}
-		Pie.Write_Image("SIPL_PIE_PLT.jpg");
+		Pie.Write_Image(file_name);
 
 	}
 
-
-};
+}
