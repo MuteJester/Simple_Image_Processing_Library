@@ -50,6 +50,8 @@
 #define S_GRID 1236
 #define S_JPG 1237
 #define S_PNG 1238
+#define S_CONNECTED 1338
+
 
 
 
@@ -189,6 +191,13 @@ public:
 		this->Real = Copy.Real;
 		this->Imaginary = Copy.Imaginary;
 	}
+	static Complex I() {
+		return Complex(0, 1);
+	}
+	static Complex Zero() {
+		return Complex(0, 0);
+	}
+
 	void operator=(Complex const &source) {
 		this->Real = source.Real;
 		this->Imaginary = source.Imaginary;
@@ -205,29 +214,43 @@ public:
 			this->Real * b.Imaginary + this->Imaginary * b.Real);
 	}
 	Complex operator*(double const &b) {
-		return Complex(this->Real * b ,this->Imaginary*b);
+		return Complex(this->Real * b, this->Imaginary*b);
 	}
 	Complex operator^(int const &B) {
 		for (int i = 1; i < B; i++) {
 			*this * *this;
 		}
 	}
+	Complex operator^(Complex x) {
+		return this->Log()*(x).Exp();
+
+	}
+	Complex Exp() {
+		double expReal = std::exp(Real);
+		return  Complex(expReal *  std::cos(Imaginary), expReal * std::sin(Imaginary));
+	}
+	Complex operator/(Complex const &divisor) {
+
+		if ((divisor.Real == 0.0 && divisor.Imaginary == 0.0)) {
+			std::abort();
+		}
 
 
-	Complex operator/(Complex const &B) {
-		Complex C(*this);
-		double divisor = B.Real*B.Real + B.Imaginary*B.Imaginary;
-		Complex t = Complex(B);
-		t.Conjugate();
-		*this*(t);
-		C.Real /= divisor;
-		C.Imaginary /= divisor;
-		return C;
+		if (std::abs(divisor.Real) < std::abs(divisor.Imaginary)) {
+			double q = divisor.Real / divisor.Imaginary;
+			double denominator = divisor.Real * q + divisor.Imaginary;
+			return Complex((this->Real * q + this->Imaginary) / denominator, (this->Imaginary * q - this->Real) / denominator);
+		}
+		else {
+			double q = divisor.Imaginary / divisor.Real;
+			double denominator = divisor.Imaginary * q + divisor.Real;
+			return Complex((this->Imaginary * q + this->Real) / denominator, (this->Imaginary - this->Real * q) / denominator);
+
+		}
 	}
 	void Conjugate() {
 		this->Imaginary *= -1;
 	}
-
 	double Abs() {
 		if (std::abs(Real) < std::abs(Imaginary)) {
 			if (Imaginary == 0.0) {
@@ -247,6 +270,21 @@ public:
 	Complex Log() {
 		return Complex(std::log(Abs()),
 			std::atan2(Imaginary, Real));
+	}
+	Complex Sqrt() {
+		if (this->Real == 0.0 && Imaginary == 0.0) {
+			return Complex(0.0, 0.0);
+		}
+
+		double t = std::sqrt((std::abs(Real) + this->Abs()) / 2.0);
+		if (Real >= 0.0) {
+			return Complex(t, Imaginary / (2.0 * t));
+		}
+		else {
+			return Complex(std::abs(Imaginary) / (2.0 * t),
+				std::copysign(1.0
+					, Imaginary) * t);
+		}
 	}
 	int bitReverse(int n, int bits) {
 		int reversedN = n;
@@ -282,22 +320,13 @@ public:
 					Complex odd = Values[oddIndex];
 
 					double term = (-2 * std::_Pi * k) / (double)N;
-					Complex exp = ( Complex(std::cos(term), std::sin(term))*(odd));
+					Complex exp = (Complex(std::cos(term), std::sin(term))*(odd));
 
 					Values[evenIndex] = even + (exp);
-					Values[oddIndex] = even -(exp);
+					Values[oddIndex] = even - (exp);
 				}
 			}
 		}
-	}
-
-	Complex Exp() {
-		double expReal = std::exp(Real);
-		return  Complex(expReal *  std::cos(Imaginary), expReal * std::sin(Imaginary));
-	}
-	Complex Power(Complex x) {
-		return this->Log()*(x).Exp();
-
 	}
 
 };
@@ -333,30 +362,30 @@ std::istream &operator>>(std::istream &in, Complex &source) {
 class LabPixel {
 public:
 	double L;
-	 double A;
-	 double B;
+	double A;
+	double B;
 	int i, j;
-	 LabPixel(double l, double a, double b) {
+	LabPixel(double l, double a, double b) {
 		this->L = l;
 		this->A = a;
 		this->B = b;
 
 	}
 
-	 LabPixel(double l, double a, double b, int i, int j) {
+	LabPixel(double l, double a, double b, int i, int j) {
 		this->L = l;
 		this->A = a;
 		this->B = b;
 		this->i = i;
 		this->j = j;
 	}
-	 LabPixel() {
+	LabPixel() {
 		this->L = 0;
 		this->A = 0;
 		this->B = 0;
 
 	}
-	 LabPixel(LabPixel const &copy) {
+	LabPixel(LabPixel const &copy) {
 		this->A = copy.A;
 		this->B = copy.B;
 		this->L = copy.L;
@@ -389,22 +418,22 @@ public:
 	int A;
 	int analysis;
 	int i, j;
-	 Pixel(int r, int g, int b) {
+	Pixel(int r, int g, int b) {
 		this->r = r;
 		this->b = b;
 		this->g = g;
 		A = 255;
 		analysis = 0;
 	}
-	 Pixel(int r, int g, int b,int a) {
-		 this->r = r;
-		 this->b = b;
-		 this->g = g;
-		 A =  a;
-		 analysis = 0;
-	 }
+	Pixel(int r, int g, int b, int a) {
+		this->r = r;
+		this->b = b;
+		this->g = g;
+		A = a;
+		analysis = 0;
+	}
 
-	 Pixel(int r, int g, int b, int i, int j) {
+	Pixel(int r, int g, int b, int i, int j) {
 		this->r = r;
 		this->b = b;
 		this->g = g;
@@ -413,22 +442,22 @@ public:
 		A = 255;
 		analysis = 0;
 	}
-	 Pixel() {
+	Pixel() {
 		this->r = 0;
 		this->b = 0;
 		this->g = 0;
 		this->A = 255;
 		analysis = 0;
 	}
-	 Pixel(Pixel const &copy) {
+	Pixel(Pixel const &copy) {
 		this->r = copy.r;
 		this->g = copy.g;
 		this->b = copy.b;
 		this->A = copy.A;
 		this->analysis = copy.analysis;
 	}
-	 Pixel Pixel_Mul(Pixel b) {
-		 Pixel ret;
+	Pixel Pixel_Mul(Pixel b) {
+		Pixel ret;
 		ret.r = this->r*b.r;
 		if (ret.r > 255) {
 			ret.r = ret.r % 255;
@@ -443,126 +472,126 @@ public:
 		}
 		return ret;
 	}
-	 bool operator>(Pixel b) {
-		 if (this->r > b.r && this->g > b.g && this->b > b.b) {
-			 return true;
-		 }
-		 else {
-			 return false;
-		 }
-	 }
-	 Pixel operator+(int const &amount) {
-		 Pixel Res;
-		 Res.r = this->r + amount;
-		 Res.g = this->g + amount;
-		 Res.b = this->b + amount;
-		 Res.Clamp_Outliers();
-		 return Res;
-	 }
-	 Pixel operator+(Pixel const &amount) {
-		 Pixel Res;
-		 Res.r = this->r + amount.r;
-		 Res.g = this->g + amount.g;
-		 Res.b = this->b + amount.b;
-		 Res.Clamp_Outliers();
-		 return Res;
-	 }
+	bool operator>(Pixel b) {
+		if (this->r > b.r && this->g > b.g && this->b > b.b) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	Pixel operator+(int const &amount) {
+		Pixel Res;
+		Res.r = this->r + amount;
+		Res.g = this->g + amount;
+		Res.b = this->b + amount;
+		Res.Clamp_Outliers();
+		return Res;
+	}
+	Pixel operator+(Pixel const &amount) {
+		Pixel Res;
+		Res.r = this->r + amount.r;
+		Res.g = this->g + amount.g;
+		Res.b = this->b + amount.b;
+		Res.Clamp_Outliers();
+		return Res;
+	}
 
-	 Pixel operator-(int const &amount) {
-		 Pixel Res;
-		 Res.r = this->r - amount;
-		 Res.g = this->g - amount;
-		 Res.b = this->b - amount;
-		 Res.Clamp_Outliers();
-		 return Res;
-	 }
-	 Pixel operator*(double const &amount) {
-		 Pixel Res;
-		 Res.r = (int)(this->r * amount);
-		 Res.g = (int)(this->g * amount);
-		 Res.b = (int)(this->b * amount);
-		 Res.Clamp_Outliers();
-		 return Res;
-	 }
-	 Pixel operator*(const Pixel &b) {
-		 Pixel ret;
-		 ret.r = this->r*b.r;
-		 if (ret.r > 255) {
-			 ret.r = ret.r % 255;
-		 }
-		 ret.g = this->g*b.g;
-		 if (ret.g > 255) {
-			 ret.g = ret.g % 255;
-		 }
-		 ret.b = this->b*b.b;
-		 if (ret.b > 255) {
-			 ret.b = ret.b % 255;
-		 }
-		 return ret;
-	 }
-	 void Add_Location(int i, int j) {
+	Pixel operator-(int const &amount) {
+		Pixel Res;
+		Res.r = this->r - amount;
+		Res.g = this->g - amount;
+		Res.b = this->b - amount;
+		Res.Clamp_Outliers();
+		return Res;
+	}
+	Pixel operator*(double const &amount) {
+		Pixel Res;
+		Res.r = (int)(this->r * amount);
+		Res.g = (int)(this->g * amount);
+		Res.b = (int)(this->b * amount);
+		Res.Clamp_Outliers();
+		return Res;
+	}
+	Pixel operator*(const Pixel &b) {
+		Pixel ret;
+		ret.r = this->r*b.r;
+		if (ret.r > 255) {
+			ret.r = ret.r % 255;
+		}
+		ret.g = this->g*b.g;
+		if (ret.g > 255) {
+			ret.g = ret.g % 255;
+		}
+		ret.b = this->b*b.b;
+		if (ret.b > 255) {
+			ret.b = ret.b % 255;
+		}
+		return ret;
+	}
+	void Add_Location(int i, int j) {
 		this->i = i;
 		this->j = j;
 	}
-	 friend std::ostream &operator<<(std::ostream &out, Pixel const &pix);
-	 void Clamp_Outliers() {
-		 if (this->r > 255 || this->r < 0) {
-			 if (this->r > 255) {
-				 this->r = 255;
-			 }
-			 else {
-				 this->r = 0;
-			 }
-		 } if (this->g > 255 || this->g < 0) {
-			 if (this->g > 255) {
-				 this->g = 255;
-			 }
-			 else {
-				 this->g = 0;
-			 }
-		 }
-		 if (this->b > 255 || this->b < 0) {
-			 if (this->b > 255) {
-				 this->b = 255;
-			 }
-			 else {
-				 this->b = 0;
-			 }
-		 }
-		 if (A > 255 || A < 0) {
-			 if (this->A > 255) {
-				 this->A = 255;
-			 }
-			 else {
-				 this->A = 0;
-			 }
-		 }
-	 }
+	friend std::ostream &operator<<(std::ostream &out, Pixel const &pix);
+	void Clamp_Outliers() {
+		if (this->r > 255 || this->r < 0) {
+			if (this->r > 255) {
+				this->r = 255;
+			}
+			else {
+				this->r = 0;
+			}
+		} if (this->g > 255 || this->g < 0) {
+			if (this->g > 255) {
+				this->g = 255;
+			}
+			else {
+				this->g = 0;
+			}
+		}
+		if (this->b > 255 || this->b < 0) {
+			if (this->b > 255) {
+				this->b = 255;
+			}
+			else {
+				this->b = 0;
+			}
+		}
+		if (A > 255 || A < 0) {
+			if (this->A > 255) {
+				this->A = 255;
+			}
+			else {
+				this->A = 0;
+			}
+		}
+	}
 
-	  bool operator==(Pixel const &Source) {
-		  if (this->r != Source.r || this->g != Source.g || this->b != Source.b) {
-			  return false;
-		  }
-		  else {
-			  return true;
-		  }
-	  }
-	  bool operator!=(Pixel const &source) {
-		  if (!(*this == source)) {
-			  return true;
-		  }
-		  else
-		  {
-			  return false;
-		  }
-		  }
-	  
+	bool operator==(Pixel const &Source) {
+		if (this->r != Source.r || this->g != Source.g || this->b != Source.b) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	bool operator!=(Pixel const &source) {
+		if (!(*this == source)) {
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 
 };
 
 std::ostream &operator<<(std::ostream &out, Pixel const &pix) {
-	 out <<  "( R:" << pix.r << ", G:" << pix.g << ", B:" << pix.b << " , A:"<< pix.A <<")\n";
-	 return out;
+	out << "( R:" << pix.r << ", G:" << pix.g << ", B:" << pix.b << " , A:" << pix.A << ")\n";
+	return out;
 }
 Pixel TRI(Pixel const &color, Pixel const &bottom, double const &alpha) {
 	int r = (int)std::round((color.r*alpha) + (bottom.r * (1 - alpha)));
@@ -719,11 +748,21 @@ typedef std::pair<std::pair<double, double>, Pixel > ScatterDot;
 #define RANDOM_MATRIX 'r'
 
 
+#ifndef RANDOMUTILITISDEFINE
+#define RANDOMUTILITISDEFINE
+
 class Random_Utilitis {
 public:
 	static int Random_INT(int minimum_value, int maximum_value) {
 		static std::random_device seed;
 		static std::mt19937 random_number_generator(seed());
+		std::uniform_int_distribution<size_t> indices(minimum_value, maximum_value - 1);
+		return (int)indices(random_number_generator);
+	}
+
+	static int Random_INT(int minimum_value, int maximum_value,int _seed) {
+		static std::random_device seed;
+		static std::mt19937 random_number_generator(_seed);
 		std::uniform_int_distribution<size_t> indices(minimum_value, maximum_value - 1);
 		return (int)indices(random_number_generator);
 	}
@@ -733,8 +772,16 @@ public:
 		std::uniform_real_distribution<> indices(minimum_value, maximum_value);
 		return indices(random_number_generator);
 	}
-
+	static double Random_DOUBLE(double minimum_value, double maximum_value, double _seed) {
+		static std::random_device seed;
+		static std::mt19937 random_number_generator(_seed);
+		std::uniform_real_distribution<> indices(minimum_value, maximum_value);
+		return indices(random_number_generator);
+	}
 };
+
+#endif // !RANDOMUTILITISDEFINE
+
 
 
 #ifndef MATRIX_STRUCTRE_THOTH
@@ -2089,24 +2136,24 @@ public:
 		this->Color_Serial_Number[137] = White_Smoke;
 	}
 	Pixel Color_Serial_Number[138];
-	Pixel Black,White,Red,Lime, Blue,Yellow,Cyan,Magenta,Silver,Gray,Maroon,Olive;
-	Pixel Green,Purple,Teal,Navy,Dark_Red,Brown,Firebrick,Crimson,Tomato,Coral,Indian_Red;
-	Pixel Light_Coral,Dark_Salmon,Salmon,Light_Salmon,Orange_Red,Dark_Orange,Orange,Gold;
-	Pixel Dark_Golden_Rod,Golden_Rod,Pale_Golden_Rod,Dark_Khaki,Khaki,Yellow_Green,Dark_Olive_Green;
-	Pixel Olive_Drab,Lawn_Green,Chart_Reuse,Green_Yellow,Dark_Green,Forest_Green,Lime_Green,Light_Green;
-	Pixel Pale_Green,Dark_Sea_Green,Medium_Spring_Green,Spring_Green,Sea_Green,Medium_Aqua_Marine,Medium_Sea_Green;
-	Pixel Light_Sea_Green,Dark_Slate_Gray,Dark_Cyan,Light_Cyan,Dark_Turquoise,Turquoise,Medium_Turquoise,Pale_Turquois;
-	Pixel Aqua_Marine,Powder_Blue,Cadet_Blue,Steel_Blue,Corn_Flower_Blue,Deep_Sky_Blue,Dodger_Blue,Light_Blue,Sky_Blue;
-	Pixel Light_Bky_Blue,Midnight_Blue,Dark_Blue,Medium_Blue,Royal_Blue,Blue_Violet,Indigo,Dark_Slate_Blue,Slate_Blue;
-	Pixel Medium_Slate_Blue,Medium_Purple,Dark_Magenta,Dark_Violet,Dark_Orchid,Medium_Orchid,Thistle,Plum,Violet,Orchid;
-	Pixel Medium_Violet_Red,Pale_Violet_Red,Deep_Pink,Hot_Pink,Light_Pink,Pink,Antique_White,Beige,Bisque,Blanched_Almond;
-	Pixel Wheat,Corn_Silk,Lemon_Chiffon,Light_Golden_Rod_Yellow,Light_Yellow,Saddle_Brown,Sienna,Chocolate,Peru,Sandy_Brown;
-	Pixel Burly_Wood, Tan,Rosy_Brown, Moccasin,Navajo_White,Peach_Puff,Misty_Rose,Lavender_Blush,Linen,Old_Lace,Papaya_Whip;
-	Pixel Sea_Shell,Mint_Cream,Slate_Gray,Light_Slate_Gray,Light_Steel_Blue,Lavender,Floral_White,Alice_Blue,Ghost_White,Honeydew,Ivory,Azure,Snow;
-	Pixel Dim_Gray,Dark_Gray,Light_Gray, Gainsboro,White_Smoke;
+	Pixel Black, White, Red, Lime, Blue, Yellow, Cyan, Magenta, Silver, Gray, Maroon, Olive;
+	Pixel Green, Purple, Teal, Navy, Dark_Red, Brown, Firebrick, Crimson, Tomato, Coral, Indian_Red;
+	Pixel Light_Coral, Dark_Salmon, Salmon, Light_Salmon, Orange_Red, Dark_Orange, Orange, Gold;
+	Pixel Dark_Golden_Rod, Golden_Rod, Pale_Golden_Rod, Dark_Khaki, Khaki, Yellow_Green, Dark_Olive_Green;
+	Pixel Olive_Drab, Lawn_Green, Chart_Reuse, Green_Yellow, Dark_Green, Forest_Green, Lime_Green, Light_Green;
+	Pixel Pale_Green, Dark_Sea_Green, Medium_Spring_Green, Spring_Green, Sea_Green, Medium_Aqua_Marine, Medium_Sea_Green;
+	Pixel Light_Sea_Green, Dark_Slate_Gray, Dark_Cyan, Light_Cyan, Dark_Turquoise, Turquoise, Medium_Turquoise, Pale_Turquois;
+	Pixel Aqua_Marine, Powder_Blue, Cadet_Blue, Steel_Blue, Corn_Flower_Blue, Deep_Sky_Blue, Dodger_Blue, Light_Blue, Sky_Blue;
+	Pixel Light_Bky_Blue, Midnight_Blue, Dark_Blue, Medium_Blue, Royal_Blue, Blue_Violet, Indigo, Dark_Slate_Blue, Slate_Blue;
+	Pixel Medium_Slate_Blue, Medium_Purple, Dark_Magenta, Dark_Violet, Dark_Orchid, Medium_Orchid, Thistle, Plum, Violet, Orchid;
+	Pixel Medium_Violet_Red, Pale_Violet_Red, Deep_Pink, Hot_Pink, Light_Pink, Pink, Antique_White, Beige, Bisque, Blanched_Almond;
+	Pixel Wheat, Corn_Silk, Lemon_Chiffon, Light_Golden_Rod_Yellow, Light_Yellow, Saddle_Brown, Sienna, Chocolate, Peru, Sandy_Brown;
+	Pixel Burly_Wood, Tan, Rosy_Brown, Moccasin, Navajo_White, Peach_Puff, Misty_Rose, Lavender_Blush, Linen, Old_Lace, Papaya_Whip;
+	Pixel Sea_Shell, Mint_Cream, Slate_Gray, Light_Slate_Gray, Light_Steel_Blue, Lavender, Floral_White, Alice_Blue, Ghost_White, Honeydew, Ivory, Azure, Snow;
+	Pixel Dim_Gray, Dark_Gray, Light_Gray, Gainsboro, White_Smoke;
 	Pixel Get_Random_Color() {
 		Random_Utilitis rnd;
-		return this->Color_Serial_Number[rnd.Random_INT(3,134)];
+		return this->Color_Serial_Number[rnd.Random_INT(3, 134)];
 	}
 
 };
@@ -2114,980 +2161,1030 @@ public:
 
 
 
-
-
-
-
-
-class TypeForm {
-
+class Font_Sprite
+{
 public:
-	int *A, *B, *C, *D, *E, *F, *G, *H, *I, *J, *K, *L, *M, *N, *O, *P, *Q, *R, *S, *T, *U, *V, *W, *X, *Y, *Z;
-	int *a, *b, *c, *d, *e, *f, *g, *h, *i, *j, *k, *l, *m, *n, *o, *p, *q, *r, *s, *t, *u, *v, *w, *x, *y, *z;
-	int *One, *Two, *Three, *Four, *Five, *Six, *Seven, *Eight,*Nine, *Zero;
-	int *exclamation_point, *question_mark, *Right_Braket, *Left_Braket,
-		*Ampersand, *Precent, *Comma, *Square_Braket_Left, *Square_Braket_Right, *Colon,
-		*Semi_Colon, *EqualSign, *PlusSign, *MinusSign, *Astersik, *Dot;
+	std::vector<std::vector<Pixel> > font_s;
+	Font_Sprite() {
+		std::string data;
+		data += "?Q`0001oOch0o01o@F40o0<AGD4090LAGD<090@A7ch0?00O7Q`0600>00000000";
+		data += "O000000nOT0063Qo4d8>?7a14Gno94AA4gno94AaOT0>o3`oO400o7QN00000400";
+		data += "Of80001oOg<7O7moBGT7O7lABET024@aBEd714AiOdl717a_=TH013Q>00000000";
+		data += "720D000V?V5oB3Q_HdUoE7a9@DdDE4A9@DmoE4A;Hg]oM4Aj8S4D84@`00000000";
+		data += "OaPT1000Oa`^13P1@AI[?g`1@A=[OdAoHgljA4Ao?WlBA7l1710007l100000000";
+		data += "ObM6000oOfMV?3QoBDD`O7a0BDDH@5A0BDD<@5A0BGeVO5ao@CQR?5Po00000000";
+		data += "Oc``000?Ogij70PO2D]??0Ph2DUM@7i`2DTg@7lh2GUj?0TO0C1870T?00000000";
+		data += "70<4001o?P<7?1QoHg43O;`h@GT0@:@LB@d0>:@hN@L0@?aoN@<0O7ao0000?000";
+		data += "OcH0001SOglLA7mg24TnK7ln24US>0PL24U140PnOgl0>7QgOcH0K71S0000A000";
+		data += "00H00000@Dm1S007@DUSg00?OdTnH7YhOfTL<7Yh@Cl0700?@Ah0300700000000";
+		data += "<008001QL00ZA41a@6HnI<1i@FHLM81M@@0LG81?O`0nC?Y7?`0ZA7Y300080000";
+		data += "O`082000Oh0827mo6>Hn?Wmo?6HnMb11MP08@C11H`08@FP0@@0004@000000000";
+		data += "00P00001Oab00003OcKP0006@6=PMgl<@440MglH@000000`@000001P00000000";
+		data += "Ob@8@@00Ob@8@Ga13R@8Mga172@8?PAo3R@827QoOb@820@0O`0007`0000007P0";
+		data += "O`000P08Od400g`<3V=P0G`673IP0`@3>1`00P@6O`P00g`<O`000GP800000000";
+		data += "?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020";
 
-	TypeForm() {
-		b = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
+		font_s.reserve(48);
+		for (int i = 0; i < 48; i++) {
+			font_s.push_back(std::vector<Pixel>(128));
+		}
 
-		//
+		int px = 0, py = 0;
+		for (size_t b = 0; b < 1024; b += 4)
+		{
+			uint32_t sym1 = (uint32_t)data[b + 0] - 48;
+			uint32_t sym2 = (uint32_t)data[b + 1] - 48;
+			uint32_t sym3 = (uint32_t)data[b + 2] - 48;
+			uint32_t sym4 = (uint32_t)data[b + 3] - 48;
+			uint32_t r = sym1 << 18 | sym2 << 12 | sym3 << 6 | sym4;
 
-
-		A = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 1, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		a = new int[81]
-		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		B = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		b = new int[81]
-		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		C = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 1, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		c = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		D = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		d = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		E = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		e = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		F = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		f = new int[81]
-		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 1, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		G = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 1, 1, 1, 1, 0,
-			0, 1, 1, 0, 0, 1, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		g = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		H = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		h = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		I = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		i = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		J = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 1, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		j = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 1, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		K = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 1, 1, 0, 0, 0,
-			0, 1, 1, 1, 1, 0, 0, 0, 0,
-			0, 1, 1, 0, 1, 1, 0, 0, 0,
-			0, 1, 1, 0, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-			k = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 0, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 0, 1, 0, 0, 0,
-			0, 0, 0, 1, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		L = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		l = new int[81]
-		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		M = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 0, 1, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 1, 1, 0, 1, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		m = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 1, 0, 1, 0, 0,
-			0, 0, 1, 0, 1, 0, 1, 0, 0,
-			0, 0, 1, 0, 1, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		N = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 0, 1, 1, 0,
-			0, 1, 1, 0, 1, 1, 1, 1, 0,
-			0, 1, 1, 0, 0, 1, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		n = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		O = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		o = new int[81]
-		{  0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		P = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		p = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Q = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		q = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		R = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		r = new int[81]
-		{  0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 1, 1, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		S = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		s = new int[81]
-		{  0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		T = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		t = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		U = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 0, 1, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		u = new int[81]
-		{   0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		V = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		v = new int[81]
-		{	0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 0, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		W = new int[81]
-				{ 0,0,0,0,0,0,0,0,0,
-				  0,1,1,0,0,0,1,1,0,
-				  0,1,1,0,0,0,1,1,0,
-				  0,1,1,0,0,0,1,1,0,
-				  0,1,1,0,1,0,1,1,0,
-				  0,1,1,1,1,1,1,1,0,
-				  0,1,1,1,0,1,1,1,0,
-				  0,1,1,0,0,0,1,1,0,
-				  0,0,0,0,0,0,0,0,0
-				};
-		w = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 1, 0, 1, 0, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 0, 1, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		X = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 1, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		x = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 1, 0, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 0, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 0, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Y = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		y = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 0, 0, 1, 0, 0, 0,
-			0, 0, 1, 0, 0, 1, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 0, 0, 0,
-			0, 0, 1, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Z = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		z = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Zero = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 1, 1, 1, 0,
-			0, 1, 1, 0, 1, 0, 1, 1, 0,
-			0, 1, 1, 1, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		One = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Two = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Three = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Four = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 1, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 1, 1, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Five = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Six = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 0, 0, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Seven = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Eight = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Nine = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 0, 0, 0,
-			0, 1, 1, 0, 0, 1, 1, 0, 0,
-			0, 1, 1, 0, 0, 1, 1, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 1, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		exclamation_point = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		question_mark = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Right_Braket = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Left_Braket = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Ampersand = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Precent = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 0, 0, 0, 0, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 1, 1, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 1, 1, 0,
-			0, 1, 1, 0, 0, 0, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Comma = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Dot = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Square_Braket_Left = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 0, 0, 0, 0, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Square_Braket_Right = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 1, 0,
-			0, 0, 0, 0, 0, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Colon = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Semi_Colon = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 1, 1, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		PlusSign = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		MinusSign = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		EqualSign = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 1, 1, 1, 1, 1, 1, 1, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-		Astersik = new int[81]
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 1, 1, 1, 1, 1, 0, 0,
-			0, 0, 0, 1, 1, 1, 0, 0, 0,
-			0, 0, 0, 0, 1, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
-	}
-	~TypeForm() {
-		delete[] A;
-		delete[] B;
-		delete[] C;
-		delete[] D;
-		delete[] E;
-		delete[] F;
-		delete[] G;
-		delete[] H;
-		delete[] I;
-		delete[] J;
-		delete[] K;
-		delete[] L;
-		delete[] M;
-		delete[] N;
-		delete[] O; 
-		delete[] P;
-		delete[] Q;
-		delete[] R;
-		delete[] S;
-		delete[] T;
-		delete[] U;
-		delete[] V; 
-		delete[] W;
-		delete[] X;
-		delete[] Y;
-		delete[] Z;
-		delete[] a;
-		delete[] b;
-		delete[] c;
-		delete[] d;
-		delete[] e;
-		delete[] f;
-		delete[] g;
-		delete[] h;
-		delete[] i;
-		delete[] j;
-		delete[] k;
-		delete[] l;
-		delete[] m;
-		delete[] n;
-		delete[] o;
-		delete[] p;
-		delete[] q;
-		delete[] r;
-		delete[] s;
-		delete[] t;
-		delete[] u;
-		delete[] v;
-		delete[] w;
-		delete[] x;
-		delete[] y;
-		delete[] z;
-		delete[] One;
-		delete[] Two;
-		delete[] Three;
-		delete[] Four;
-		delete[] Five;
-		delete[] Six;
-		delete[] Seven;
-		delete[] Nine;
-		delete[] Zero;
-		delete[] exclamation_point;
-		delete[] question_mark;
-		delete[] Right_Braket;
-		delete[] Left_Braket;
-		delete[] Ampersand;
-		delete[] Precent;
-		delete[] Comma;
-		delete[] Square_Braket_Left;
-		delete[] Square_Braket_Right;
-		delete[] Colon;
-		delete[] Semi_Colon;
-		delete[] EqualSign;
-		delete[] PlusSign;
-		delete[] MinusSign;
-		delete[] Astersik;
-		delete[] Dot;
-
+			for (int i = 0; i < 24; i++)
+			{
+				int k = r & (1 << i) ? 255 : 0;
+				font_s[py][px] = Pixel(k, k, k);
+				if (++py == 48) { px++; py = 0; }
+			}
+		}
 	}
 
 
-}TYPELOADF;
 
+};
+Font_Sprite FSPRITE;
+
+
+
+
+//
+//class TypeForm {
+//
+//public:
+//	int *A, *B, *C, *D, *E, *F, *G, *H, *I, *J, *K, *L, *M, *N, *O, *P, *Q, *R, *S, *T, *U, *V, *W, *X, *Y, *Z;
+//	int *a, *b, *c, *d, *e, *f, *g, *h, *i, *j, *k, *l, *m, *n, *o, *p, *q, *r, *s, *t, *u, *v, *w, *x, *y, *z;
+//	int *One, *Two, *Three, *Four, *Five, *Six, *Seven, *Eight, *Nine, *Zero;
+//	int *exclamation_point, *question_mark, *Right_Braket, *Left_Braket,
+//		*Ampersand, *Precent, *Comma, *Square_Braket_Left, *Square_Braket_Right, *Colon,
+//		*Semi_Colon, *EqualSign, *PlusSign, *MinusSign, *Astersik, *Dot;
+//
+//	TypeForm() {
+//		b = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//
+//		//
+//
+//
+//		A = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 1, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		a = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		B = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		b = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		C = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 1, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		c = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		D = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		d = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		E = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		e = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		F = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		f = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 1, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		G = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 1, 1, 1, 1, 0,
+//			0, 1, 1, 0, 0, 1, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		g = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		H = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		h = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		I = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		i = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		J = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 1, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		j = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 1, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		K = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 1, 1, 0, 0, 0,
+//			0, 1, 1, 1, 1, 0, 0, 0, 0,
+//			0, 1, 1, 0, 1, 1, 0, 0, 0,
+//			0, 1, 1, 0, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		k = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 0, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 0, 1, 0, 0, 0,
+//			0, 0, 0, 1, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		L = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		l = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		M = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 0, 1, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 1, 1, 0, 1, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		m = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 1, 0, 1, 0, 0,
+//			0, 0, 1, 0, 1, 0, 1, 0, 0,
+//			0, 0, 1, 0, 1, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		N = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 0, 1, 1, 0,
+//			0, 1, 1, 0, 1, 1, 1, 1, 0,
+//			0, 1, 1, 0, 0, 1, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		n = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		O = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		o = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		P = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		p = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Q = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		q = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		R = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		r = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 1, 1, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		S = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		s = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		T = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		t = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		U = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 0, 1, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		u = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		V = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		v = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 0, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		W = new int[81]
+//		{ 0,0,0,0,0,0,0,0,0,
+//		  0,1,1,0,0,0,1,1,0,
+//		  0,1,1,0,0,0,1,1,0,
+//		  0,1,1,0,0,0,1,1,0,
+//		  0,1,1,0,1,0,1,1,0,
+//		  0,1,1,1,1,1,1,1,0,
+//		  0,1,1,1,0,1,1,1,0,
+//		  0,1,1,0,0,0,1,1,0,
+//		  0,0,0,0,0,0,0,0,0
+//		};
+//		w = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 1, 0, 1, 0, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 0, 1, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		X = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 1, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		x = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 1, 0, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 0, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 0, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Y = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		y = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 0, 0, 1, 0, 0, 0,
+//			0, 0, 1, 0, 0, 1, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 0, 0, 0,
+//			0, 0, 1, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Z = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		z = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Zero = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 1, 1, 1, 0,
+//			0, 1, 1, 0, 1, 0, 1, 1, 0,
+//			0, 1, 1, 1, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		One = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Two = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Three = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Four = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 1, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 1, 1, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Five = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Six = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 0, 0, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Seven = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Eight = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Nine = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 0, 0, 0,
+//			0, 1, 1, 0, 0, 1, 1, 0, 0,
+//			0, 1, 1, 0, 0, 1, 1, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 1, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		exclamation_point = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		question_mark = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Right_Braket = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Left_Braket = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Ampersand = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Precent = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 0, 0, 0, 0, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 1, 1, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 1, 1, 0,
+//			0, 1, 1, 0, 0, 0, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Comma = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Dot = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Square_Braket_Left = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 0, 0, 0, 0, 0,
+//			0, 1, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Square_Braket_Right = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 1, 0,
+//			0, 0, 0, 0, 0, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Colon = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Semi_Colon = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 1, 1, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		PlusSign = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		MinusSign = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		EqualSign = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 1, 1, 1, 1, 1, 1, 1, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//		Astersik = new int[81]
+//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 1, 1, 1, 1, 1, 0, 0,
+//			0, 0, 0, 1, 1, 1, 0, 0, 0,
+//			0, 0, 0, 0, 1, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			0, 0, 0, 0, 0, 0, 0, 0, 0
+//		};
+//	}
+//	~TypeForm() {
+//		delete[] A;
+//		delete[] B;
+//		delete[] C;
+//		delete[] D;
+//		delete[] E;
+//		delete[] F;
+//		delete[] G;
+//		delete[] H;
+//		delete[] I;
+//		delete[] J;
+//		delete[] K;
+//		delete[] L;
+//		delete[] M;
+//		delete[] N;
+//		delete[] O;
+//		delete[] P;
+//		delete[] Q;
+//		delete[] R;
+//		delete[] S;
+//		delete[] T;
+//		delete[] U;
+//		delete[] V;
+//		delete[] W;
+//		delete[] X;
+//		delete[] Y;
+//		delete[] Z;
+//		delete[] a;
+//		delete[] b;
+//		delete[] c;
+//		delete[] d;
+//		delete[] e;
+//		delete[] f;
+//		delete[] g;
+//		delete[] h;
+//		delete[] i;
+//		delete[] j;
+//		delete[] k;
+//		delete[] l;
+//		delete[] m;
+//		delete[] n;
+//		delete[] o;
+//		delete[] p;
+//		delete[] q;
+//		delete[] r;
+//		delete[] s;
+//		delete[] t;
+//		delete[] u;
+//		delete[] v;
+//		delete[] w;
+//		delete[] x;
+//		delete[] y;
+//		delete[] z;
+//		delete[] One;
+//		delete[] Two;
+//		delete[] Three;
+//		delete[] Four;
+//		delete[] Five;
+//		delete[] Six;
+//		delete[] Seven;
+//		delete[] Nine;
+//		delete[] Zero;
+//		delete[] exclamation_point;
+//		delete[] question_mark;
+//		delete[] Right_Braket;
+//		delete[] Left_Braket;
+//		delete[] Ampersand;
+//		delete[] Precent;
+//		delete[] Comma;
+//		delete[] Square_Braket_Left;
+//		delete[] Square_Braket_Right;
+//		delete[] Colon;
+//		delete[] Semi_Colon;
+//		delete[] EqualSign;
+//		delete[] PlusSign;
+//		delete[] MinusSign;
+//		delete[] Astersik;
+//		delete[] Dot;
+//
+//	}
+//
+//
+//}TYPELOADF;
+//
 
 
 //misc
@@ -3129,138 +3226,165 @@ int Color_Distance(Pixel a, Pixel b) {
 
 	return recored;
 }
+//
 
 
-
-	template<class T> double getMean(std::vector<T> Data) {
-		double sum = 0;
-		for (int i = 0; i < Data.size(); i++) {
-			sum += Data[i];
-		}
-
-		return sum / Data.size();
+template<class T> double getMean(std::vector<T> Data) {
+	double sum = 0;
+	for (int i = 0; i < Data.size(); i++) {
+		sum += Data[i];
 	}
-	template<class T> double getMedian(std::vector<T> Data) {
-		std::vector<T> tmp;
 
-		tmp = Data;
-		std::sort(tmp.begin(), tmp.end());
-		if (tmp.size() % 2 == 0) {
-			return (double)(tmp[tmp.size() / 2] + (double)tmp[(tmp.size() / 2) - 1]) / 2;
-		}
-		else {
+	return sum / Data.size();
+}
+template<class T> double getMedian(std::vector<T> Data) {
+	std::vector<T> tmp;
 
-			return tmp[tmp.size() / 2];
+	tmp = Data;
+	std::sort(tmp.begin(), tmp.end());
+	if (tmp.size() % 2 == 0) {
+		return (double)(tmp[tmp.size() / 2] + (double)tmp[(tmp.size() / 2) - 1]) / 2;
+	}
+	else {
+
+		return tmp[tmp.size() / 2];
+	}
+}
+template<class T>  double getStandard_Deviation(std::vector<T> Data) {
+	double mean = this->getMean(Data);
+	double sum = 0;
+	for (int i = 0; i < Data.size(); i++) {
+		sum += ((Data[i] - mean)*(Data[i] - mean));
+	}
+	sum /= (double)Data.size();
+	sum = std::sqrt(sum);
+	return sum;
+}
+template<class T> double getVariance(std::vector<T>  Data) {
+	double Deviation = getStandard_Deviation(Data);
+	return (Deviation)*(Deviation);
+}
+template<class T> T getMin(std::vector<T> Data) {
+	T min = std::numeric_limits<T>::max();
+	for (int i = 1; i < Data.size(); i++) {
+		if (Data[i] < min) {
+			min = Data[i];
 		}
 	}
-	template<class T>  double getStandard_Deviation(std::vector<T> Data) {
-		double mean = this->getMean(Data);
-		double sum = 0;
-		for (int i = 0; i < Data.size(); i++) {
-			sum += ((Data[i] - mean)*(Data[i] - mean));
-		}
-		sum /= (double)Data.size();
-		sum = std::sqrt(sum);
-		return sum;
-	}
-	template<class T> double getVariance(std::vector<T>  Data) {
-		double Deviation = getStandard_Deviation(Data);
-		return (Deviation)*(Deviation);
-	}
-	template<class T> T getMin(std::vector<T> Data) {
-		T min = std::numeric_limits<T>::max();
-		for (int i = 1; i < Data.size(); i++) {
-			if (Data[i] < min) {
-				min = Data[i];
-			}
-		}
-		return min;
-	}
-	 double nthRoot(int A, int N){
-		double xPre = std::rand() % 10;
-		double eps = 0.001;
-		double delX = 2147483647;
-		double xK = 0.0;
-		while (delX > eps)
-		{
-			xK = ((N - 1.0) * xPre +
-				(double)A / std::pow(xPre, N - 1)) / (double)N;
-			delX = std::
-abs(xK - xPre);
-			xPre = xK;
-		}
-
-		return xK;
-	}
-	 template<class T> T getMax(std::vector<std::vector<T> > data) {
-		 int max = std::numeric_limits<T>::min();
-		 for (int i = 0; i < data.size(); i++) {
-			 for (int j = 0; j < data[i].size(); j++) {
-				std::vector<T> temp = data[i];
-				 if (temp[j] > max) {
-					 max = temp[j];
-				 }
-			 }
-		 }
-
-
-
-		 return max;
-
-	 }
-	 template<class T> T getMin(std::vector<std::vector<T> > data) {
-		 int max = std::numeric_limits<T>::max();
-		 for (int i = 0; i < data.size(); i++) {
-			 for (int j = 0; j < data[i].size(); j++) {
-				 std::vector<T> temp = data[i];
-				 if (temp[j] < max) {
-					 max = temp[j];
-				 }
-			 }
-		 }
-
-
-
-		 return max;
-
-	 }
-	 template<class T> T getMax(std::vector<T> data) {
-		 int max = std::numeric_limits<T>::max();
-		for (int j = 0; j < data.size(); j++) {
-			if (data[j] > max) {
-				max = data[j];
-			}
-		}
-		return max;
-	}
-	double Remap(double value, double fromMin, double fromMax, double toMin, double toMax)
+	return min;
+}
+double nthRoot(int A, int N) {
+	double xPre = std::rand() % 10;
+	double eps = 0.001;
+	double delX = 2147483647;
+	double xK = 0.0;
+	while (delX > eps)
 	{
-		double fromAbs = value - fromMin;
-		double fromMaxAbs = fromMax - fromMin;
-		double normal;
-		if (fromMaxAbs == 0) {
-			normal = 0;
-		}
-		else {
-			normal = fromAbs / fromMaxAbs;
-		}
-
-		double toMaxAbs = toMax - toMin;
-		double toAbs = toMaxAbs * normal;
-
-		double to = toAbs + toMin;
-
-		return to;
+		xK = ((N - 1.0) * xPre +
+			(double)A / std::pow(xPre, N - 1)) / (double)N;
+		delX = std::
+			abs(xK - xPre);
+		xPre = xK;
 	}
 
-	std::string GetPointTwoPrecision(double number) {
-		std::ostringstream streamObj;
-		streamObj << std::fixed;
-		streamObj << std::setprecision(2);
-		streamObj << ((number));
-		return streamObj.str();
+	return xK;
+}
+template<class T> T getMax(std::vector<std::vector<T> > data) {
+	int max = std::numeric_limits<T>::min();
+	for (int i = 0; i < data.size(); i++) {
+		for (int j = 0; j < data[i].size(); j++) {
+			std::vector<T> temp = data[i];
+			if (temp[j] > max) {
+				max = temp[j];
+			}
+		}
 	}
-	//
+
+
+
+	return max;
+
+}
+template<class T> T getMin(std::vector<std::vector<T> > data) {
+	int max = std::numeric_limits<T>::max();
+	for (int i = 0; i < data.size(); i++) {
+		for (int j = 0; j < data[i].size(); j++) {
+			std::vector<T> temp = data[i];
+			if (temp[j] < max) {
+				max = temp[j];
+			}
+		}
+	}
+
+
+
+	return max;
+
+}
+template<class T> T getMax(std::vector<T> data) {
+	int max = std::numeric_limits<T>::max();
+	for (int j = 0; j < data.size(); j++) {
+		if (data[j] > max) {
+			max = data[j];
+		}
+	}
+	return max;
+}
+double Remap(double value, double fromMin, double fromMax, double toMin, double toMax)
+{
+	double fromAbs = value - fromMin;
+	double fromMaxAbs = fromMax - fromMin;
+	double normal;
+	if (fromMaxAbs == 0) {
+		normal = 0;
+	}
+	else {
+		normal = fromAbs / fromMaxAbs;
+	}
+
+	double toMaxAbs = toMax - toMin;
+	double toAbs = toMaxAbs * normal;
+
+	double to = toAbs + toMin;
+
+	return to;
+}
+double Linear_Interpolate(double const &a, double const &b, double const &x) {
+	return  a * (1 - x) + b * x;
+}
+double Cosine_Interpolate(double const &a, double const &b, double const &x){
+	double ft = x * std::_Pi;
+	double f = (1 - std::cos(ft)) * .5;
+
+	return  a * (1 - f) + b * f;
+}
+double Cubic_Interpolate(double const &Before_A, double const &A, double const &B, double const &After_B, double const &x){
+
+	double	P = (After_B - B) - (Before_A - A);
+	double	Q = (Before_A - A) - P;
+	double	R = B - Before_A;
+	double	S = A;
+	return P * std::pow(x, 3) + Q * x*x + R * x + S;
+}
+double SmoothStep_Interpolate(double const &a, double const &b, double const &x) {
+	double val = (x*x)*(3 - 2 * x);
+	return Linear_Interpolate(a, b, val);
+}
+double Acceleration_Interpolate(double const &a, double const &b, double const &x) {
+	return Linear_Interpolate(a, b, x*x);
+}
+double Deceleration_Interpolate(double const &a, double const &b, double const &x) {
+	double val = 1.0 - std::pow(1.0-x, 2);
+	return Linear_Interpolate(a, b, val);
+}
+std::string GetPointTwoPrecision(double number) {
+	std::ostringstream streamObj;
+	streamObj << std::fixed;
+	streamObj << std::setprecision(2);
+	streamObj << ((number));
+	return streamObj.str();
+}
+//
 
 
 
@@ -3332,12 +3456,13 @@ public:
 
 	double Size() {
 		//return (double)std::abs(this->Upleft_X - Downright_X)*(Upleft_Y - Downright_Y);
-		return std::sqrt((this->Downright_X - this->Upleft_X)*(this->Downright_X - this->Upleft_X) + 
+		return std::sqrt((this->Downright_X - this->Upleft_X)*(this->Downright_X - this->Upleft_X) +
 			(this->Downright_Y - this->Upleft_Y)*(this->Downright_Y - this->Upleft_Y));
 	}
 
 
 };
+
 
 
 class Image {
@@ -3350,78 +3475,78 @@ private:
 	unsigned short MODE = 0;
 	void init_pixel_matrix() {
 
-		
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 this->Pixel_Matrix.push_back(std::vector<Pixel>());
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 this->Pixel_Matrix[i].push_back(Pixel(0, 0, 0));
-			 }
-		 }
 
-		 if (this->channel == 3) {
+		for (int i = 0; i < this->Image_Height; i++) {
+			this->Pixel_Matrix.push_back(std::vector<Pixel>());
+			for (int j = 0; j < this->Image_Width; j++) {
+				this->Pixel_Matrix[i].push_back(Pixel(0, 0, 0));
+			}
+		}
 
-			 int j = 0, k = 0, clock = 0;
-			 for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
-				 if (clock == Image_Width) {
-					 j++;
-					 k = 0;
-					 clock = 0;
-				 }
-				 // Pixel_Matrix[j][k].index_range = i;
-				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
-				 k++;
-				 clock++;
-			 }
-		 }
-		 else {
+		if (this->channel == 3) {
 
-			 int j = 0, k = 0, clock = 0;
-			 for (int i = 0; i < Image_Width*Image_Height * 4; i += 4) {
-				 if (clock == Image_Width) {
-					 j++;
-					 k = 0;
-					 clock = 0;
-				 }
-				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
-				 k++;
-				 clock++;
-			 }
+			int j = 0, k = 0, clock = 0;
+			for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
+				if (clock == Image_Width) {
+					j++;
+					k = 0;
+					clock = 0;
+				}
+				// Pixel_Matrix[j][k].index_range = i;
+				Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				k++;
+				clock++;
+			}
+		}
+		else {
 
-		 }
+			int j = 0, k = 0, clock = 0;
+			for (int i = 0; i < Image_Width*Image_Height * 4; i += 4) {
+				if (clock == Image_Width) {
+					j++;
+					k = 0;
+					clock = 0;
+				}
+				Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				k++;
+				clock++;
+			}
+
+		}
 
 	}
 	void BresenhamsLine(int start_y, int start_x, int target_y, int target_x, Pixel color) {
-		 double dx, sx, dy, sy, err, e2;
-		 double x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
-		 dx = std::abs(target_y - start_y);
-		 sx = start_y < target_y ? 1 : -1;
-		 dy = -std::abs(target_x - start_x);
-		 sy = start_x < target_x ? 1 : -1;
-		 err = dx + dy;  //error value
-		 while (true) {
-			 if (x0 == x1 && y0 == y1) {
-				 this->Set_Color((int)std::floor(x0), (int)std::floor(y0), color);
-				 //Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)] = new Pixel(color);
+		double dx, sx, dy, sy, err, e2;
+		double x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
+		dx = std::abs(target_y - start_y);
+		sx = start_y < target_y ? 1 : -1;
+		dy = -std::abs(target_x - start_x);
+		sy = start_x < target_x ? 1 : -1;
+		err = dx + dy;  //error value
+		while (true) {
+			if (x0 == x1 && y0 == y1) {
+				this->Set_Color((int)std::floor(x0), (int)std::floor(y0), color);
+				//Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)] = new Pixel(color);
 
-				 break;
-			 }
+				break;
+			}
 
-			 //Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)] = new Pixel(color);
-			 this->Set_Color((int)std::floor(x0), (int)std::floor(y0), color);
+			//Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)] = new Pixel(color);
+			this->Set_Color((int)std::floor(x0), (int)std::floor(y0), color);
 
 
-			 e2 = 2 * err;
-			 if (e2 >= dy) {
-				 err += dy;
-				 x0 += sx;
-			 }
-			 if (e2 <= dx) {
-				 err += dx;
-				 y0 += sy;
-			 }
+			e2 = 2 * err;
+			if (e2 >= dy) {
+				err += dy;
+				x0 += sx;
+			}
+			if (e2 <= dx) {
+				err += dx;
+				y0 += sy;
+			}
 
-		 }
-	 }
+		}
+	}
 	std::vector<Point<double> > K_Means(const std::vector<Point<double> >& data, size_t k, size_t number_of_iterations) {
 		static std::random_device seed; //seed for psudo random engine 
 		static std::mt19937 random_number_generator(seed()); //merssene twisster using the PR seed
@@ -3483,7 +3608,7 @@ private:
 			std::cout << "OUT OF BOUNDS WHEN DRAWING CIRCLE\n";
 			return;
 		}
-	
+
 		this->Set_Color(centerY + deltaY, centerX + deltaX, TRI(Color, this->Get_Color(centerY + deltaY, centerX + deltaX), alpha));
 		this->Pixel_Matrix[centerY + deltaY][centerX + deltaX] = TRI(Color, this->Pixel_Matrix[centerY + deltaY][centerX + deltaX], alpha);
 		this->Set_Color(centerY + deltaY, centerX - deltaX, TRI(Color, this->Get_Color(centerY + deltaY, centerX - deltaX), alpha));
@@ -3499,239 +3624,251 @@ public:
 
 
 	std::vector<std::vector<Pixel> > Pixel_Matrix;
-    int Image_Width, Image_Height;
+	int Image_Width, Image_Height;
 	std::string F_Path;
 
 	//functionality
-	 Image() {
+	Image() {
 
 
 	}
-	 Image(Image const &copy) {
+	Image(Image const &copy) {
 		this->F_Path = copy.F_Path;
 		this->image_data = copy.image_data;
 		this->Pixel_Matrix = copy.Pixel_Matrix;
 		this->Image_Width = copy.Image_Width;
 		this->Image_Height = copy.Image_Height;
 		this->channel = copy.channel;
-		
-	} 
-	 void Set_Color(int i, int j, Pixel color) {
-		 if (channel == 3) {
-			 int pos = ((Image_Width * 3)*(i)+3 * (j));
-			 this->image_data[pos] = color.r;
-			 this->image_data[pos + 1] = color.g;
-			 this->image_data[pos + 2] = color.b;
-		 }
-		 else {
-			 int pos = ((Image_Width * 4)*(i)+4 * (j));
-			 this->image_data[pos] = color.r;
-			 this->image_data[pos + 1] = color.g;
-			 this->image_data[pos + 2] = color.b;
-			 this->image_data[pos + 3] = color.A;
-
-		 }
-
 
 	}
-	 Pixel Get_Color(int i, int j) {
-		 Pixel res;
-		 if (channel == 3) {
-			 int pos = ((Image_Width * 3)*(i)+3 * (j));
-			 res = Pixel((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2]);
-		 }
-		 else {
-			 int pos = ((Image_Width * 4)*(i)+4 * (j));
-			 res = Pixel((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2], (int)image_data[pos + 3]);
-
-		 }
-		 return res;
-	 }
-	 void Load_Image(std::string FilePath){
-
-		 if (FilePath.find(".jpg") != std::string::npos) {
-
-			 this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, 3);
-
-			 this->im_size = Image_Width * Image_Height;
-			 if (this->image_data == NULL) {
-				 std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
-			 }
-			 else {
-				 this->init_pixel_matrix();
-				 std::cout << "\n" << FilePath << " File Loaded Succsesfully\n";
-
-			 }
-		 }
-		 else if (FilePath.find(".png") != std::string::npos) {
-
-			 this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, STBI_rgb_alpha);
-
-			 this->im_size = Image_Width * Image_Height;
-			 if (this->image_data == NULL) {
-				 std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
-			 }
-			 else {
-				 this->init_pixel_matrix();
-				 std::cout << "\n"<< FilePath<<" File Loaded Succsesfully\n";
-
-			 }
-		 }
-
-	}
-
-	 /*
-	 void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x) {
-		int width = right_corner_x - left_corner_x;
-		int height = right_corner_y - left_corner_y;
-		Image tmp = new Image();
-		int x = 0, y = 0;
-		tmp.Load_Blank_Canvas(height, width, new Pixel(0, 0, 0));
-		for (int i = left_corner_y; i < right_corner_y; i++) {
-			for (int j = left_corner_x; j < right_corner_x; j++) {
-				tmp.Pixel_Matrix[y][x] = this->Pixel_Matrix[i][j];
-				x++;
-			}
-			y++;
-			x = 0;
+	void Set_Color(int i, int j, Pixel color) {
+		if (channel == 3) {
+			int pos = ((Image_Width * 3)*(i)+3 * (j));
+			this->image_data[pos] = color.r;
+			this->image_data[pos + 1] = color.g;
+			this->image_data[pos + 2] = color.b;
 		}
-		tmp.Commint_Matrix_Changes();
-		this->IMG = tmp.IMG;
-		this->Image_Width = tmp.Image_Width;
-		this->Image_Height = tmp.Image_Height;
-	}
-	 void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x, String save_as) {
-		int width = right_corner_x - left_corner_x;
-		int height = right_corner_y - left_corner_y;
-		Image tmp = new Image();
-		int x = 0, y = 0;
-		tmp.Load_Blank_Canvas(height, width, new Pixel(0, 0, 0));
-		for (int i = left_corner_y; i < right_corner_y; i++) {
-			for (int j = left_corner_x; j < right_corner_x; j++) {
-				tmp.Pixel_Matrix[y][x] = this->Pixel_Matrix[i][j];
-				x++;
-			}
-			y++;
-			x = 0;
-		}
-		tmp.Commint_Matrix_Changes();
-		tmp.Write_Image(save_as);
-	}
-	 */
-	 
-	 
-	 Image operator+(Image const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r += Arg.Pixel_Matrix[i][j].r;
-				 Res.Pixel_Matrix[i][j].g += Arg.Pixel_Matrix[i][j].g;
-				 Res.Pixel_Matrix[i][j].b += Arg.Pixel_Matrix[i][j].b;
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator-(Image const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r -= Arg.Pixel_Matrix[i][j].r;
-				 Res.Pixel_Matrix[i][j].g -= Arg.Pixel_Matrix[i][j].g;
-				 Res.Pixel_Matrix[i][j].b -= Arg.Pixel_Matrix[i][j].b;
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 std::vector<Pixel> &operator[](int row) {
-		 return this->Pixel_Matrix[row];
-	 }
-	 Image operator*(Image const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r *= Arg.Pixel_Matrix[i][j].r;
-				 Res.Pixel_Matrix[i][j].g *= Arg.Pixel_Matrix[i][j].g;
-				 Res.Pixel_Matrix[i][j].b *= Arg.Pixel_Matrix[i][j].b;
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator/(Image const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r /= Arg.Pixel_Matrix[i][j].r;
-				 Res.Pixel_Matrix[i][j].g /= Arg.Pixel_Matrix[i][j].g;
-				 Res.Pixel_Matrix[i][j].b /= Arg.Pixel_Matrix[i][j].b;
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator/(double const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r = (int)(Arg / Res.Pixel_Matrix[i][j].r);
-				 Res.Pixel_Matrix[i][j].g /= (int)(Arg / Res.Pixel_Matrix[i][j].g);
-				 Res.Pixel_Matrix[i][j].b /= (int)(Arg / Res.Pixel_Matrix[i][j].b);
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
+		else {
+			int pos = ((Image_Width * 4)*(i)+4 * (j));
+			this->image_data[pos] = color.r;
+			this->image_data[pos + 1] = color.g;
+			this->image_data[pos + 2] = color.b;
+			this->image_data[pos + 3] = color.A;
 
-	 Image operator+(int const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r += Arg;
-				 Res.Pixel_Matrix[i][j].g += Arg;
-				 Res.Pixel_Matrix[i][j].b += Arg;
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator-(int const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r -= Arg;
-				 Res.Pixel_Matrix[i][j].g -= Arg;
-				 Res.Pixel_Matrix[i][j].b -= Arg;
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator*(double const &Arg) {
-		 Image Res(*this);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r = (int)(Arg* Res.Pixel_Matrix[i][j].r);
-				 Res.Pixel_Matrix[i][j].g = (int)(Arg*Res.Pixel_Matrix[i][j].g);
-				 Res.Pixel_Matrix[i][j].b = (int)(Arg* Res.Pixel_Matrix[i][j].b);
-				 Res.Pixel_Matrix[i][j].Clamp_Outliers();
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image Arithmetic_Union(Image to_Union) {
-		 Image Res(*this);
-		 if (to_Union.Image_Height != this->Image_Height || this->Image_Width != to_Union.Image_Width) {
-			std::cout<<"Operation Aborted: Images Are Different In Size\n";
+		}
+
+
+	}
+	Pixel Get_Color(int i, int j) {
+		Pixel res;
+		if (channel == 3) {
+			int pos = ((Image_Width * 3)*(i)+3 * (j));
+			res = Pixel((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2]);
+		}
+		else {
+			int pos = ((Image_Width * 4)*(i)+4 * (j));
+			res = Pixel((int)image_data[pos], (int)image_data[pos + 1], (int)image_data[pos + 2], (int)image_data[pos + 3]);
+
+		}
+		return res;
+	}
+	void Set_Antialiased_Point(double const &x, double const &y,Pixel const &Color) {
+		for (double i = std::floor(x); i < std::ceil(x); i++) {
+			for (double j = std::floor(y); j < ceil(y);j++) {
+				double percent_x = 1 - std::abs(x - i);
+				double percent_y = 1 - std::abs(y - j);
+				double	percent = percent_x * percent_y;
+				
+
+				Set_Color(j, i, Pixel(Color.r*percent, Color.g*percent, Color.b*percent));
+			}
+		}
+	}
+	void Load_Image(std::string FilePath) {
+
+		if (FilePath.find(".jpg") != std::string::npos) {
+
+			this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, 3);
+
+			this->im_size = Image_Width * Image_Height;
+			if (this->image_data == NULL) {
+				std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+			}
+			else {
+				this->init_pixel_matrix();
+				std::cout << "\n" << FilePath << " File Loaded Succsesfully\n";
+
+			}
+		}
+		else if (FilePath.find(".png") != std::string::npos) {
+
+			this->image_data = stbi_load(FilePath.c_str(), &this->Image_Width, &Image_Height, &channel, STBI_rgb_alpha);
+
+			this->im_size = Image_Width * Image_Height;
+			if (this->image_data == NULL) {
+				std::cout << "\n There Was An Error While Openning Image\nPlease Check File Name / Diractory\n";
+			}
+			else {
+				this->init_pixel_matrix();
+				std::cout << "\n" << FilePath << " File Loaded Succsesfully\n";
+
+			}
+		}
+
+	}
+
+	/*
+	void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x) {
+	   int width = right_corner_x - left_corner_x;
+	   int height = right_corner_y - left_corner_y;
+	   Image tmp = new Image();
+	   int x = 0, y = 0;
+	   tmp.Load_Blank_Canvas(height, width, new Pixel(0, 0, 0));
+	   for (int i = left_corner_y; i < right_corner_y; i++) {
+		   for (int j = left_corner_x; j < right_corner_x; j++) {
+			   tmp.Pixel_Matrix[y][x] = this->Pixel_Matrix[i][j];
+			   x++;
+		   }
+		   y++;
+		   x = 0;
+	   }
+	   tmp.Commint_Matrix_Changes();
+	   this->IMG = tmp.IMG;
+	   this->Image_Width = tmp.Image_Width;
+	   this->Image_Height = tmp.Image_Height;
+   }
+	void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x, String save_as) {
+	   int width = right_corner_x - left_corner_x;
+	   int height = right_corner_y - left_corner_y;
+	   Image tmp = new Image();
+	   int x = 0, y = 0;
+	   tmp.Load_Blank_Canvas(height, width, new Pixel(0, 0, 0));
+	   for (int i = left_corner_y; i < right_corner_y; i++) {
+		   for (int j = left_corner_x; j < right_corner_x; j++) {
+			   tmp.Pixel_Matrix[y][x] = this->Pixel_Matrix[i][j];
+			   x++;
+		   }
+		   y++;
+		   x = 0;
+	   }
+	   tmp.Commint_Matrix_Changes();
+	   tmp.Write_Image(save_as);
+   }
+	*/
+
+
+	Image operator+(Image const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r += Arg.Pixel_Matrix[i][j].r;
+				Res.Pixel_Matrix[i][j].g += Arg.Pixel_Matrix[i][j].g;
+				Res.Pixel_Matrix[i][j].b += Arg.Pixel_Matrix[i][j].b;
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator-(Image const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r -= Arg.Pixel_Matrix[i][j].r;
+				Res.Pixel_Matrix[i][j].g -= Arg.Pixel_Matrix[i][j].g;
+				Res.Pixel_Matrix[i][j].b -= Arg.Pixel_Matrix[i][j].b;
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	std::vector<Pixel> &operator[](int row) {
+		return this->Pixel_Matrix[row];
+	}
+	Image operator*(Image const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r *= Arg.Pixel_Matrix[i][j].r;
+				Res.Pixel_Matrix[i][j].g *= Arg.Pixel_Matrix[i][j].g;
+				Res.Pixel_Matrix[i][j].b *= Arg.Pixel_Matrix[i][j].b;
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator/(Image const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r /= Arg.Pixel_Matrix[i][j].r;
+				Res.Pixel_Matrix[i][j].g /= Arg.Pixel_Matrix[i][j].g;
+				Res.Pixel_Matrix[i][j].b /= Arg.Pixel_Matrix[i][j].b;
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator/(double const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r = (int)(Arg / Res.Pixel_Matrix[i][j].r);
+				Res.Pixel_Matrix[i][j].g /= (int)(Arg / Res.Pixel_Matrix[i][j].g);
+				Res.Pixel_Matrix[i][j].b /= (int)(Arg / Res.Pixel_Matrix[i][j].b);
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+
+	Image operator+(int const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r += Arg;
+				Res.Pixel_Matrix[i][j].g += Arg;
+				Res.Pixel_Matrix[i][j].b += Arg;
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator-(int const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r -= Arg;
+				Res.Pixel_Matrix[i][j].g -= Arg;
+				Res.Pixel_Matrix[i][j].b -= Arg;
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator*(double const &Arg) {
+		Image Res(*this);
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r = (int)(Arg* Res.Pixel_Matrix[i][j].r);
+				Res.Pixel_Matrix[i][j].g = (int)(Arg*Res.Pixel_Matrix[i][j].g);
+				Res.Pixel_Matrix[i][j].b = (int)(Arg* Res.Pixel_Matrix[i][j].b);
+				Res.Pixel_Matrix[i][j].Clamp_Outliers();
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image Arithmetic_Union(Image to_Union) {
+		Image Res(*this);
+		if (to_Union.Image_Height != this->Image_Height || this->Image_Width != to_Union.Image_Width) {
+			std::cout << "Operation Aborted: Images Are Different In Size\n";
 			return Image();
 		}
 
@@ -3746,110 +3883,110 @@ public:
 		Res.Commint_Matrix_Changes();
 		return Res;
 	}
-	 Image operator~() {
-		 Image Res(*this);
+	Image operator~() {
+		Image Res(*this);
 
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 Res.Pixel_Matrix[i][j].r = 255 - Res.Pixel_Matrix[i][j].r;
-				 Res.Pixel_Matrix[i][j].g = 255 - Res.Pixel_Matrix[i][j].g;
-				 Res.Pixel_Matrix[i][j].b = 255 - Res.Pixel_Matrix[i][j].b;
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				Res.Pixel_Matrix[i][j].r = 255 - Res.Pixel_Matrix[i][j].r;
+				Res.Pixel_Matrix[i][j].g = 255 - Res.Pixel_Matrix[i][j].g;
+				Res.Pixel_Matrix[i][j].b = 255 - Res.Pixel_Matrix[i][j].b;
 
 
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator&(Image to_AND) {
-		 if (to_AND.Image_Height != this->Image_Height || this->Image_Width != to_AND.Image_Width) {
-				std::cout<<"Operation Aborted: Images Are Different In Size\n";
-			 return Image();
-		 }
-		 Image Res(*this);
-		 int a, b;
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 a = Res.Pixel_Matrix[i][j].r / 255;
-				 b = to_AND.Pixel_Matrix[i][j].r / 255;
-				 if ((b & a) == 1) {
-					 Res.Pixel_Matrix[i][j].r = 255;
-					 Res.Pixel_Matrix[i][j].g = 255;
-					 Res.Pixel_Matrix[i][j].b = 255;
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator&(Image to_AND) {
+		if (to_AND.Image_Height != this->Image_Height || this->Image_Width != to_AND.Image_Width) {
+			std::cout << "Operation Aborted: Images Are Different In Size\n";
+			return Image();
+		}
+		Image Res(*this);
+		int a, b;
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				a = Res.Pixel_Matrix[i][j].r / 255;
+				b = to_AND.Pixel_Matrix[i][j].r / 255;
+				if ((b & a) == 1) {
+					Res.Pixel_Matrix[i][j].r = 255;
+					Res.Pixel_Matrix[i][j].g = 255;
+					Res.Pixel_Matrix[i][j].b = 255;
 
-				 }
-				 else {
-					 Res.Pixel_Matrix[i][j].r = 0;
-					 Res.Pixel_Matrix[i][j].g = 0;
-					 Res.Pixel_Matrix[i][j].b = 0;
+				}
+				else {
+					Res.Pixel_Matrix[i][j].r = 0;
+					Res.Pixel_Matrix[i][j].g = 0;
+					Res.Pixel_Matrix[i][j].b = 0;
 
-				 }
+				}
 
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator|(Image to_OR) {
-		 if (to_OR.Image_Height != this->Image_Height || this->Image_Width != to_OR.Image_Width) {
-			 std::cout << "Operation Aborted: Images Are Different In Size\n";
-			 return Image();
-		 }
-		 Image Res(*this);
-		 int a, b;
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 a = Res.Pixel_Matrix[i][j].r / 255;
-				 b = to_OR.Pixel_Matrix[i][j].r / 255;
-				 if ((b | a) == 1) {
-					 Res.Pixel_Matrix[i][j].r = 255;
-					 Res.Pixel_Matrix[i][j].g = 255;
-					 Res.Pixel_Matrix[i][j].b = 255;
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator|(Image to_OR) {
+		if (to_OR.Image_Height != this->Image_Height || this->Image_Width != to_OR.Image_Width) {
+			std::cout << "Operation Aborted: Images Are Different In Size\n";
+			return Image();
+		}
+		Image Res(*this);
+		int a, b;
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				a = Res.Pixel_Matrix[i][j].r / 255;
+				b = to_OR.Pixel_Matrix[i][j].r / 255;
+				if ((b | a) == 1) {
+					Res.Pixel_Matrix[i][j].r = 255;
+					Res.Pixel_Matrix[i][j].g = 255;
+					Res.Pixel_Matrix[i][j].b = 255;
 
-				 }
-				 else {
-					 Res.Pixel_Matrix[i][j].r = 0;
-					 Res.Pixel_Matrix[i][j].g = 0;
-					 Res.Pixel_Matrix[i][j].b = 0;
+				}
+				else {
+					Res.Pixel_Matrix[i][j].r = 0;
+					Res.Pixel_Matrix[i][j].g = 0;
+					Res.Pixel_Matrix[i][j].b = 0;
 
-				 }
+				}
 
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 Image operator^(Image to_XOR) {
-		 if (to_XOR.Image_Height != this->Image_Height || this->Image_Width != to_XOR.Image_Width) {
-			 std::cout << "Operation Aborted: Images Are Different In Size\n";
-			 return Image();
-		 }
-		 Image Res(*this);
-		 int a, b;
-		 for (int i = 0; i < Res.Image_Height; i++) {
-			 for (int j = 0; j < Res.Image_Width; j++) {
-				 a = Res.Pixel_Matrix[i][j].r / 255;
-				 b = to_XOR.Pixel_Matrix[i][j].r / 255;
-				 if ((b ^ a) == 1) {
-					 Res.Pixel_Matrix[i][j].r = 255;
-					 Res.Pixel_Matrix[i][j].g = 255;
-					 Res.Pixel_Matrix[i][j].b = 255;
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+	Image operator^(Image to_XOR) {
+		if (to_XOR.Image_Height != this->Image_Height || this->Image_Width != to_XOR.Image_Width) {
+			std::cout << "Operation Aborted: Images Are Different In Size\n";
+			return Image();
+		}
+		Image Res(*this);
+		int a, b;
+		for (int i = 0; i < Res.Image_Height; i++) {
+			for (int j = 0; j < Res.Image_Width; j++) {
+				a = Res.Pixel_Matrix[i][j].r / 255;
+				b = to_XOR.Pixel_Matrix[i][j].r / 255;
+				if ((b ^ a) == 1) {
+					Res.Pixel_Matrix[i][j].r = 255;
+					Res.Pixel_Matrix[i][j].g = 255;
+					Res.Pixel_Matrix[i][j].b = 255;
 
-				 }
-				 else {
-					 Res.Pixel_Matrix[i][j].r = 0;
-					 Res.Pixel_Matrix[i][j].g = 0;
-					 Res.Pixel_Matrix[i][j].b = 0;
+				}
+				else {
+					Res.Pixel_Matrix[i][j].r = 0;
+					Res.Pixel_Matrix[i][j].g = 0;
+					Res.Pixel_Matrix[i][j].b = 0;
 
-				 }
+				}
 
-			 }
-		 }
-		 Res.Commint_Matrix_Changes();
-		 return Res;
-	 }
-	 
-	 void Commint_Matrix_Changes() {
+			}
+		}
+		Res.Commint_Matrix_Changes();
+		return Res;
+	}
+
+	void Commint_Matrix_Changes() {
 
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
@@ -3857,309 +3994,308 @@ public:
 			}
 		}
 	}
-	 void Update_Pixel_Matrix() {
-		 if (channel == 3) {
-			 int j = 0, k = 0, clock = 0;
-			 for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
-				 if (clock == Image_Width) {
-					 j++;
-					 k = 0;
-					 clock = 0;
-				 }
-				 // Pixel_Matrix[j][k].index_range = i;
-				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
-				 k++;
-				 clock++;
-			 }
-		 }
-		 else {
-			 int j = 0, k = 0, clock = 0;
-			 for (int i = 0; i < Image_Width*Image_Height * 4; i += 4) {
-				 if (clock == Image_Width) {
-					 j++;
-					 k = 0;
-					 clock = 0;
-				 }
-				 // Pixel_Matrix[j][k].index_range = i;
-				 Pixel_Matrix[j][k] = this->Get_Color(j, k);
-				 k++;
-				 clock++;
-			 }
-		 }
+	void Update_Pixel_Matrix() {
+		if (channel == 3) {
+			int j = 0, k = 0, clock = 0;
+			for (int i = 0; i < Image_Width*Image_Height * 3; i += 3) {
+				if (clock == Image_Width) {
+					j++;
+					k = 0;
+					clock = 0;
+				}
+				// Pixel_Matrix[j][k].index_range = i;
+				Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				k++;
+				clock++;
+			}
+		}
+		else {
+			int j = 0, k = 0, clock = 0;
+			for (int i = 0; i < Image_Width*Image_Height * 4; i += 4) {
+				if (clock == Image_Width) {
+					j++;
+					k = 0;
+					clock = 0;
+				}
+				// Pixel_Matrix[j][k].index_range = i;
+				Pixel_Matrix[j][k] = this->Get_Color(j, k);
+				k++;
+				clock++;
+			}
+		}
 	}
-	 void Write_Image(std::string Filename) {
+	void Write_Image(std::string Filename) {
 
-		 if (channel == 3) {
-			 stbi_write_jpg((Filename).c_str(), this->Image_Width, Image_Height, channel, image_data, 100);
-			 std::cout << "\nJpg File Saved Succsfully As: " << Filename << std::endl;
+		if (channel == 3) {
+			stbi_write_jpg((Filename).c_str(), this->Image_Width, Image_Height, channel, image_data, 100);
+			std::cout << "\nJpg File Saved Succsfully As: " << Filename << std::endl;
 
-		 }
-		 else if (channel == 4) {
-			 stbi_write_png((Filename).c_str(), Image_Width, Image_Height, channel, image_data, this->Image_Width*sizeof(int));
-			 std::cout << "\nPng File Saved Succsfully As: " << Filename << std::endl;
-
-
-		 }
+		}
+		else if (channel == 4) {
+			stbi_write_png((Filename).c_str(), Image_Width, Image_Height, channel, image_data, this->Image_Width * sizeof(int));
+			std::cout << "\nPng File Saved Succsfully As: " << Filename << std::endl;
 
 
-	 }
-	 void Load_Blank_Canvas(int height, int width, Pixel const &Background_Color,int mode = S_JPG) {
-
-		 if (mode == S_JPG) {
-			 this->channel = 3;
-			 this->Image_Width = width;
-			 this->Image_Height = height;
-			 if (image_data != nullptr) {
-
-				 stbi_image_free(image_data);
-			 }
-			 this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
-
-			 for (int i = 0; i < height; i++) {
-				 for (int j = 0; j < width; j++) {
-					 this->Set_Color(i, j, Background_Color);
-				 }
-			 }
-
-			 this->init_pixel_matrix();
-
-		 }
-		 else if (mode == S_PNG) {
-			 this->channel = 4;
-			 this->Image_Width = width;
-			 this->Image_Height = height;
-			 if (image_data != nullptr) {
-
-				 stbi_image_free(image_data);
-			 }
-			 this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(int));
-
-			 for (int i = 0; i < height; i++) {
-				 for (int j = 0; j < width; j++) {
-					 this->Set_Color(i, j, Background_Color);
-				 }
-			 }
-
-			 this->init_pixel_matrix();
+		}
 
 
-
-		 }
 	}
-	 void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x) {
-		 int width = right_corner_x - left_corner_x;
-		 int height = right_corner_y - left_corner_y;
-		 Image tmp;
-		 int x = 0, y = 0;
-		 tmp.Load_Blank_Canvas(height, width, Pixel(0, 0, 0));
-		 for (int i = left_corner_y; i < right_corner_y; i++) {
-			 for (int j = left_corner_x; j < right_corner_x; j++) {
-				 tmp.Pixel_Matrix[y][x] = this->Pixel_Matrix[i][j];
-				 x++;
-			 }
-			 y++;
-			 x = 0;
-		 }
-		 tmp.Commint_Matrix_Changes();
-		 stbi_image_free(this->image_data);
-		 this->image_data = tmp.image_data;
-		 this->Pixel_Matrix = tmp.Pixel_Matrix;
-		 this->Image_Width = tmp.Image_Width;
-		 this->Image_Height = tmp.Image_Height;
-	 }
+	void Load_Blank_Canvas(int height, int width, Pixel const &Background_Color, int mode = S_JPG) {
 
-	 void Draw_Square(int center_x, int center_y, int param_a, int param_b, Pixel Color, int Mode = S_FILL) {
+		if (mode == S_JPG) {
+			this->channel = 3;
+			this->Image_Width = width;
+			this->Image_Height = height;
+			if (image_data != nullptr) {
 
-		 if (Mode == S_FILL) {
+				stbi_image_free(image_data);
+			}
+			this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(unsigned char));
 
-			 if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
-				 std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-				 return;
-			 }
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					this->Set_Color(i, j, Background_Color);
+				}
+			}
 
-			 for (int j = center_y - param_b; j <= center_y + param_b; j++) {
-				 for (int i = center_x - param_a; i <= center_x + param_a; i++) {
-					 //Pixel_Matrix[j][i] = new Pixel(Color);
-					 this->Set_Color(j, i, Color);
-				 }
-			 }
-		 }
-		 else if (Mode == S_CHECKERED) {
-			 if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
-				 std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-				 return;
-			 }
+			this->init_pixel_matrix();
 
-			 for (int j = center_y - param_b; j <= center_y + param_b; j++) {
-				 for (int i = center_x - param_a; i <= center_x + param_a; i += 8) {
-					 //Pixel_Matrix[j][i] = new Pixel(Color);
-					 this->Set_Color(j, i, Color);
-				 }
-			 }
+		}
+		else if (mode == S_PNG) {
+			this->channel = 4;
+			this->Image_Width = width;
+			this->Image_Height = height;
+			if (image_data != nullptr) {
 
-			 for (int j = center_y - param_b; j <= center_y + param_b; j++) {
-				 for (int i = center_x - param_a; i <= center_x + param_a; i += 8) {
-					 //Pixel_Matrix[i][j] = new Pixel(Color);
-					 this->Set_Color(i, j, Color);
-				 }
-			 }
-		 }
-		 else if (Mode == S_CORNERS) {
+				stbi_image_free(image_data);
+			}
+			this->image_data = (unsigned char*)malloc(width*height*channel * sizeof(int));
 
-			 this->Draw_Line(center_x, center_y, param_a, center_y, Color);
-			 this->Draw_Line(center_x, center_y, center_x, param_b, Color);
-			 this->Draw_Line(center_x, param_b, param_a, param_b, Color);
-			 this->Draw_Line(param_a, center_y, param_a, param_b, Color);
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					this->Set_Color(i, j, Background_Color);
+				}
+			}
+
+			this->init_pixel_matrix();
 
 
 
-		 }
-		 else if (Mode == S_HOLLOW) {
+		}
+	}
+	void Crop_Image(int left_corner_y, int left_corner_x, int right_corner_y, int right_corner_x) {
+		int width = right_corner_x - left_corner_x;
+		int height = right_corner_y - left_corner_y;
+		Image tmp;
+		int x = 0, y = 0;
+		tmp.Load_Blank_Canvas(height, width, Pixel(0, 0, 0));
+		for (int i = left_corner_y; i < right_corner_y; i++) {
+			for (int j = left_corner_x; j < right_corner_x; j++) {
+				tmp.Pixel_Matrix[y][x] = this->Pixel_Matrix[i][j];
+				x++;
+			}
+			y++;
+			x = 0;
+		}
+		tmp.Commint_Matrix_Changes();
+		stbi_image_free(this->image_data);
+		this->image_data = tmp.image_data;
+		this->Pixel_Matrix = tmp.Pixel_Matrix;
+		this->Image_Width = tmp.Image_Width;
+		this->Image_Height = tmp.Image_Height;
+	}
 
-			 if (center_x + param_a >= this->Image_Width || center_y + param_b >=
-				 this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
-				 std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
-				 return;
-			 }
-			 for (int i = center_x - param_a; i <= center_x + param_a; i++) {
-				 this->Set_Color(center_y + param_b, i, Color);
-			 }
-			 for (int i = center_x - param_a; i <= center_x + param_a; i++) {
-				 this->Set_Color(center_y - param_b, i, Color);
-			 }
-			 for (int i = center_y - param_b; i <= center_y + param_a; i++) {
-				 this->Set_Color(i, center_x - param_a, Color);
-			 }
-			 for (int i = center_y - param_b; i <= center_y + param_a; i++) {
-				 this->Set_Color(i, center_x + param_a, Color);
-			 }
-			 this->Update_Pixel_Matrix();
+	void Draw_Square(int center_x, int center_y, int param_a, int param_b, Pixel Color, int Mode = S_FILL) {
 
-		 }
-	 }
+		if (Mode == S_FILL) {
 
-	 void Draw_Line(int start_Y, int start_X, int target_Y, int target_X, Pixel color,int Mode = S_DEFAULT) {
-		 if (Mode == S_DEFAULT) {
-			 this->BresenhamsLine(start_Y, start_X, target_Y, target_X, color);
-			 this->Update_Pixel_Matrix();
-		 }
-		 else if (Mode == S_AA_LINE) {
-			 
+			if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
+				std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+				return;
+			}
+
+			for (int j = center_y - param_b; j <= center_y + param_b; j++) {
+				for (int i = center_x - param_a; i <= center_x + param_a; i++) {
+					//Pixel_Matrix[j][i] = new Pixel(Color);
+					this->Set_Color(j, i, Color);
+				}
+			}
+		}
+		else if (Mode == S_CHECKERED) {
+			if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
+				std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+				return;
+			}
+
+			for (int j = center_y - param_b; j <= center_y + param_b; j++) {
+				for (int i = center_x - param_a; i <= center_x + param_a; i += 8) {
+					//Pixel_Matrix[j][i] = new Pixel(Color);
+					this->Set_Color(j, i, Color);
+				}
+			}
+
+			for (int j = center_y - param_b; j <= center_y + param_b; j++) {
+				for (int i = center_x - param_a; i <= center_x + param_a; i += 8) {
+					//Pixel_Matrix[i][j] = new Pixel(Color);
+					this->Set_Color(i, j, Color);
+				}
+			}
+		}
+		else if (Mode == S_CORNERS) {
+
+			this->Draw_Line(center_x, center_y, param_a, center_y, Color);
+			this->Draw_Line(center_x, center_y, center_x, param_b, Color);
+			this->Draw_Line(center_x, param_b, param_a, param_b, Color);
+			this->Draw_Line(param_a, center_y, param_a, param_b, Color);
+
+
+
+		}
+		else if (Mode == S_HOLLOW) {
+
+			if (center_x + param_a >= this->Image_Width || center_y + param_b >=
+				this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
+				std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
+				return;
+			}
+			for (int i = center_x - param_a; i <= center_x + param_a; i++) {
+				this->Set_Color(center_y + param_b, i, Color);
+			}
+			for (int i = center_x - param_a; i <= center_x + param_a; i++) {
+				this->Set_Color(center_y - param_b, i, Color);
+			}
+			for (int i = center_y - param_b; i <= center_y + param_a; i++) {
+				this->Set_Color(i, center_x - param_a, Color);
+			}
+			for (int i = center_y - param_b; i <= center_y + param_a; i++) {
+				this->Set_Color(i, center_x + param_a, Color);
+			}
+			this->Update_Pixel_Matrix();
+
+		}
+	}
+
+	void Draw_Line(int start_Y, int start_X, int target_Y, int target_X, Pixel color, int Mode = S_DEFAULT) {
+		if (Mode == S_DEFAULT) {
+			this->BresenhamsLine(start_Y, start_X, target_Y, target_X, color);
+			this->Update_Pixel_Matrix();
+		}
+		else if (Mode == S_AA_LINE) {
+
 			int x0 = start_X;
 			int y0 = start_Y;
 			int x1 = target_X;
 			int y1 = target_Y;
 
-			 const bool steep = abs(y1 - y0) > abs(x1 - x0);
-			 if (steep) {
-				 std::swap(x0, y0);
-				 std::swap(x1, y1);
-			 }
-			 if (x0 > x1) {
-				 std::swap(x0, x1);
-				 std::swap(y0, y1);
-			 }
+			const bool steep = abs(y1 - y0) > abs(x1 - x0);
+			if (steep) {
+				std::swap(x0, y0);
+				std::swap(x1, y1);
+			}
+			if (x0 > x1) {
+				std::swap(x0, x1);
+				std::swap(y0, y1);
+			}
 
-			 const float dx = (float)x1 - x0;
-			 const float dy = (float)y1 - y0;
-			 const float gradient = (dx == 0) ? 1 : dy / dx;
+			const float dx = (float)x1 - x0;
+			const float dy = (float)y1 - y0;
+			const float gradient = (dx == 0) ? 1 : dy / dx;
 
-			 int xpx11;
-			 float intery;
-			 {
-				 const float xend = (float)round(x0);
-				 const float yend = y0 + gradient * (xend - x0);
-				 const float xgap = (float)AArfpart(x0 + 0.5);
-				 xpx11 = int(xend);
-				 const int ypx11 = (int)AAipart(yend);
-				 if (steep) {
+			int xpx11;
+			float intery;
+			{
+				const float xend = (float)round(x0);
+				const float yend = y0 + gradient * (xend - x0);
+				const float xgap = (float)AArfpart(x0 + 0.5);
+				xpx11 = int(xend);
+				const int ypx11 = (int)AAipart(yend);
+				if (steep) {
 
-					 Pixel Col = TRI(color, this->Get_Color(ypx11, xpx11), (AArfpart(yend) * xgap));
+					Pixel Col = TRI(color, this->Get_Color(ypx11, xpx11), (AArfpart(yend) * xgap));
 
-					 Set_Color(ypx11, xpx11, Col);
-					 this->Pixel_Matrix[ypx11][xpx11] = Col;
+					Set_Color(ypx11, xpx11, Col);
+					this->Pixel_Matrix[ypx11][xpx11] = Col;
 
-					 Col = TRI(color, this->Get_Color(ypx11 + 1, xpx11), (AArfpart(yend) * xgap));
-					 Set_Color(ypx11 + 1, xpx11, Col);
-					 this->Pixel_Matrix[ypx11+1][xpx11] = Col;
+					Col = TRI(color, this->Get_Color(ypx11 + 1, xpx11), (AArfpart(yend) * xgap));
+					Set_Color(ypx11 + 1, xpx11, Col);
+					this->Pixel_Matrix[ypx11 + 1][xpx11] = Col;
 
-				 }
-				 else {
-					 Pixel Col = TRI(color, this->Get_Color(xpx11, ypx11), (AArfpart(yend) * xgap));
+				}
+				else {
+					Pixel Col = TRI(color, this->Get_Color(xpx11, ypx11), (AArfpart(yend) * xgap));
 
-					 Set_Color(xpx11, ypx11, Col);
-					 this->Pixel_Matrix[xpx11][ypx11] = Col;
+					Set_Color(xpx11, ypx11, Col);
+					this->Pixel_Matrix[xpx11][ypx11] = Col;
 
-					 Col = TRI(color, this->Get_Color(xpx11, ypx11+1), (AArfpart(yend) * xgap));
-					 Set_Color(xpx11,ypx11+1, Col);
-					 this->Pixel_Matrix[xpx11][ypx11+1] = Col;
+					Col = TRI(color, this->Get_Color(xpx11, ypx11 + 1), (AArfpart(yend) * xgap));
+					Set_Color(xpx11, ypx11 + 1, Col);
+					this->Pixel_Matrix[xpx11][ypx11 + 1] = Col;
 
-				 }
-				 intery = yend + gradient;
-			 }
+				}
+				intery = yend + gradient;
+			}
 
-			 int xpx12;
-			 {
-				 const float xend = (float)round(x1);
-				 const float yend = y1 + gradient * (xend - x1);
-				 const float xgap = (float)AArfpart(x1 + 0.5);
-				 xpx12 = int(xend);
-				 const int ypx12 = (int)AAipart(yend);
-				 if (steep) {
-					 Pixel Col = TRI(color, this->Get_Color(ypx12, xpx12), (AArfpart(yend) * xgap));
+			int xpx12;
+			{
+				const float xend = (float)round(x1);
+				const float yend = y1 + gradient * (xend - x1);
+				const float xgap = (float)AArfpart(x1 + 0.5);
+				xpx12 = int(xend);
+				const int ypx12 = (int)AAipart(yend);
+				if (steep) {
+					Pixel Col = TRI(color, this->Get_Color(ypx12, xpx12), (AArfpart(yend) * xgap));
 
-					 Set_Color(ypx12, xpx12, Col);
-					 Col = TRI(color, this->Get_Color(ypx12+1, xpx12), (AArfpart(yend) * xgap));
-					 Set_Color(ypx12 + 1, xpx12, Col);
-				 }
-				 else {
+					Set_Color(ypx12, xpx12, Col);
+					Col = TRI(color, this->Get_Color(ypx12 + 1, xpx12), (AArfpart(yend) * xgap));
+					Set_Color(ypx12 + 1, xpx12, Col);
+				}
+				else {
 
-					 Pixel Col = TRI(color, this->Get_Color(xpx12, ypx12), (AArfpart(yend) * xgap));
+					Pixel Col = TRI(color, this->Get_Color(xpx12, ypx12), (AArfpart(yend) * xgap));
 
-					 Set_Color(xpx12, ypx12, Col);
-					 this->Pixel_Matrix[xpx12][ypx12] = Col;
+					Set_Color(xpx12, ypx12, Col);
+					this->Pixel_Matrix[xpx12][ypx12] = Col;
 
-					 Col = TRI(color, this->Get_Color(xpx12, ypx12+1), (AArfpart(yend) * xgap));
-					 Set_Color(xpx12, ypx12 + 1, Col);
-					 this->Pixel_Matrix[xpx12][ypx12+1] = Col;
+					Col = TRI(color, this->Get_Color(xpx12, ypx12 + 1), (AArfpart(yend) * xgap));
+					Set_Color(xpx12, ypx12 + 1, Col);
+					this->Pixel_Matrix[xpx12][ypx12 + 1] = Col;
 
-				 }
-			 }
+				}
+			}
 
-			 if (steep) {
-				 for (int x = xpx11 + 1; x < xpx12; x++) {
-					 
-					 Pixel Col = TRI(color, this->Get_Color((int)AAipart(intery),x),(AArfpart(intery)));
-					 Set_Color((int)AAipart(intery), x, Col);
-					 this->Pixel_Matrix[(int)AAipart(intery)][x] = Col;
+			if (steep) {
+				for (int x = xpx11 + 1; x < xpx12; x++) {
 
-					 Col = TRI(color, this->Get_Color((int)AAipart(intery)+1, x), (AAfpart(intery)));
-					 Set_Color((int)AAipart(intery) + 1, x, Col);
-					 this->Pixel_Matrix[(int)AAipart(intery)+1][x] = Col;
+					Pixel Col = TRI(color, this->Get_Color((int)AAipart(intery), x), (AArfpart(intery)));
+					Set_Color((int)AAipart(intery), x, Col);
+					this->Pixel_Matrix[(int)AAipart(intery)][x] = Col;
 
-					 intery += gradient;
-				 }
-			 }
-			 else {
-				 for (int x = xpx11 + 1; x < xpx12; x++) {
-					 Pixel Col = TRI(color, this->Get_Color(x, (int)AAipart(intery)), (AArfpart(intery)));
-					 Set_Color(x, (int)AAipart(intery), Col);
-					 this->Pixel_Matrix[x][(int)AAipart(intery)] = Col;
-					 Col = TRI(color, this->Get_Color(x, (int)AAipart(intery))+1, (AAfpart(intery)));
-					 Set_Color(x, (int)AAipart(intery) + 1,Col);
-					 this->Pixel_Matrix[x][(int)AAipart(intery)+1] = Col;
+					Col = TRI(color, this->Get_Color((int)AAipart(intery) + 1, x), (AAfpart(intery)));
+					Set_Color((int)AAipart(intery) + 1, x, Col);
+					this->Pixel_Matrix[(int)AAipart(intery) + 1][x] = Col;
 
-					 intery += gradient;
-				 }
-			 }
-			 this->Update_Pixel_Matrix();
-		 }
+					intery += gradient;
+				}
+			}
+			else {
+				for (int x = xpx11 + 1; x < xpx12; x++) {
+					Pixel Col = TRI(color, this->Get_Color(x, (int)AAipart(intery)), (AArfpart(intery)));
+					Set_Color(x, (int)AAipart(intery), Col);
+					this->Pixel_Matrix[x][(int)AAipart(intery)] = Col;
+					Col = TRI(color, this->Get_Color(x, (int)AAipart(intery)) + 1, (AAfpart(intery)));
+					Set_Color(x, (int)AAipart(intery) + 1, Col);
+					this->Pixel_Matrix[x][(int)AAipart(intery) + 1] = Col;
+
+					intery += gradient;
+				}
+			}
 
 
+		}
 
 	}
 
-	 void Draw_Circle(int center_x, int center_y, int c_radius, Pixel color, int Mode = S_HOLLOW) {
+	void Draw_Circle(int center_x, int center_y, int c_radius, Pixel color, int Mode = S_HOLLOW) {
 
 		if (Mode == S_FILL) {
 
@@ -4217,39 +4353,39 @@ public:
 				return;
 
 			}
-			int x=0, y=0;
-				double radiusX = c_radius;
-				double radiusY = c_radius;
-				double radiusX2 = radiusX * radiusX;
-				double radiusY2 = radiusY * radiusY;
-				int maxTransparency = 255;
-				double quarter = (double)std::roundf((float)radiusX2 / (float)std::sqrt(radiusX2 + radiusY2));
-				for (double y = 0; y <= quarter; y+=0.5) {
-					double x = radiusX * std::sqrt(1 - y * y / radiusY2);
-					double error =  x - std::floor(x);
-					int transparency = (int)std::round(error * maxTransparency);
-					int alpha = transparency;
-					int alpha2 = maxTransparency - transparency;
+			int x = 0, y = 0;
+			double radiusX = c_radius;
+			double radiusY = c_radius;
+			double radiusX2 = radiusX * radiusX;
+			double radiusY2 = radiusY * radiusY;
+			int maxTransparency = 255;
+			double quarter = (double)std::roundf((float)radiusX2 / (float)std::sqrt(radiusX2 + radiusY2));
+			for (double y = 0; y <= quarter; y += 0.5) {
+				double x = radiusX * std::sqrt(1 - y * y / radiusY2);
+				double error = x - std::floor(x);
+				int transparency = (int)std::round(error * maxTransparency);
+				int alpha = transparency;
+				int alpha2 = maxTransparency - transparency;
 
-					this->AAsetPixel4((int)center_x, (int)center_y, (int)std::floor(x), (int)y,color,(double)alpha/255);
-					this->AAsetPixel4((int)center_x, (int)center_y, (int)std::floor(x)-1, (int)y, color, (double)alpha2 / 255);
-				}
-				quarter = std::round(radiusX2 / std::sqrt(radiusX2 + radiusY2));
-				for (double x = 0; x <= quarter; x+=0.5) {
-					double y = radiusY * std::sqrt(1 - x * x / radiusX2);
-					double error = y - std::floor(y);
-					float transparency = std::roundf((float)error * (float)maxTransparency);
-					int alpha = (int)transparency;
-					int alpha2 = (int)(maxTransparency - transparency);
+				this->AAsetPixel4((int)center_x, (int)center_y, (int)std::floor(x), (int)y, color, (double)alpha / 255);
+				this->AAsetPixel4((int)center_x, (int)center_y, (int)std::floor(x) - 1, (int)y, color, (double)alpha2 / 255);
+			}
+			quarter = std::round(radiusX2 / std::sqrt(radiusX2 + radiusY2));
+			for (double x = 0; x <= quarter; x += 0.5) {
+				double y = radiusY * std::sqrt(1 - x * x / radiusX2);
+				double error = y - std::floor(y);
+				float transparency = std::roundf((float)error * (float)maxTransparency);
+				int alpha = (int)transparency;
+				int alpha2 = (int)(maxTransparency - transparency);
 
-			
-					this->AAsetPixel4((int)center_x, (int)center_y, (int)x, (int)std::floor(y), color, (double)alpha / 255);
-					this->AAsetPixel4((int)center_x, (int)center_y, (int)x, (int)std::floor(y) -1, color, (double)alpha2 / 255);
-				}
 
-			
-				
-			
+				this->AAsetPixel4((int)center_x, (int)center_y, (int)x, (int)std::floor(y), color, (double)alpha / 255);
+				this->AAsetPixel4((int)center_x, (int)center_y, (int)x, (int)std::floor(y) - 1, color, (double)alpha2 / 255);
+			}
+
+
+
+
 		}
 		else if (Mode == S_AA_FILL) {
 			this->Draw_Circle(center_x, center_y, c_radius - 1, color, S_FILL);
@@ -4257,14 +4393,14 @@ public:
 
 		}
 	}
-	 
-	 void Draw_Text(int center_y, int center_x, std::string text, Pixel color) {
+
+	/*void Draw_Text(int center_y, int center_x, std::string text, Pixel color) {
 
 		int text_length = (int)text.length();
 		int start_x, draw_y, flag = 0, temp = 0;
 		if (center_x + (9 * (text_length / 2)) > Image_Width || center_x - (9 * (text_length / 2)) < 0
 			|| center_y + 4 > Image_Height || center_y - 4 < 0) {
-			std::cout<<"Text Longer The Image Frame, Aborting...\n";
+			std::cout << "Text Longer The Image Frame, Aborting...\n";
 			return;
 		}
 
@@ -5887,9 +6023,49 @@ public:
 
 
 
+	}*/
+
+	void Draw_Text(int const &y, int const &x, const std::string& sText, Pixel const &col = Pixel(0,0,0), uint32_t scale = 1) {
+
+		int32_t sx = 0;
+		int32_t sy = 0;
+		Font_Sprite FSPRITE;
+		for (auto c : sText)
+		{
+			if (c == '\n')
+			{
+				sx = 0; sy += 8 * scale;
+			}
+			else
+			{
+				int32_t ox = (c - 32) % 16;
+				int32_t oy = (c - 32) / 16;
+
+				if (scale > 1)
+				{
+					for (uint32_t i = 0; i < 8; i++)
+						for (uint32_t j = 0; j < 8; j++)
+							if (FSPRITE.font_s[j + oy * 8][i + ox * 8].r > 0)
+								for (uint32_t is = 0; is < scale; is++)
+									for (uint32_t js = 0; js < scale; js++)
+										this->Set_Color(y + sy + (j*scale) + js, x + sx + (i*scale) + is, col);
+				}
+				else
+				{
+						for (uint32_t i = 0; i < 8; i++)
+							for (uint32_t j = 0; j < 8; j++)
+								if (FSPRITE.font_s[j + oy * 8][i + ox * 8].r > 0)
+									this->Set_Color(y + sy + j, x + sx + i, col);
+					
+
+				}
+				sx += 8 * scale;
+			}
+		}
+
 	}
-	
-	 void Grayscale(int alter) {
+
+	void Grayscale(int alter) {
 		for (int i = 0; i < Image_Height; i++) {
 
 			for (int j = 0; j < Image_Width; j++) {
@@ -5903,8 +6079,8 @@ public:
 			this->Commint_Matrix_Changes();
 		}
 	}
-	
-	 double Image_Difference_Value(Image b) {
+
+	double Image_Difference_Value(Image b) {
 
 		double result = 0;
 		for (int i = 0; i < Image_Height; i++) {
@@ -5915,7 +6091,7 @@ public:
 		return result / Image_Height * Image_Width;
 
 	}
-	 bool Distance_Neighbors(double max_distance, int i, int j) {
+	bool Distance_Neighbors(double max_distance, int i, int j) {
 		Pixel center, point;
 		center = Pixel_Matrix[i][j];
 		double dist = 0;
@@ -6035,7 +6211,7 @@ public:
 
 
 	}
-	 double Get_Neighbour_Mean_R(int i, int j) {
+	double Get_Neighbour_Mean_R(int i, int j) {
 		double Mean = 0;
 		int Divider = 1;
 		Mean += Pixel_Matrix[i][j].r;
@@ -6076,7 +6252,7 @@ public:
 		return Mean / Divider;
 
 	}
-	 double Get_Neighbour_Mean_G(int i, int j) {
+	double Get_Neighbour_Mean_G(int i, int j) {
 		double Mean = 0;
 		int Divider = 1;
 		Mean += Pixel_Matrix[i][j].g;
@@ -6117,7 +6293,7 @@ public:
 		return Mean / Divider;
 
 	}
-	 double Get_Neighbour_Mean_B(int i, int j) {
+	double Get_Neighbour_Mean_B(int i, int j) {
 		double Mean = 0;
 		int Divider = 1;
 		Mean += Pixel_Matrix[i][j].b;
@@ -6157,7 +6333,7 @@ public:
 		}
 		return Mean / Divider;
 	}
-	 double Get_Neighbour_Mean_G(int i, int j, Matrix<double> Kernel, double Kernel_Normal) {
+	double Get_Neighbour_Mean_G(int i, int j, Matrix<double> Kernel, double Kernel_Normal) {
 		double Mean = 0;
 		int Divider = 1;
 		Mean += Pixel_Matrix[i][j].g * Kernel[1][1];
@@ -6210,7 +6386,7 @@ public:
 		return Mean / Divider;
 
 	}
-	 double Get_Neighbour_Mean_R(int i, int j, Matrix<double> Kernel, double Kernel_Normal) {
+	double Get_Neighbour_Mean_R(int i, int j, Matrix<double> Kernel, double Kernel_Normal) {
 		double Mean = 0;
 		int Divider = 1;
 		Mean += Pixel_Matrix[i][j].r * Kernel[1][1];
@@ -6263,7 +6439,7 @@ public:
 		return Mean / Divider;
 
 	}
-	 double Get_Neighbour_Mean_B(int i, int j, Matrix<double> Kernel, double Kernel_Normal) {
+	double Get_Neighbour_Mean_B(int i, int j, Matrix<double> Kernel, double Kernel_Normal) {
 		double Mean = 0;
 		int Divider = 1;
 		Mean += Pixel_Matrix[i][j].b * Kernel[1][1];
@@ -6316,26 +6492,26 @@ public:
 		return Mean / Divider;
 
 	}
-	
-	 void Mark_Identical_Pixels(Pixel Target) {
-		 Color_Palette cset;
+
+	void Mark_Identical_Pixels(Pixel Target) {
+		Color_Palette cset;
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
 				if (Pixel_Matrix[i][j] == Target) {
-					this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+					this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 				}
 			}
 		}
 
 	}
-	 void Mark_Identical_Pixels(Image Source) {
-		 Color_Palette cset;
+	void Mark_Identical_Pixels(Image Source) {
+		Color_Palette cset;
 
 		if (this->Image_Width*this->Image_Height <= Source.Image_Height * Source.Image_Width) {
 			for (int i = 0; i < Image_Height; i++) {
 				for (int j = 0; j < Image_Width; j++) {
 					if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-						this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+						this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 					}
 				}
 			}
@@ -6344,21 +6520,21 @@ public:
 			for (int i = 0; i < Source.Image_Height; i++) {
 				for (int j = 0; j < Source.Image_Width; j++) {
 					if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-						this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+						this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 					}
 				}
 			}
 		}
 
 	}
-	 void Mark_Identical_Pixels(Image Source, std::string mode) {
-		 Color_Palette cset;
-		if (mode=="Strict") {//strict
+	void Mark_Identical_Pixels(Image Source, std::string mode) {
+		Color_Palette cset;
+		if (mode == "Strict") {//strict
 			if (this->Image_Width*this->Image_Height <= Source.Image_Height * Source.Image_Width) {
 				for (int i = 0; i < Image_Height; i++) {
 					for (int j = 0; j < Image_Width; j++) {
 						if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-							this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 						}
 					}
 				}
@@ -6367,7 +6543,7 @@ public:
 				for (int i = 0; i < Source.Image_Height; i++) {
 					for (int j = 0; j < Source.Image_Width; j++) {
 						if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-							this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 						}
 					}
 				}
@@ -6379,7 +6555,7 @@ public:
 				for (int i = 0; i < Image_Height; i++) {
 					for (int j = 0; j < Image_Width; j++) {
 						if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50) {
-							this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 						}
 					}
 				}
@@ -6388,14 +6564,14 @@ public:
 				for (int i = 0; i < Source.Image_Height; i++) {
 					for (int j = 0; j < Source.Image_Width; j++) {
 						if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50) {
-							this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 						}
 					}
 				}
 			}
 		}
 	}
-	 void Mark_Different_Pixels(Image Source, int Color_Treshold, int Distnace_Treshold, Pixel frame_color) {
+	void Mark_Different_Pixels(Image Source, int Color_Treshold, int Distnace_Treshold, Pixel frame_color) {
 
 
 		if (this->Image_Width != Source.Image_Width || this->Image_Height != Source.Image_Height) {
@@ -6440,9 +6616,9 @@ public:
 
 
 	}
-	 void Write_Pixel_Difference(Image Source, std::string mode, int min_diff) {
+	void Write_Pixel_Difference(Image Source, std::string mode, int min_diff) {
 
-		if (mode ==("Copy")) {
+		if (mode == ("Copy")) {
 			if (this->Image_Width != Source.Image_Width || this->Image_Height != Source.Image_Height) {
 				return;
 			}
@@ -6460,7 +6636,7 @@ public:
 			return;
 		}
 	}
-	 void Mark_Different_Pixels(Image Source) {
+	void Mark_Different_Pixels(Image Source) {
 		if (this->Image_Width != Source.Image_Width || this->Image_Height != Source.Image_Height) {
 			return;
 		}
@@ -6468,14 +6644,14 @@ public:
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
 				if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) > 2) {
-					this->Draw_Square(i, j, 2, 2, cset.Red,S_HOLLOW);
+					this->Draw_Square(i, j, 2, 2, cset.Red, S_HOLLOW);
 				}
 			}
 		}
 
 
 	}
-	 void Mark_Different_Pixels(Image Source, std::string mode) {
+	void Mark_Different_Pixels(Image Source, std::string mode) {
 
 
 
@@ -6488,14 +6664,14 @@ public:
 			for (int i = 0; i < Image_Height; i++) {
 				for (int j = 0; j < Image_Width; j++) {
 					if (!(Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j])) {
-						this->Draw_Square(j, i, 2, 2, cset.Red,S_HOLLOW);
+						this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
 					}
 				}
 			}
 		}
 
 	}
-	 void Write_Channel_Row_Level_Graph() {
+	void Write_Channel_Row_Level_Graph() {
 		int posR, PosG, PosB, H = 500, W = 1300;
 		int bar_width = this->Image_Width / 300;
 		if (bar_width == 0) {
@@ -6609,7 +6785,7 @@ public:
 
 		frame.Write_Image("ChannelGraph.png");
 	}
-	 void Write_Channel(char color) {
+	void Write_Channel(char color) {
 
 		switch (color)
 		{
@@ -6646,8 +6822,8 @@ public:
 
 
 	}
-	
-	 void Shutdown_Channel(char color) {
+
+	void Shutdown_Channel(char color) {
 
 		switch (color)
 		{
@@ -6680,9 +6856,9 @@ public:
 			break;
 		}
 	}
-	 void Flip180() {
+	void Flip180() {
 		Image temp;
-		temp.Load_Blank_Canvas(this->Image_Height, this->Image_Width,Pixel(0, 0, 0));
+		temp.Load_Blank_Canvas(this->Image_Height, this->Image_Width, Pixel(0, 0, 0));
 		int k = 0, m = 0;
 
 		for (int i = Image_Height - 1; i >= 0; i--) {
@@ -6703,7 +6879,7 @@ public:
 			}
 		}
 	}
-	 void Color_Flooring(std::string mode, int alter) {
+	void Color_Flooring(std::string mode, int alter) {
 
 		if (mode == ("10")) {
 			for (int i = 0; i < this->Image_Height; i++) {
@@ -6734,7 +6910,7 @@ public:
 			this->Commint_Matrix_Changes();
 		}
 	}
-	 void Thresholding(std::string mode, int value, int alter) {
+	void Thresholding(std::string mode, int value, int alter) {
 
 		if (mode == ("Trunc")) {
 
@@ -6804,7 +6980,7 @@ public:
 		}
 
 	}
-	 void Thresholding(int alter) {
+	void Thresholding(int alter) {
 		this->Grayscale(alter);
 		//using otsus method
 		std::vector<int> Histogram(256, 0);
@@ -6862,7 +7038,7 @@ public:
 		}
 
 	}
-	 void Edge_Detection() {
+	void Edge_Detection() {
 		Pixel prev;
 
 		for (int i = 0; i < Image_Height; i++) {
@@ -6906,7 +7082,7 @@ public:
 
 
 	}
-	 void Edge_Detection(int max_color_gap) {
+	void Edge_Detection(int max_color_gap) {
 
 		Pixel prev;
 
@@ -6949,7 +7125,7 @@ public:
 			}
 		}
 	}
-	 void Mark_Contour(Pixel Color, int max_color_gap) {
+	void Mark_Contour(Pixel Color, int max_color_gap) {
 		Pixel prev;
 
 		for (int i = 0; i < Image_Height; i++) {
@@ -7011,7 +7187,7 @@ public:
 		}
 
 	}
-	 void Feature_Matching(int source_x, int source_y) {
+	void Feature_Matching(int source_x, int source_y) {
 		if ((source_x + 1 > Image_Width) || (source_x - 1 < 0) || (source_y + 1 > Image_Height) || (source_y - 1 < 0)) {
 			//out of image border;
 			return;
@@ -7077,7 +7253,7 @@ public:
 
 
 	}
-	 void Quarantine_Pixel(Pixel sample, double max_difference, std::string mode) {
+	void Quarantine_Pixel(Pixel sample, double max_difference, std::string mode) {
 
 		if (mode == ("Keep_Self")) {
 			for (int i = 0; i < this->Image_Height; i++) {
@@ -7092,7 +7268,7 @@ public:
 			}
 
 		}
-		else if (mode== ("Drop_Self")) {
+		else if (mode == ("Drop_Self")) {
 			for (int i = 0; i < this->Image_Height; i++) {
 				for (int j = 0; j < this->Image_Width; j++) {
 					if (Color_DistanceSq(Pixel_Matrix[i][j], sample) < max_difference) {
@@ -7106,219 +7282,219 @@ public:
 
 		}
 	}
-	 void Kronecker_product(Image b, std::string mode, int Alter) {
-		 if (mode == "Mul") {
-			 std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
-			 for (int i = 0; i < b.Image_Height; i++) {
-				 Kronecker_pixel_mat[i]=std::vector<Pixel>(b.Image_Width);
-			 }
-			 unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
-			 unsigned long long startRow, startCol, index = 0;
-			 Pixel temp;
-			 for (int i = 0; i < this->Image_Height; i++) {
-				 for (int j = 0; j < this->Image_Width; j++) {
-					 startRow = i * b.Image_Height;
-					 startCol = j * b.Image_Width;
-					 for (int k = 0; k < b.Image_Height; k++) {
-						 for (int l = 0; l < b.Image_Width; l++) {
-							 temp = this->Pixel_Matrix[i][j] * b.Pixel_Matrix[k][l];
-							 Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+	void Kronecker_product(Image b, std::string mode, int Alter) {
+		if (mode == "Mul") {
+			std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
+			for (int i = 0; i < b.Image_Height; i++) {
+				Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
+			}
+			unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
+			unsigned long long startRow, startCol, index = 0;
+			Pixel temp;
+			for (int i = 0; i < this->Image_Height; i++) {
+				for (int j = 0; j < this->Image_Width; j++) {
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++) {
+						for (int l = 0; l < b.Image_Width; l++) {
+							temp = this->Pixel_Matrix[i][j] * b.Pixel_Matrix[k][l];
+							Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
 
-						 }
-					 }
-				 }
-			 }
+						}
+					}
+				}
+			}
 
-			 if (Alter == 1) {
-				 this->Image_Width *= b.Image_Width;
-				 this->Image_Height *= b.Image_Height;
-				 stbi_image_free( this->image_data);
-				
-				 this->Pixel_Matrix = Kronecker_pixel_mat;
-				 for (long long i = 0; i < this->Image_Height; i++) {
-					 for (long long j = 0; j < this->Image_Width; j++) {
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+			if (Alter == 1) {
+				this->Image_Width *= b.Image_Width;
+				this->Image_Height *= b.Image_Height;
+				stbi_image_free(this->image_data);
 
-					 }
-				 }
-				 this->image_data = Kronecker;
-				 std::free(Kronecker);
+				this->Pixel_Matrix = Kronecker_pixel_mat;
+				for (long long i = 0; i < this->Image_Height; i++) {
+					for (long long j = 0; j < this->Image_Width; j++) {
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
 
-			 }
+					}
+				}
+				this->image_data = Kronecker;
+				std::free(Kronecker);
 
-
-		 }
-		 else if (mode == "Size") {
-			 std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
-			 for (int i = 0; i < b.Image_Height; i++) {
-				 Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
-			 }
-			 unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
-			 unsigned long long startRow, startCol, index = 0;
-			 Pixel temp;
-
-			 for (int i = 0; i < this->Image_Height; i++) {
-				 for (int j = 0; j < this->Image_Width; j++) {
-					 startRow = i * b.Image_Height;
-					 startCol = j * b.Image_Width;
-					 for (int k = 0; k < b.Image_Height; k++) {
-						 for (int l = 0; l < b.Image_Width; l++) {
-							 if (this->Pixel_Matrix[i][j] > b.Pixel_Matrix[k][l]) {
-								 temp = this->Pixel_Matrix[i][j];
-							 }
-							 else {
-								 temp = b.Pixel_Matrix[k][l];
-							 }
-
-							 Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
-
-						 }
-					 }
-				 }
-			 }
-
-			 if (Alter == 1) {
-				 this->Image_Width *= b.Image_Width;
-				 this->Image_Height *= b.Image_Height;
-				 stbi_image_free(this->image_data);
-
-				 this->Pixel_Matrix = Kronecker_pixel_mat;
-				 for (long long i = 0; i < this->Image_Height; i++) {
-					 for (long long j = 0; j < this->Image_Width; j++) {
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
-
-					 }
-				 }
-				 this->image_data = Kronecker;
-				 std::free(Kronecker);
-
-			 }
-		 }
-		 else if ( mode == "Build_From") {
-
-			 std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
-			 for (int i = 0; i < b.Image_Height; i++) {
-				 Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
-			 }
-			 unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
-			 unsigned long long startRow, startCol, index = 0;
-			 Pixel temp;
-
-			 int flag = 0;
-			 for (int i = 0; i < this->Image_Height; i++) {
-				 for (int j = 0; j < this->Image_Width; j++) {
-					 startRow = i * b.Image_Height;
-					 startCol = j * b.Image_Width;
-					 for (int k = 0; k < b.Image_Height; k++) {
-						 for (int l = 0; l < b.Image_Width; l++) {
-							 if (flag == 0) {
-								 temp = this->Pixel_Matrix[i][j];
-								 flag = 1;
-							 }
-							 else {
-								 temp = b.Pixel_Matrix[k][l];
-								 flag = 0;
-							 }
-
-							 Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
-
-						 }
-					 }
-				 }
-			 }
-
-			 if (Alter == 1) {
-				 this->Image_Width *= b.Image_Width;
-				 this->Image_Height *= b.Image_Height;
-				 stbi_image_free(this->image_data);
-
-				 this->Pixel_Matrix = Kronecker_pixel_mat;
-				 for (long long i = 0; i < this->Image_Height; i++) {
-					 for (long long j = 0; j < this->Image_Width; j++) {
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
-
-					 }
-				 }
-				 this->image_data = Kronecker;
-				 std::free(Kronecker);
-
-			 }
-		 }
-		 else if (mode == "Mix") {
-
-			 std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
-			 for (int i = 0; i < b.Image_Height; i++) {
-				 Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
-			 }
-			 unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
-			 unsigned long long startRow, startCol, index = 0;
-			 Pixel temp;
-
-			 int flag = 1;
-
-			 for (int i = 0; i < this->Image_Height; i++) {
-
-				 for (int j = 0; j < this->Image_Width; j++)
-				 {
-					 startRow = i * b.Image_Height;
-					 startCol = j * b.Image_Width;
-					 for (int k = 0; k < b.Image_Height; k++)
-					 {
-						 if (flag == 1) {
-							 temp = this->Pixel_Matrix[i][j];
-						 }
-						 else if (flag == 0) {
-							 temp = b.Pixel_Matrix[i][j];
-						 }
-
-						 for (int l = 0; l < b.Image_Width; l++)
-						 {
-
-							 Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
-						 }
-						 if (flag == 1) {
-							 flag = 0;
-						 }
-						 else {
-							 flag = 1;
-						 }
-					 }
+			}
 
 
-				 }
+		}
+		else if (mode == "Size") {
+			std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
+			for (int i = 0; i < b.Image_Height; i++) {
+				Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
+			}
+			unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
+			unsigned long long startRow, startCol, index = 0;
+			Pixel temp;
 
-			 }
+			for (int i = 0; i < this->Image_Height; i++) {
+				for (int j = 0; j < this->Image_Width; j++) {
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++) {
+						for (int l = 0; l < b.Image_Width; l++) {
+							if (this->Pixel_Matrix[i][j] > b.Pixel_Matrix[k][l]) {
+								temp = this->Pixel_Matrix[i][j];
+							}
+							else {
+								temp = b.Pixel_Matrix[k][l];
+							}
 
-			 if (Alter == 1) {
-				 this->Image_Width *= b.Image_Width;
-				 this->Image_Height *= b.Image_Height;
-				 stbi_image_free(this->image_data);
+							Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
 
-				 this->Pixel_Matrix = Kronecker_pixel_mat;
-				 for (long long i = 0; i < this->Image_Height; i++) {
-					 for (long long j = 0; j < this->Image_Width; j++) {
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
-						 Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+						}
+					}
+				}
+			}
 
-					 }
-				 }
-				 this->image_data = Kronecker;
-				 std::free(Kronecker);
+			if (Alter == 1) {
+				this->Image_Width *= b.Image_Width;
+				this->Image_Height *= b.Image_Height;
+				stbi_image_free(this->image_data);
 
-			 }
-		 }
+				this->Pixel_Matrix = Kronecker_pixel_mat;
+				for (long long i = 0; i < this->Image_Height; i++) {
+					for (long long j = 0; j < this->Image_Width; j++) {
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+					}
+				}
+				this->image_data = Kronecker;
+				std::free(Kronecker);
+
+			}
+		}
+		else if (mode == "Build_From") {
+
+			std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
+			for (int i = 0; i < b.Image_Height; i++) {
+				Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
+			}
+			unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
+			unsigned long long startRow, startCol, index = 0;
+			Pixel temp;
+
+			int flag = 0;
+			for (int i = 0; i < this->Image_Height; i++) {
+				for (int j = 0; j < this->Image_Width; j++) {
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++) {
+						for (int l = 0; l < b.Image_Width; l++) {
+							if (flag == 0) {
+								temp = this->Pixel_Matrix[i][j];
+								flag = 1;
+							}
+							else {
+								temp = b.Pixel_Matrix[k][l];
+								flag = 0;
+							}
+
+							Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+
+						}
+					}
+				}
+			}
+
+			if (Alter == 1) {
+				this->Image_Width *= b.Image_Width;
+				this->Image_Height *= b.Image_Height;
+				stbi_image_free(this->image_data);
+
+				this->Pixel_Matrix = Kronecker_pixel_mat;
+				for (long long i = 0; i < this->Image_Height; i++) {
+					for (long long j = 0; j < this->Image_Width; j++) {
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+					}
+				}
+				this->image_data = Kronecker;
+				std::free(Kronecker);
+
+			}
+		}
+		else if (mode == "Mix") {
+
+			std::vector<std::vector<Pixel> > Kronecker_pixel_mat(b.Image_Height);
+			for (int i = 0; i < b.Image_Height; i++) {
+				Kronecker_pixel_mat[i] = std::vector<Pixel>(b.Image_Width);
+			}
+			unsigned char *Kronecker = (unsigned char*)malloc(sizeof(unsigned char)*(this->Image_Height*b.Image_Height*b.Image_Width*this->Image_Width * 3));
+			unsigned long long startRow, startCol, index = 0;
+			Pixel temp;
+
+			int flag = 1;
+
+			for (int i = 0; i < this->Image_Height; i++) {
+
+				for (int j = 0; j < this->Image_Width; j++)
+				{
+					startRow = i * b.Image_Height;
+					startCol = j * b.Image_Width;
+					for (int k = 0; k < b.Image_Height; k++)
+					{
+						if (flag == 1) {
+							temp = this->Pixel_Matrix[i][j];
+						}
+						else if (flag == 0) {
+							temp = b.Pixel_Matrix[i][j];
+						}
+
+						for (int l = 0; l < b.Image_Width; l++)
+						{
+
+							Kronecker_pixel_mat[startRow + k][startCol + l] = temp;
+						}
+						if (flag == 1) {
+							flag = 0;
+						}
+						else {
+							flag = 1;
+						}
+					}
+
+
+				}
+
+			}
+
+			if (Alter == 1) {
+				this->Image_Width *= b.Image_Width;
+				this->Image_Height *= b.Image_Height;
+				stbi_image_free(this->image_data);
+
+				this->Pixel_Matrix = Kronecker_pixel_mat;
+				for (long long i = 0; i < this->Image_Height; i++) {
+					for (long long j = 0; j < this->Image_Width; j++) {
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].r;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].g;
+						Kronecker[index++] = Kronecker_pixel_mat[i][j].b;
+
+					}
+				}
+				this->image_data = Kronecker;
+				std::free(Kronecker);
+
+			}
+		}
 
 
 
 	}
-	 void Image_Transpose() {
+	void Image_Transpose() {
 		int H = this->Image_Width, W = this->Image_Height;
 		std::vector < std::vector<Pixel> > tmat(H);
 		for (int i = 0; i < H; i++) {
@@ -7335,12 +7511,12 @@ public:
 
 
 	}
-	 double Pixel_Dataframe_Difference(Pixel Pix, Point<double> DF_point) {
+	double Pixel_Dataframe_Difference(Pixel Pix, Point<double> DF_point) {
 		double distance;
 		distance = ((DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b));
 		return std::sqrt(distance);
-	} 
-	 void Image_Segmentation(int k, int iterations) {
+	}
+	void Image_Segmentation(int k, int iterations) {
 
 		std::vector<Point<double> > image_ThreeD_Mat;
 		std::vector<Point<double> > Result;
@@ -7382,59 +7558,59 @@ public:
 
 
 	}
-	 void Blob_Framing(int distance_treshold, Pixel frame_color) {
-		 Color_Palette CSET;
+	void Blob_Framing(int distance_treshold, Pixel frame_color) {
+		Color_Palette CSET;
 		std::vector<Blob> Blobs;
 
-		 Blob temp = Blob(0, 0, distance_treshold);
-		 bool detected = false;
-		 for (int i = 0; i < Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
+		Blob temp = Blob(0, 0, distance_treshold);
+		bool detected = false;
+		for (int i = 0; i < Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
 
-				 if (this->Pixel_Matrix[i][j].analysis == 42) {
+				if (this->Pixel_Matrix[i][j].analysis == 42) {
 
-					 for (int k = 0; k < (int)Blobs.size(); ++k) {
-						 if (Blobs[k].Near(i, j) == true) {
-							 Blobs[k].add(i, j);
-							 detected = true;
+					for (int k = 0; k < (int)Blobs.size(); ++k) {
+						if (Blobs[k].Near(i, j) == true) {
+							Blobs[k].add(i, j);
+							detected = true;
 
-							 break;
+							break;
 
-						 }
+						}
 
-					 }
+					}
 
-					 if (detected == false) {
-						 temp.SetProps(i, j);
-						 Blobs.push_back(Blob(temp));
-					 }
+					if (detected == false) {
+						temp.SetProps(i, j);
+						Blobs.push_back(Blob(temp));
+					}
 
-					 detected = false;
+					detected = false;
 
-				 }
-			 }
-		 }
+				}
+			}
+		}
 
-		 for (int k = 0; k < (int)Blobs.size(); k++) {
-			 if (Blobs[k].Size() < distance_treshold) {
+		for (int k = 0; k < (int)Blobs.size(); k++) {
+			if (Blobs[k].Size() < distance_treshold) {
 
-				 Blobs.erase(Blobs.begin()+k);
-			 }
+				Blobs.erase(Blobs.begin() + k);
+			}
 
-		 }
+		}
 
-		 for (int k = 0; k < (int)Blobs.size(); ++k) {
+		for (int k = 0; k < (int)Blobs.size(); ++k) {
 
-			 Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, S_CORNERS);
-			 //Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = new Pixel(CSET.Yellow);
-			 //Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = new Pixel(CSET.Green);
+			Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, S_CORNERS);
+			//Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = new Pixel(CSET.Yellow);
+			//Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = new Pixel(CSET.Green);
 
 
 
-		 }
-	 }
+		}
+	}
 
-	 void Figure_Detection(int blob_distance_treshold, int color_distance_treshold, int Thresholding_level) {
+	void Figure_Detection(int blob_distance_treshold, int color_distance_treshold, int Thresholding_level) {
 
 		this->Thresholding("Trunc", Thresholding_level, 0);
 
@@ -7473,7 +7649,7 @@ public:
 		this->Blob_Framing(blob_distance_treshold, C.Red);
 		this->Update_Pixel_Matrix();
 	}
-	 void Write_Average_Color_Palette(int palette_size) {
+	void Write_Average_Color_Palette(int palette_size) {
 		int H, W, lx;
 		Color_Palette CSET;
 		Pixel palette_sample;
@@ -7484,7 +7660,7 @@ public:
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				imData.push_back( Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
+				imData.push_back(Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
 			}
 		}
 
@@ -7513,7 +7689,7 @@ public:
 		palette_image.Write_Image(palette_size + " Bit Palette.png");
 
 	}
-	 void Pixel_Griding() {
+	void Pixel_Griding() {
 		double sigma = 1.0;
 		double r, s = 2.0 * sigma * sigma;
 		Matrix<double> GKernel(5, 5);
@@ -7546,12 +7722,12 @@ public:
 
 
 	}
-	 std::vector<Point<double> > Get_Average_Color_Palette(int palette_size, int number_of_iterations) {
-		 std::vector<Point<double> > imData;
+	std::vector<Point<double> > Get_Average_Color_Palette(int palette_size, int number_of_iterations) {
+		std::vector<Point<double> > imData;
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				imData.push_back( Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
+				imData.push_back(Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
 			}
 		}
 
@@ -7579,7 +7755,7 @@ public:
 					}
 				}
 
-				Pixel_Matrix[i][j] =  Pixel((int)temp.x, (int)temp.y, (int)temp.z);
+				Pixel_Matrix[i][j] = Pixel((int)temp.x, (int)temp.y, (int)temp.z);
 
 
 			}
@@ -7592,7 +7768,7 @@ public:
 
 
 	}
-	 std::vector<Pixel> Get_Line_Pixels(int start_y, int start_x, int target_y, int target_x) {
+	std::vector<Pixel> Get_Line_Pixels(int start_y, int start_x, int target_y, int target_x) {
 		double dx, sx, dy, sy, err, e2;
 
 		std::vector<Pixel> Points;
@@ -7605,13 +7781,13 @@ public:
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
 				//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
-				Points.push_back( Pixel(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
+				Points.push_back(Pixel(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
 					Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b, (int)std::floor(x0), (int)std::floor(x0)));
 				break;
 			}
 
 			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
-			Points.push_back( Pixel(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
+			Points.push_back(Pixel(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
 				Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b, (int)std::floor(x0), (int)std::floor(x0)));
 
 			e2 = 2 * err;
@@ -7630,13 +7806,13 @@ public:
 
 		return Points;
 	}
-	 void Register_PixelFrame(std::vector<Pixel> Frame) {
+	void Register_PixelFrame(std::vector<Pixel> Frame) {
 		Pixel color;
 		for (int i = 0; i < Frame.size(); i++) {
 			this->Pixel_Matrix[Frame[i].i][Frame[i].j] = Frame[i];
 		}
 	}
-	 Pixel Dominant_Color_Via_Line(int start_y, int start_x, int target_y, int target_x) {
+	Pixel Dominant_Color_Via_Line(int start_y, int start_x, int target_y, int target_x) {
 		double dx, sx, dy, sy, err, e2;
 		Pixel Dom_Color;
 		std::vector<Point<double> > Points;
@@ -7658,7 +7834,7 @@ public:
 			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
 			Points.push_back(Point<double>(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
 				Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b));
-			
+
 			e2 = 2 * err;
 			if (e2 >= dy) {
 				err += dy;
@@ -7678,9 +7854,9 @@ public:
 
 		return Dom_Color;
 	}
-	 void Image_Rebuild_With_Lines(int Iterations) {
+	void Image_Rebuild_With_Lines(int Iterations) {
 		Random_Utilitis rnd;
-		
+
 		Color_Palette CSET;
 		Pixel dominant_color;
 		std::vector<Pixel> Line;
@@ -7688,16 +7864,16 @@ public:
 		B.Load_Blank_Canvas(this->Image_Height, this->Image_Width, CSET.Black);
 		C.Load_Blank_Canvas(this->Image_Height, this->Image_Width, CSET.Black);
 
-			#ifdef Line_StepByStep
+#ifdef Line_StepByStep
 
 
 
-				std::stringstream ss;
-				std::string via;
-				int counter = 0;
+		std::stringstream ss;
+		std::string via;
+		int counter = 0;
 
-			#endif
-		
+#endif
+
 		int x0, y0, x1, y1;
 		double cur_difference, temp_dif;
 
@@ -7709,7 +7885,7 @@ public:
 			x1 = rnd.Random_INT(0, (Image_Width));
 			y1 = rnd.Random_INT(0, (Image_Height));
 
-			 
+
 
 			dominant_color = this->Dominant_Color_Via_Line(y0, x0, y1, x1);
 			Line = B.Get_Line_Pixels(y0, x0, y1, x1);
@@ -7720,19 +7896,19 @@ public:
 
 			if (temp_dif < cur_difference) {
 				C.Draw_Line(y0, x0, y1, x1, dominant_color);
-					#ifdef Line_StepByStep
-								ss << counter;
-								via = ss.str();
-								if ((counter + 1) % 40 == 0) {
-									C.Write_Image(via.c_str());
+#ifdef Line_StepByStep
+				ss << counter;
+				via = ss.str();
+				if ((counter + 1) % 40 == 0) {
+					C.Write_Image(via.c_str());
 
-								}
-								ss.str(std::string());
-								counter++;
+				}
+				ss.str(std::string());
+				counter++;
 
 
-					#endif // Line_StepByStep
-				
+#endif // Line_StepByStep
+
 				cur_difference = temp_dif;
 
 
@@ -7752,7 +7928,7 @@ public:
 
 	}
 
-	 std::vector<Point<double> > GetCoordinateFrame(int start_y, int start_x, int target_y, int target_x) {
+	std::vector<Point<double> > GetCoordinateFrame(int start_y, int start_x, int target_y, int target_x) {
 		double dx, sx, dy, sy, err, e2;
 
 		std::vector<Point<double> > Points;
@@ -7764,11 +7940,11 @@ public:
 		err = dx + dy;  //error value
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
-				Points.push_back( Point<double>((int)x0, (int)y0, 0));
+				Points.push_back(Point<double>((int)x0, (int)y0, 0));
 				break;
 			}
 
-			Points.push_back( Point<double>((int)x0, (int)y0, 0));
+			Points.push_back(Point<double>((int)x0, (int)y0, 0));
 
 			e2 = 2 * err;
 			if (e2 >= dy) {
@@ -7786,19 +7962,19 @@ public:
 
 		return Points;
 	}
-	 void Up_Scale() {
+	void Up_Scale() {
 
 		//BufferedImage scaled = new BufferedImage(this->Image_Width * 3,	this->Image_Height * 3,BufferedImage.TYPE_3BYTE_BGR);
 
 
 		Image scaled;
 		int p = 0, z = 0;
-		scaled.Load_Blank_Canvas((Image_Height * 3), (Image_Width * 3),  Pixel(0, 0, 0));
+		scaled.Load_Blank_Canvas((Image_Height * 3), (Image_Width * 3), Pixel(0, 0, 0));
 		for (int i = 0; i < scaled.Image_Height; i += 3) {
 			for (int j = 0; j < scaled.Image_Width; j += 3) {
 				for (int k = 0; k < 3; k++) {
 					for (int m = 0; m < 3; m++) {
-						scaled.Pixel_Matrix[i + k][j + m] =  Pixel(this->Pixel_Matrix[p][z]);
+						scaled.Pixel_Matrix[i + k][j + m] = Pixel(this->Pixel_Matrix[p][z]);
 					}
 				}
 				z++;
@@ -7867,74 +8043,74 @@ public:
 		this->Image_Width *= 3;
 
 	}
-	 void Set_Scale(int Height, int Width) {
-		 unsigned char* temp = (unsigned char*)malloc(Height*Width*channel * sizeof(unsigned char));
-		 std::vector<std::vector<Pixel> > NPM(Height);
-		 std::vector<Pixel> pixels(this->Image_Height*this->Image_Width);
-		 int z = 0;
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 pixels[z++] = this->Pixel_Matrix[i][j];
-			 }
-		 }
-		 for (int i = 0; i < Height; i++) {
-			 NPM[i] = std::vector<Pixel>(Width);
-		 }
+	void Set_Scale(int Height, int Width) {
+		unsigned char* temp = (unsigned char*)malloc(Height*Width*channel * sizeof(unsigned char));
+		std::vector<std::vector<Pixel> > NPM(Height);
+		std::vector<Pixel> pixels(this->Image_Height*this->Image_Width);
+		int z = 0;
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				pixels[z++] = this->Pixel_Matrix[i][j];
+			}
+		}
+		for (int i = 0; i < Height; i++) {
+			NPM[i] = std::vector<Pixel>(Width);
+		}
 
-		 for (int i = 0; i < this->Image_Height;i++) {
-			 this->Pixel_Matrix[i].clear();
-			 std::vector<Pixel>().swap(this->Pixel_Matrix[i]);
-		 }
-		 this->Pixel_Matrix.clear();
-		 std::vector<std::vector<Pixel> >().swap(this->Pixel_Matrix);
+		for (int i = 0; i < this->Image_Height; i++) {
+			this->Pixel_Matrix[i].clear();
+			std::vector<Pixel>().swap(this->Pixel_Matrix[i]);
+		}
+		this->Pixel_Matrix.clear();
+		std::vector<std::vector<Pixel> >().swap(this->Pixel_Matrix);
 
-		 Pixel a, b, c,d;
-		 int index , x, y;
-		 float x_ratio = ((float)(this->Image_Width - 1)) / Width;
-		 float y_ratio = ((float)(this->Image_Height - 1)) / Height;
-		 float x_diff, y_diff, blue, red, green;
-		 int offset = 0;
-		 for (int i = 0; i < Height; i++) {
-			 for (int j = 0; j < Width; j++) {
-				 x = (int)(x_ratio * j);
-				 y = (int)(y_ratio * i);
-				 x_diff = (x_ratio * j) - x;
-				 y_diff = (y_ratio * i) - y;
-				 index = (y*this->Image_Width + x);
-				 a = pixels[index];
-				 b = pixels[index + 1];
-				 c = pixels[index + this->Image_Width];
-				 d = pixels[index + this->Image_Width + 1];
+		Pixel a, b, c, d;
+		int index, x, y;
+		float x_ratio = ((float)(this->Image_Width - 1)) / Width;
+		float y_ratio = ((float)(this->Image_Height - 1)) / Height;
+		float x_diff, y_diff, blue, red, green;
+		int offset = 0;
+		for (int i = 0; i < Height; i++) {
+			for (int j = 0; j < Width; j++) {
+				x = (int)(x_ratio * j);
+				y = (int)(y_ratio * i);
+				x_diff = (x_ratio * j) - x;
+				y_diff = (y_ratio * i) - y;
+				index = (y*this->Image_Width + x);
+				a = pixels[index];
+				b = pixels[index + 1];
+				c = pixels[index + this->Image_Width];
+				d = pixels[index + this->Image_Width + 1];
 
-				 // blue element
-				 // Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
-				 blue = (float)(a.b *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.b*this->Image_Width*(1 - this->Image_Height) + c.b*this->Image_Height*(1 - this->Image_Width) + 
-					 d.b*this->Image_Height*this->Image_Width);
+				// blue element
+				// Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
+				blue = (float)(a.b *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.b*this->Image_Width*(1 - this->Image_Height) + c.b*this->Image_Height*(1 - this->Image_Width) +
+					d.b*this->Image_Height*this->Image_Width);
 
-				 // green element
-				 // Yg = Ag(1-w)(1-h) + Bg(w)(1-h) + Cg(h)(1-w) + Dg(wh)
-				 green = (float)(a.g *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.g*this->Image_Width*(1 - this->Image_Height) + c.g*this->Image_Height*(1 - this->Image_Width) +
-					 d.g*this->Image_Height*this->Image_Width);
-				 // red element
-				 // Yr = Ar(1-w)(1-h) + Br(w)(1-h) + Cr(h)(1-w) + Dr(wh)
-				 red = (float)(a.r *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.r*this->Image_Width*(1 - this->Image_Height) + c.r*this->Image_Height*(1 - this->Image_Width) +
-					 d.r*this->Image_Height*this->Image_Width);
+				// green element
+				// Yg = Ag(1-w)(1-h) + Bg(w)(1-h) + Cg(h)(1-w) + Dg(wh)
+				green = (float)(a.g *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.g*this->Image_Width*(1 - this->Image_Height) + c.g*this->Image_Height*(1 - this->Image_Width) +
+					d.g*this->Image_Height*this->Image_Width);
+				// red element
+				// Yr = Ar(1-w)(1-h) + Br(w)(1-h) + Cr(h)(1-w) + Dr(wh)
+				red = (float)(a.r *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.r*this->Image_Width*(1 - this->Image_Height) + c.r*this->Image_Height*(1 - this->Image_Width) +
+					d.r*this->Image_Height*this->Image_Width);
 
-				 NPM[i][j] = Pixel((int)red, (int)green, (int)blue);
-			 }
-		 }
+				NPM[i][j] = Pixel((int)red, (int)green, (int)blue);
+			}
+		}
 
-		 pixels.clear();
-		 std::vector<Pixel>().swap(pixels);
+		pixels.clear();
+		std::vector<Pixel>().swap(pixels);
 
-		 this->Pixel_Matrix = NPM;
-		 stbi_image_free(this->image_data);
-		 this->Image_Height = Height;
-		 this->Image_Width = Width;
-		 this->image_data = temp;
+		this->Pixel_Matrix = NPM;
+		stbi_image_free(this->image_data);
+		this->Image_Height = Height;
+		this->Image_Width = Width;
+		this->image_data = temp;
 	}
-	
-	 void Detect_Faces() {
+
+	void Detect_Faces() {
 		short flag = 0;
 		Color_Palette CSET;
 		int distance = 0, min_d = 355, skin_thresh = 15, grap_thresh = 60;
@@ -7945,7 +8121,7 @@ public:
 		left_eye.x = right_eye.x = 0;
 		left_eye.y = right_eye.y = 0;
 		Pixel black;
-		Pixel skin_graph , nose_graph , forhead_graph  , chin_graph ;
+		Pixel skin_graph, nose_graph, forhead_graph, chin_graph;
 		black.r = black.g = black.b = 0;
 
 		for (int i = 0; i < Image_Height; i++) {
@@ -7956,13 +8132,13 @@ public:
 						left_eye.x = j;
 						left_eye.y = i;
 						flag = 1;
-						#ifdef FaceDebug	
+#ifdef FaceDebug	
 
 
 
 						Draw_Circle(j, i, 3, CSET.Green); //detected eye loctaion -left eye-
 
-	#endif
+#endif
 					}
 				}
 				else if (flag == 1) {
@@ -7974,15 +8150,15 @@ public:
 						right_eye.y = i;
 						flag = 2;
 						//i += 4;
-	#ifdef FaceDebug
+#ifdef FaceDebug
 
 
 						Draw_Circle(j, i, 3, CSET.Red); //detected eye location -right eye
 						Draw_Circle((int)left_eye.x, (int)left_eye.y, 3, CSET.Green); //detected eye location -right eye
-	#endif
+#endif
 
 
-						//defenition of skin graphs for validation sequance
+					//defenition of skin graphs for validation sequance
 						skin_graph = Pixel_Matrix[(int)(left_eye.y)][(int)(left_eye.x) + (distance / 2)];
 						if ((left_eye.y) + (distance / 2) < Image_Height && (left_eye.x) + (distance / 2) < Image_Width) {
 							nose_graph = Pixel_Matrix[(int)(left_eye.y) + (distance / 2)][(int)(left_eye.x) + (distance / 2)];
@@ -8021,14 +8197,14 @@ public:
 
 
 
-				#ifdef FaceDebug
+#ifdef FaceDebug
 
 				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 3, CSET.Blue); //sking graph location
 				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 4, CSET.Red); //sking graph location
 				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 2, CSET.Green); //sking graph location
 
 				Draw_Line((int)left_eye.y, (int)left_eye.x, (int)left_eye.y, (int)left_eye.x + distance / 2, CSET.Black); // line to cetner point 
-	#endif
+#endif
 				if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye.y + distance / 2][(int)left_eye.x]) < grap_thresh) {
 
 					if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye.y + distance / 2][(int)left_eye.x]) < skin_thresh) { // left chick cmp
@@ -8037,7 +8213,7 @@ public:
 
 						if (Distance_Neighbors(treshold, (int)left_eye.y + distance / 2, (int)left_eye.x)) {
 							validation_level += n_valid_bounty;
-							std::cout<<("Validated --Neighbor-- left chick: " + validation_level)<<"\n";
+							std::cout << ("Validated --Neighbor-- left chick: " + validation_level) << "\n";
 
 						}
 						//#ifdef FaceDebug
@@ -8055,7 +8231,7 @@ public:
 
 						if (Distance_Neighbors(treshold, (int)right_eye.y + distance / 2, (int)right_eye.x)) {
 							validation_level += n_valid_bounty;
-							std::cout<<("Validated  --Neighbor-- right chick: " + validation_level)<<std::endl;
+							std::cout << ("Validated  --Neighbor-- right chick: " + validation_level) << std::endl;
 
 						}
 
@@ -8064,17 +8240,17 @@ public:
 
 
 					if (Color_Distance(skin_graph, forhead_graph) < grap_thresh) { //forhead vs skin center cmp
-	#ifdef FaceDebug
+#ifdef FaceDebug
 						Draw_Circle((int)left_eye.x + distance / 2, (int)left_eye.y - (distance / 4), 3, CSET.White); //at forhead
 						Draw_Line((int)left_eye.y, (int)left_eye.x + distance / 2, (int)left_eye.y - (distance / 4), (int)left_eye.x + distance / 2, CSET.White);
 
-						#endif
+#endif
 						validation_level++; //level 3
-						std::cout<<("Validated Forhead - Center: " + validation_level)<<std::endl;
+						std::cout << ("Validated Forhead - Center: " + validation_level) << std::endl;
 
 						if (Distance_Neighbors(treshold, (int)left_eye.y - (distance / 4), (int)left_eye.x + distance / 2)) {
 							validation_level += n_valid_bounty;
-							std::cout<<("Validated  --Neighbor-- Forhead - Center: " + validation_level)<<std::endl;
+							std::cout << ("Validated  --Neighbor-- Forhead - Center: " + validation_level) << std::endl;
 
 						}
 
@@ -8085,34 +8261,34 @@ public:
 
 
 					if (Color_Distance(nose_graph, skin_graph) < grap_thresh) {//nose vs middle face cmp
-	#ifdef FaceDebug
+#ifdef FaceDebug
 						Draw_Circle((int)left_eye.x + distance / 2, (int)left_eye.y + distance / 2, 3, CSET.White);
 						//Draw_Line(left_eye.x + distance / 2, left_eye.y, left_eye.x + distance / 2, left_eye.y + (distance / 2), 'W');
 
-	#endif
+#endif
 						validation_level++; //level 4
-						std::cout<<("Validated Nose - Center: " + validation_level)<<std::endl;
+						std::cout << ("Validated Nose - Center: " + validation_level) << std::endl;
 
 						if (Distance_Neighbors(treshold, (int)left_eye.y + distance / 2, (int)left_eye.x + distance / 2)) {
 							validation_level += n_valid_bounty;
-							std::cout<<("Validated  --Neighbor-- Nose - Center: " + validation_level)<<std::endl;
+							std::cout << ("Validated  --Neighbor-- Nose - Center: " + validation_level) << std::endl;
 
 						}
 					}
 
 
 					if (Color_Distance(chin_graph, skin_graph) < grap_thresh) {//chin vs middle face cmp
-	#ifdef FaceDebug
+#ifdef FaceDebug
 						Draw_Circle((int)left_eye.x + distance / 2, (int)(left_eye.y + 1.3*distance), 3, CSET.White);
 						Draw_Line((int)left_eye.y, (int)left_eye.x + distance / 2, (int)(left_eye.y + 1.3*(distance)), (int)left_eye.x + distance / 2, CSET.White);
 
-						#endif
+#endif
 						validation_level++; //level 5
-						std::cout<<("Validated Chin - Center: " + validation_level)<<std::endl;
+						std::cout << ("Validated Chin - Center: " + validation_level) << std::endl;
 
 						if (Distance_Neighbors(treshold, (int)left_eye.y + (int)(1.3*distance), (int)left_eye.x + distance / 2)) {
 							validation_level += n_valid_bounty;
-							std::cout<<("Validated  --Neighbor-- Chin - Center: " + validation_level)<<std::endl;
+							std::cout << ("Validated  --Neighbor-- Chin - Center: " + validation_level) << std::endl;
 
 						}
 					}
@@ -8121,17 +8297,17 @@ public:
 
 
 
-					#ifdef FaceDebug
+#ifdef FaceDebug
 
 
 
 
-									//right eye validate for v2 yet to be added to calculation
+					//right eye validate for v2 yet to be added to calculation
 					Draw_Line((int)right_eye.y, (int)right_eye.x, (int)right_eye.y, (int)right_eye.x - distance / 2, CSET.Black); // line to cetner point from -right eye-
 					Draw_Circle((int)(right_eye.x), (int)(right_eye.y) + (distance / 2), 3, CSET.White); //chick graph location -right eye- 
 					Draw_Line((int)right_eye.y, (int)right_eye.x, (int)right_eye.y + distance / 2, (int)right_eye.x, CSET.White); // line to chick point -right eye-
 
-	#endif
+#endif
 
 					if (validation_level >= 30) {
 						Draw_Square((int)left_eye.x + distance / 2, (int)left_eye.y + distance / 2, distance, distance, CSET.Red);
@@ -8158,8 +8334,8 @@ public:
 
 
 	}
-	 std::vector<int> Get_Red_Histogram() {
-		 std::vector<int> Rh(256, 0);
+	std::vector<int> Get_Red_Histogram() {
+		std::vector<int> Rh(256, 0);
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				Rh[this->Pixel_Matrix[i][j].r]++;
@@ -8167,9 +8343,9 @@ public:
 		}
 		return Rh;
 	}
-	 std::vector<int> Get_Green_Histogram() {
-		 std::vector<int> Rh(256, 0);
-		 
+	std::vector<int> Get_Green_Histogram() {
+		std::vector<int> Rh(256, 0);
+
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				Rh[this->Pixel_Matrix[i][j].g]++;
@@ -8177,8 +8353,8 @@ public:
 		}
 		return Rh;
 	}
-	 std::vector<int>Get_Blue_Histogram() {
-		 std::vector<int> Rh(256, 0);
+	std::vector<int>Get_Blue_Histogram() {
+		std::vector<int> Rh(256, 0);
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				Rh[this->Pixel_Matrix[i][j].b]++;
@@ -8187,8 +8363,8 @@ public:
 		return Rh;
 	}
 
-	 void Histogram_Equalization() {
-		std::vector<int> xxR(256,0);
+	void Histogram_Equalization() {
+		std::vector<int> xxR(256, 0);
 		std::vector<int> xxG(256, 0);
 		std::vector<int> xxB(256, 0);
 
@@ -8264,8 +8440,8 @@ public:
 
 		this->Commint_Matrix_Changes();
 	}
-	 
-	 void Histogram_Linear_Correction() {
+
+	void Histogram_Linear_Correction() {
 		int maxR = std::numeric_limits<int>::min(), maxG = std::numeric_limits<int>::min(), maxB = std::numeric_limits<int>::min(),
 			minR = std::numeric_limits<int>::max(), minG = std::numeric_limits<int>::max(), minB = std::numeric_limits<int>::max();
 		for (int i = 0; i < this->Image_Height; i++) {
@@ -8305,9 +8481,9 @@ public:
 
 		this->Commint_Matrix_Changes();
 	}
-	 void Histogram_Power_Correction() {
-		 int maxR = std::numeric_limits<int>::min(), maxG = std::numeric_limits<int>::min(), maxB = std::numeric_limits<int>::min(),
-			 minR = std::numeric_limits<int>::max(), minG = std::numeric_limits<int>::max(), minB = std::numeric_limits<int>::max();
+	void Histogram_Power_Correction() {
+		int maxR = std::numeric_limits<int>::min(), maxG = std::numeric_limits<int>::min(), maxB = std::numeric_limits<int>::min(),
+			minR = std::numeric_limits<int>::max(), minG = std::numeric_limits<int>::max(), minB = std::numeric_limits<int>::max();
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				if (this->Pixel_Matrix[i][j].r > maxR) {
@@ -8357,9 +8533,9 @@ public:
 
 		this->Commint_Matrix_Changes();
 	}
-	 void Histogram_Log_Correction() {
-		 int maxR = std::numeric_limits<int>::min(), maxG = std::numeric_limits<int>::min(), maxB = std::numeric_limits<int>::min(),
-			 minR = std::numeric_limits<int>::max(), minG = std::numeric_limits<int>::max(), minB = std::numeric_limits<int>::max();
+	void Histogram_Log_Correction() {
+		int maxR = std::numeric_limits<int>::min(), maxG = std::numeric_limits<int>::min(), maxB = std::numeric_limits<int>::min(),
+			minR = std::numeric_limits<int>::max(), minG = std::numeric_limits<int>::max(), minB = std::numeric_limits<int>::max();
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				if (this->Pixel_Matrix[i][j].r > maxR) {
@@ -8408,9 +8584,9 @@ public:
 
 		this->Commint_Matrix_Changes();
 	}
-	
-	 
-	 void Zero_Padding() {
+
+
+	void Zero_Padding() {
 		Image padded;
 		Color_Palette CSET;
 		padded.Load_Blank_Canvas(this->Image_Height + 2, this->Image_Width + 2, CSET.Black);
@@ -8426,7 +8602,7 @@ public:
 		this->Pixel_Matrix = padded.Pixel_Matrix;
 		this->Commint_Matrix_Changes();
 	}
-	 void Extended_Padding() {
+	void Extended_Padding() {
 		Image padded;
 		Color_Palette CSET;
 		padded.Load_Blank_Canvas(this->Image_Height + 2, this->Image_Width + 2, CSET.Black);
@@ -8452,8 +8628,8 @@ public:
 		this->Commint_Matrix_Changes();
 	}
 
-	 
-	 void Image_Convolution(int Mode) {
+
+	void Image_Convolution(int Mode) {
 		if (Mode == S_Median_Filter) {
 			std::vector<int> GroupR(9);
 			std::vector<int> GroupG(9);
@@ -8514,7 +8690,7 @@ public:
 			this->Crop_Image(1, 1, this->Image_Height - 1, this->Image_Width - 1);
 
 		}
-		else if (Mode== S_Mean_Blur) {
+		else if (Mode == S_Mean_Blur) {
 
 			std::vector<std::vector<int> > Kernel(3);
 			Kernel[0] = std::vector<int>(3);
@@ -8580,10 +8756,10 @@ public:
 
 		}
 		else if (Mode == S_Gaussian_Blur) {
-		std::vector<std::vector<int> > Kernel(3);
-		Kernel[0] = std::vector<int>(3);
-		Kernel[1] = std::vector<int>(3);
-		Kernel[2] = std::vector<int>(3);
+			std::vector<std::vector<int> > Kernel(3);
+			Kernel[0] = std::vector<int>(3);
+			Kernel[1] = std::vector<int>(3);
+			Kernel[2] = std::vector<int>(3);
 			Kernel[0][0] = 1;
 			Kernel[0][1] = 2;
 			Kernel[0][2] = 1;
@@ -8836,7 +9012,7 @@ public:
 					this->Pixel_Matrix[i][j].b = (int)((B_sum / 2) + 128);
 					this->Pixel_Matrix[i][j].Clamp_Outliers();
 					if (this->Pixel_Matrix[i][j].r < 0 || this->Pixel_Matrix[i][j].g < 0 || this->Pixel_Matrix[i][j].r < 0) {
-						std::cout<<("Found <0 !\n");
+						std::cout << ("Found <0 !\n");
 					}
 
 					R_sum = 0;
@@ -9077,7 +9253,7 @@ public:
 
 
 	}
-	 void Scale_Down_By_Convolution(std::string Mode) {
+	void Scale_Down_By_Convolution(std::string Mode) {
 		if (Mode == ("Mean")) {
 			std::vector<std::vector<int> > Kernel(3);
 			Kernel[0] = std::vector<int>(3);
@@ -9094,7 +9270,7 @@ public:
 			Kernel[2][1] = 1;
 			Kernel[2][2] = 1;
 			this->Extended_Padding();
-			Shrinked.Load_Blank_Canvas(this->Image_Height / 3, this->Image_Width / 3,  Pixel(0, 0, 0));
+			Shrinked.Load_Blank_Canvas(this->Image_Height / 3, this->Image_Width / 3, Pixel(0, 0, 0));
 			double scaling_factor = (double)1 / 9;
 			double R_sum = 0, G_sum = 0, B_sum = 0;
 			int sh = 0, sw = 0;
@@ -9211,7 +9387,7 @@ public:
 
 		}
 	}
-	 void Dithering_Floyd_Steinberg(int Palette_Size) {
+	void Dithering_Floyd_Steinberg(int Palette_Size) {
 		std::vector<Point<double> > ACP = this->Get_Average_Color_Palette(Palette_Size, 25);
 		this->Extended_Padding();
 		double minDistance = std::numeric_limits<double>::max();
@@ -9256,7 +9432,7 @@ public:
 		this->Commint_Matrix_Changes();
 		this->Crop_Image(1, 1, this->Image_Height - 1, this->Image_Width - 1);
 	}
-	 void Circle_Packing(int amount_of_circles, int max_circle_size) {
+	void Circle_Packing(int amount_of_circles, int max_circle_size) {
 		class circle {
 		public:
 			int x, y, r;
@@ -9268,7 +9444,7 @@ public:
 				this->r = r;
 				this->Color = Color;
 			}
-		    int intersect_check(int x2, int y2, int r2)
+			int intersect_check(int x2, int y2, int r2)
 			{
 				int distSq = (this->x - x2) * (this->x - x2) +
 					(this->y - y2) * (this->y - y2);
@@ -9289,14 +9465,14 @@ public:
 			int r = tlb.Random_INT(1, max_circle_size);
 			int x = tlb.Random_INT(1 + r, this->Image_Width - 1 - r);
 			int y = tlb.Random_INT(1 + r, this->Image_Height - 1 - r);
-			Pixel Color =  Pixel(this->Pixel_Matrix[y][x]);
-			circle to_add =  circle(x, y, r, Color);
+			Pixel Color = Pixel(this->Pixel_Matrix[y][x]);
+			circle to_add = circle(x, y, r, Color);
 			for (int j = 0; j < circles.size(); j++) {
 				if (circles[j].intersect_check(x, y, r) == 0) {
 					r = tlb.Random_INT(1, max_circle_size);
 					x = tlb.Random_INT(1 + r, this->Image_Width - 2 - r);
 					y = tlb.Random_INT(1 + r, this->Image_Height - 2 - r);
-					Color =  Pixel(this->Pixel_Matrix[y][x]);
+					Color = Pixel(this->Pixel_Matrix[y][x]);
 					j = 0;
 					to_add.r = r;
 					to_add.x = x;
@@ -9313,7 +9489,7 @@ public:
 
 
 	}
-	 void Add_Salt_and_Pepper_Noise(double Salt_Propability, double Pepper_Probability) {
+	void Add_Salt_and_Pepper_Noise(double Salt_Propability, double Pepper_Probability) {
 		double rand = 0;
 		Random_Utilitis tlb;
 
@@ -9360,11 +9536,11 @@ public:
 		this->Commint_Matrix_Changes();
 	}
 
-	 void Image_Averaging(std::vector<Image> Images) {
+	void Image_Averaging(std::vector<Image> Images) {
 		int a_width = Images[0].Image_Width, a_height = Images[0].Image_Height;
 		for (int i = 0; i < Images.size(); i++) {
 			if (Images[i].Image_Height != a_height || Images[i].Image_Width != a_width) {
-				std::cout<<"Not All Images Match In Size: Problomatic Image:" + Images[i].F_Path<<"\n";
+				std::cout << "Not All Images Match In Size: Problomatic Image:" + Images[i].F_Path << "\n";
 			}
 		}
 
@@ -9382,15 +9558,15 @@ public:
 
 		}
 
-		*this = *this/(double)(Images.size());
+		*this = *this / (double)(Images.size());
 
 
 	}
-	 Point<double> Get_Image_Color_Means() {
+	Point<double> Get_Image_Color_Means() {
 		std::vector<int> Histogram_R = this->Get_Red_Histogram();
 		std::vector<int> Histogram_G = this->Get_Green_Histogram();
 		std::vector<int> Histogram_B = this->Get_Blue_Histogram();
-		Point<double> Var ;
+		Point<double> Var;
 		double R_Mean = 0, G_Mean = 0, B_Mean = 0;
 		for (int i = 0; i < 256; i++) {
 			R_Mean += i * ((double)Histogram_R[i] / (this->Image_Height*this->Image_Width));
@@ -9406,10 +9582,10 @@ public:
 
 		return Var;
 	}
-	 Point<double> Get_Image_Color_Variance() {
-		 std::vector<int> Histogram_R = this->Get_Red_Histogram();
-		 std::vector<int> Histogram_G = this->Get_Green_Histogram();
-		 std::vector<int> Histogram_B = this->Get_Blue_Histogram();
+	Point<double> Get_Image_Color_Variance() {
+		std::vector<int> Histogram_R = this->Get_Red_Histogram();
+		std::vector<int> Histogram_G = this->Get_Green_Histogram();
+		std::vector<int> Histogram_B = this->Get_Blue_Histogram();
 		Point<double> Var;
 		double R_Mean = 0, G_Mean = 0, B_Mean = 0;
 		double R_Var = 0, G_Var = 0, B_Var = 0;
@@ -9436,10 +9612,10 @@ public:
 
 		return Var;
 	}
-	 Point<double> Get_Image_Color_Variance(int nth_moment) {
-		 std::vector<int> Histogram_R = this->Get_Red_Histogram();
-		 std::vector<int> Histogram_G = this->Get_Green_Histogram();
-		 std::vector<int> Histogram_B = this->Get_Blue_Histogram();
+	Point<double> Get_Image_Color_Variance(int nth_moment) {
+		std::vector<int> Histogram_R = this->Get_Red_Histogram();
+		std::vector<int> Histogram_G = this->Get_Green_Histogram();
+		std::vector<int> Histogram_B = this->Get_Blue_Histogram();
 		Point<double> Var;
 		double R_Mean = 0, G_Mean = 0, B_Mean = 0;
 		double R_Var = 0, G_Var = 0, B_Var = 0;
@@ -9466,7 +9642,7 @@ public:
 
 		return Var;
 	}
-	 void Logarithmic_Transformation() {
+	void Logarithmic_Transformation() {
 		int max_mag_R = 0;
 		int max_mag_G = 0;
 		int max_mag_B = 0;
@@ -9500,7 +9676,7 @@ public:
 		this->Commint_Matrix_Changes();
 
 	}
-	 void Square_Root_Transformation() {
+	void Square_Root_Transformation() {
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				this->Pixel_Matrix[i][j].r = (int)std::sqrt(this->Pixel_Matrix[i][j].r);
@@ -9512,13 +9688,13 @@ public:
 		}
 		this->Commint_Matrix_Changes();
 	}
-	 std::vector<std::vector<Complex> > Fourier_Transform() {
-		 std::vector<std::vector<Complex> > Fourier_Matrix(this->Image_Height);
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 Fourier_Matrix[i] = std::vector<Complex>(this->Image_Width);
-		 }
-		Complex temp =  Complex(1, 0);
-		Complex Eval =  Complex(std::exp(1.0), 0);
+	std::vector<std::vector<Complex> > Fourier_Transform() {
+		std::vector<std::vector<Complex> > Fourier_Matrix(this->Image_Height);
+		for (int i = 0; i < this->Image_Height; i++) {
+			Fourier_Matrix[i] = std::vector<Complex>(this->Image_Width);
+		}
+		Complex temp = Complex(1, 0);
+		Complex Eval = Complex(std::exp(1.0), 0);
 		Complex Epow;
 		Complex Transition;
 		Complex Sum;
@@ -9531,14 +9707,14 @@ public:
 						temp*(this->Pixel_Matrix[k][l].r);
 						val = 2 * std::_Pi*((((double)(k*i) / this->Image_Height) + ((double)(j*l) / this->Image_Width)));
 						//System.out.format("k: %d, l:%d ,i:%d j:%d  val :  %f  \n",k,l,i,j,val );
-						Transition =  Complex(val, 0);
-						Epow =  Complex(0, -1);
-						Epow = Epow*(Transition);
+						Transition = Complex(val, 0);
+						Epow = Complex(0, -1);
+						Epow = Epow * (Transition);
 
-						Eval = Eval.Power(Epow);
-						temp = temp*(Eval);
+						Eval = Eval^(Epow);
+						temp = temp * (Eval);
 
-						Sum = Sum+(temp);
+						Sum = Sum + (temp);
 
 						temp.Real = 1;
 						temp.Imaginary = 0;
@@ -9571,7 +9747,7 @@ public:
 		return Fourier_Matrix;
 
 	}
-	 void Negative_Transformation() {
+	void Negative_Transformation() {
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 				this->Pixel_Matrix[i][j].r = 255 - 1 - this->Pixel_Matrix[i][j].r;
@@ -9582,7 +9758,7 @@ public:
 		}
 		this->Commint_Matrix_Changes();
 	}
-	 void Power_Law_Transformation(double Gamma) {
+	void Power_Law_Transformation(double Gamma) {
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
 
@@ -9594,7 +9770,7 @@ public:
 		}
 		this->Commint_Matrix_Changes();
 	}
-	 void Bit_Plane_Slice(int Plane) {
+	void Bit_Plane_Slice(int Plane) {
 		int plane = 0;
 		plane = (int)std::pow(2, Plane);
 
@@ -9617,7 +9793,7 @@ public:
 		this->Commint_Matrix_Changes();
 	}
 
-	 void Add_Gaussian_Noise(double Variance) {
+	void Add_Gaussian_Noise(double Variance) {
 
 		double RDV = 0;
 		std::default_random_engine generator;
@@ -9636,169 +9812,170 @@ public:
 		this->Commint_Matrix_Changes();
 
 	}
-	 void Connected_Components_Labeling() {
-		 this->Extended_Padding();
-		 this->Grayscale(1);
-		 this->Thresholding(1);
-		 this->Write_Image("thresh.jpg");
-		 this->Update_Pixel_Matrix();
+	void Connected_Components_Labeling() {
+		this->Extended_Padding();
+		this->Grayscale(1);
+		this->Thresholding(1);
+		this->Write_Image("thresh.jpg");
+		this->Update_Pixel_Matrix();
 
-		 std::unordered_map<int, int> Labels;
-		 Matrix<double> States(this->Image_Height, this->Image_Width);
-		 int last_label = 0;
-		 Color_Palette CSET;
+		std::unordered_map<int, int> Labels;
+		Matrix<double> States(this->Image_Height, this->Image_Width);
+		int last_label = 0;
+		Color_Palette CSET;
 
-		 for (int i = 1; i < this->Image_Height - 1; i++) {
-			 for (int j = 1; j < this->Image_Width - 1; j++) {
-				 if (this->Pixel_Matrix[i][j] != (CSET.Black)) {
-					 if (States[i - 1][j] == 0 && States[i][j - 1] == 0) {
-						 last_label++;
-						 Labels.insert(std::make_pair(last_label, last_label));
-						 States[i][j] = last_label;
-					 }
-					 else {
-						 if (States[i - 1][j] == 0 && States[i][j - 1] != 0) {
+		for (int i = 1; i < this->Image_Height - 1; i++) {
+			for (int j = 1; j < this->Image_Width - 1; j++) {
+				if (this->Pixel_Matrix[i][j] != (CSET.Black)) {
+					if (States[i - 1][j] == 0 && States[i][j - 1] == 0) {
+						last_label++;
+						Labels.insert(std::make_pair(last_label, last_label));
+						States[i][j] = last_label;
+					}
+					else {
+						if (States[i - 1][j] == 0 && States[i][j - 1] != 0) {
 
-							 States[i][j] = Labels[((int)States[i][j - 1])];
+							States[i][j] = Labels[((int)States[i][j - 1])];
 
-						 }
-						 else if (States[i - 1][j] != 0 && States[i][j - 1] == 0) {
-							 States[i][j] = Labels[(int)States[i - 1][j]];
-						 }
-						 else {
+						}
+						else if (States[i - 1][j] != 0 && States[i][j - 1] == 0) {
+							States[i][j] = Labels[(int)States[i - 1][j]];
+						}
+						else {
 
-							 if (States[i][j - 1] <= States[i - 1][j]) {
-								 States[i][j] = States[i][j - 1];
-								 Labels.insert(std::make_pair((int)States[i - 1][j], Labels[(int)States[i][j - 1]]));
-							 }
-							 else {
-								 States[i][j] = States[i - 1][j];
-								 Labels.insert(std::make_pair((int)States[i][j - 1], Labels[(int)States[i - 1][j]]));
-							 }
+							if (States[i][j - 1] <= States[i - 1][j]) {
+								States[i][j] = States[i][j - 1];
+								Labels.insert(std::make_pair((int)States[i - 1][j], Labels[(int)States[i][j - 1]]));
+							}
+							else {
+								States[i][j] = States[i - 1][j];
+								Labels.insert(std::make_pair((int)States[i][j - 1], Labels[(int)States[i - 1][j]]));
+							}
 
-						 }
-					 }
-				 }
-			 }
-
-
-		 }
-
-		 for (int i = 1; i < this->Image_Height - 1; i++) {
-			 for (int j = 1; j < this->Image_Width - 1; j++) {
-				 if (States[i][j] != 0) {
-					 States[i][j] = Labels[(int)States[i][j]];
-				 }
-			 }
-		 }
-
-		 for (int i = 1; i < this->Image_Height - 1; i++) {
-			 for (int j = 1; j < this->Image_Width - 1; j++) {
-				 if (States[i][j] != 0) {
-					 this->Pixel_Matrix[i][j] = CSET.Color_Serial_Number[(int)States[i][j] % 134 + 2];
-				 }
-			 }
-		 }
-		 this->Commint_Matrix_Changes();
+						}
+					}
+				}
+			}
 
 
+		}
 
+		for (int i = 1; i < this->Image_Height - 1; i++) {
+			for (int j = 1; j < this->Image_Width - 1; j++) {
+				if (States[i][j] != 0) {
+					States[i][j] = Labels[(int)States[i][j]];
+				}
+			}
+		}
 
-	 }
-	 
-
-	 Matrix<double> Flatten() {
-		 Matrix<double> res(3, this->Image_Height*this->Image_Width);
-		 int index = 0;
-		 for (int i = 0; i < this->Image_Height; i++) {
-			 for (int j = 0; j < this->Image_Width; j++) {
-				 res[0][index] = this->Pixel_Matrix[i][j].r;
-				 res[1][index] = this->Pixel_Matrix[i][j].g;
-				 res[2][index] = this->Pixel_Matrix[i][j].b;
-				 index++;
-			 }
-		 }
-		 return res;
-	 }
-
-
-	 Image Slice(int y0, int x0, int x1, int y1) {
-		 Image res;
-		 res.Load_Blank_Canvas(std::abs(y1 - y0), std::abs(x1 - x0), Pixel(0, 0, 0));
-		 // std::cout << "W: " << std::abs(x1 - x0) << std::endl;
-
-		 int di = 0, dj = 0;
-		 for (int i = y0; i < y1; i++) {
-			 for (int j = x0; j < x1; j++) {
-				 res.Pixel_Matrix[di][dj] = this->Pixel_Matrix[i][j];
-				 res.Set_Color(di, dj, this->Get_Color(i, j));
-				 dj++;
-			 }
-			 di++;
-			 dj = 0;
-		 }
-		 return res;
-
-	 }
-
-	 Image MaxPooling(int filter_height, int filter_width, int stride) {
-		 Image output;
-
-		 this->Zero_Padding();
-		 output.Load_Blank_Canvas(this->Image_Height / (filter_height), (this->Image_Width / (filter_width)), Pixel(0, 0, 0));
-		 //std::cout << "H: " << this->Image_Height / (filter_height + stride) << " ,W : " << this->Image_Width / (filter_width+stride) << std::endl;
-
-		 Pixel max(0, 0, 0);
-
-		 int ddi = 0, ddj = 0;
-
-		 for (int i = 1; i < this->Image_Height - 1; i += stride) {
-			 for (int j = 1; j < this->Image_Width - 1; j += stride) {
+		for (int i = 1; i < this->Image_Height - 1; i++) {
+			for (int j = 1; j < this->Image_Width - 1; j++) {
+				if (States[i][j] != 0) {
+					this->Pixel_Matrix[i][j] = CSET.Color_Serial_Number[(int)States[i][j] % 134 + 2];
+				}
+			}
+		}
+		this->Commint_Matrix_Changes();
 
 
 
-				 for (int di = i; di < i + filter_height; di++) {
-					 for (int dj = j; dj < (j + filter_width); dj++) {
 
-						 if (this->Pixel_Matrix[di][dj] > max) {
-							 max = this->Pixel_Matrix[di][dj];
-						 }
+	}
+	Matrix<double> Flatten() {
+		Matrix<double> res(3, this->Image_Height*this->Image_Width);
+		int index = 0;
+		for (int i = 0; i < this->Image_Height; i++) {
+			for (int j = 0; j < this->Image_Width; j++) {
+				res[0][index] = this->Pixel_Matrix[i][j].r;
+				res[1][index] = this->Pixel_Matrix[i][j].g;
+				res[2][index] = this->Pixel_Matrix[i][j].b;
+				index++;
+			}
+		}
+		return res;
+	}
+	Image Slice(int y0, int x0, int x1, int y1) {
+		Image res;
+		res.Load_Blank_Canvas(std::abs(y1 - y0), std::abs(x1 - x0), Pixel(0, 0, 0));
+		// std::cout << "W: " << std::abs(x1 - x0) << std::endl;
 
-					 }
+		int di = 0, dj = 0;
+		for (int i = y0; i < y1; i++) {
+			for (int j = x0; j < x1; j++) {
+				res.Pixel_Matrix[di][dj] = this->Pixel_Matrix[i][j];
+				res.Set_Color(di, dj, this->Get_Color(i, j));
+				dj++;
+			}
+			di++;
+			dj = 0;
+		}
+		return res;
 
-				 }
+	}
+	Image MaxPooling(int filter_height, int filter_width, int stride) {
+		Image output;
 
+		this->Zero_Padding();
+		output.Load_Blank_Canvas(this->Image_Height / (filter_height), (this->Image_Width / (filter_width)), Pixel(0, 0, 0));
+		//std::cout << "H: " << this->Image_Height / (filter_height + stride) << " ,W : " << this->Image_Width / (filter_width+stride) << std::endl;
 
-				 output.Pixel_Matrix[ddi][ddj] = max;
-				 ddj++;
-				 max.r = max.g = max.b = 0;
-			 }
-			 ddi++;
-			 ddj = 0;
+		Pixel max(0, 0, 0);
 
-		 }
+		int ddi = 0, ddj = 0;
 
-		 output.Commint_Matrix_Changes();
-		 return output;
-	 }
-	 private:
-		 Pixel get_Larget_Pixel(Image  &img) {
-
-			 Pixel max(0, 0, 0);
-
-			 for (int i = 0; i < img.Image_Height; i++) {
-				 for (int j = 0; j < img.Image_Width; j++) {
-					 if (img[i][j] > max) {
-						 max = img[i][j];
-					 }
-				 }
-			 }
-			 return max;
+		for (int i = 1; i < this->Image_Height - 1; i += stride) {
+			for (int j = 1; j < this->Image_Width - 1; j += stride) {
 
 
 
-		 }
-	 
+				for (int di = i; di < i + filter_height; di++) {
+					for (int dj = j; dj < (j + filter_width); dj++) {
+
+						if (this->Pixel_Matrix[di][dj] > max) {
+							max = this->Pixel_Matrix[di][dj];
+						}
+
+					}
+
+				}
+
+
+				output.Pixel_Matrix[ddi][ddj] = max;
+				ddj++;
+				max.r = max.g = max.b = 0;
+			}
+			ddi++;
+			ddj = 0;
+
+		}
+
+		output.Commint_Matrix_Changes();
+		return output;
+	}
+
+	Image Generate_Perlin_Noise(int const &im_height,int const &im_width) {
+
+	}
+
+
+private:
+	Pixel get_Larget_Pixel(Image  &img) {
+
+		Pixel max(0, 0, 0);
+
+		for (int i = 0; i < img.Image_Height; i++) {
+			for (int j = 0; j < img.Image_Width; j++) {
+				if (img[i][j] > max) {
+					max = img[i][j];
+				}
+			}
+		}
+		return max;
+
+
+
+	}
+
 };
 
 Image Matrix_To_Graysacle(Matrix<double> &source) {
@@ -9835,6 +10012,9 @@ Image Matrix_To_Graysacle(std::vector<std::vector<double> > &source) {
 
 
 
+
+
+
 namespace SPlot {
 	class Scatter_Plot {
 	private:
@@ -9853,9 +10033,9 @@ namespace SPlot {
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
-				Max_Y = std::numeric_limits<double>::min();
+			Max_Y = std::numeric_limits<double>::min();
 			Min_X = std::numeric_limits<double>::max(),
-				Min_Y = std::numeric_limits<double>::max();
+			Min_Y = std::numeric_limits<double>::max();
 
 			for (int i = 0; i < Data.size(); i++) {
 				if (data[i].first > Max_X) {
@@ -10093,7 +10273,9 @@ namespace SPlot {
 		double Max_X, Max_Y, Min_Y, Min_X;
 		std::string x_label, y_label;
 		Color_Palette CSET;
-		int mode;
+		int mode = S_DEFAULT;
+		std::vector<int> seperators;
+
 	public:
 		Stem_Plot(std::vector<std::pair<double, double> > data, std::string X_Label, std::string Y_Label) {
 			for (int i = 0; i < data.size(); i++) {
@@ -10129,6 +10311,41 @@ namespace SPlot {
 
 
 		}
+		Stem_Plot(std::vector<std::pair<int, double> > data, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+			//Max_X += Max_X / 1000;
+			//Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+
 		Stem_Plot(std::vector<double> x_Values, std::vector<double> y_Values, std::string X_Label, std::string Y_Label) {
 			for (int i = 0; i < x_Values.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
@@ -10227,44 +10444,52 @@ namespace SPlot {
 
 
 		}
-		void Save_Plot(std::string File_Name) {
-
+		void Save_Plot(std::string File_Name,int mod=0) {
+			
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
 			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
 			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
 			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
 			Plot.Draw_Text(325, 750, y_label, CSET.Black);
 			Plot.Draw_Text(65, 400, x_label, CSET.Black);
-			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
-			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+			double xx, yy;
 
+			if (this->Min_X < 0) {
+				xx = Remap((float)0, (float)Min_X, (float)Max_X, 105, 720);
+				yy = Remap((float)0, (float)(Min_Y), (float)Max_Y, 565, 80);
+				Plot.Draw_Line(575, xx, 76, xx, CSET.Black);
+				Plot.Draw_Line(620, xx + 1, 76, xx + 1, CSET.Dark_Gray);
+				Plot.Draw_Text(630, xx - 4, "0", CSET.Black);
+
+			}
 			std::ostringstream streamObj;
 			streamObj << std::fixed;
 			streamObj << std::setprecision(2);
-
-			Plot.Draw_Text(595, 90 + 0 * 78 * 2, GetPointTwoPrecision(Min_X), CSET.Black);
-
-			Plot.Draw_Text(595, 99 + 1 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 1)), CSET.Black);
-
-			Plot.Draw_Text(595, 99 + 2 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 2)), CSET.Black);
-
-			Plot.Draw_Text(595, 99 + 3 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 3)), CSET.Black);
+			double amount = 419 / 4;
+			double amounty = 335 / 4;
+			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
+			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+			for (int m = 0; m < 4 - 1; m++) {
+				xx = Remap((float)99 + m * amount * 2, (float)105, (float)720, Min_X, Max_X);
 
 
+				Plot.Draw_Text(595, 99 + m * amount * 2, GetPointTwoPrecision((xx)), CSET.Black);
 
-			Plot.Draw_Text(595, 99 + 4 * 78 * 2, GetPointTwoPrecision(Max_X), CSET.Black);
-
-
-			Plot.Draw_Text(575 - 0 * 62 * 2, 40, GetPointTwoPrecision(Min_Y), CSET.Black);
-
-			Plot.Draw_Text(575 - 1 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 1)), CSET.Black);
-
-			Plot.Draw_Text(575 - 2 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 2)), CSET.Black);
+			}
+			Plot.Draw_Text(595, 90 + (4 - 1) * amount * 2, GetPointTwoPrecision(Max_X), CSET.Black);
 
 
-			Plot.Draw_Text(575 - 3 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 3)), CSET.Black);
 
-			Plot.Draw_Text(575 - 4 * 62 * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
+
+			for (int m = 0; m < 4 - 1; m++) {
+				yy = Remap((float)575 - m * amounty * 2, (float)(565), (float)80, Min_Y, Max_Y);
+
+				Plot.Draw_Text(575 - m * amounty * 2, 40, GetPointTwoPrecision(yy), CSET.Black);
+
+			}
+			Plot.Draw_Text(575 - (4 - 1) * amounty * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
 
 
 			if (mode == S_GRID) {
@@ -10281,37 +10506,117 @@ namespace SPlot {
 
 			}
 			else if (mode == S_DEFAULT) {
-				for (int i = 0; i < 5; i++) {
+				for (int i = 0; i < 4; i++) {
 
-					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
+					double amount = 419 / 4;
+					double amounty = 335 / 4;
+					for (int i = 0; i < 4; i++) {
+						Plot.Draw_Line(575 - amounty * i * 2, 100, 575 - amounty * i * 2, 90, CSET.Black);
 
-					Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
-					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+						Plot.Draw_Line(575, 100 + i * amount * 2, 575 + 10, 100 + i * amount * 2, CSET.Black);
+						Plot.Draw_Line(575, 99 + i * amount * 2, 575 + 10, 99 + i * amount * 2, CSET.Black);
 
+
+
+					}
 
 
 				}
 			}
 
-		
+
 			Plot.Draw_Line(327, 100, 327, 725, CSET.Black);
 			Plot.Draw_Line(326, 100, 326, 725, CSET.Black);
 
-			double tx, ty;
-			std::pair<double, double> b;
+
+			if (mod == 0) {
+				double tx, ty;
+				std::pair<double, double> b;
+				Plot.Update_Pixel_Matrix();
+				for (int i = 0; i < Data.size(); i++) {
+					b = Data[i].first;
+					tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+					ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+					Plot.Draw_Line((int)ty, (int)tx, 326, (int)tx, Data[i].second);
+					Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+					Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+
+				}
+			}
+			else if (mod == S_CONNECTED) {
+				double tx, ty, tx2, ty2;
+			std::pair<double, double> b, b2;
 			Plot.Update_Pixel_Matrix();
-			for (int i = 0; i < Data.size(); i++) {
+			for (int i = 0; i < Data.size() - 1; i++) {
 				b = Data[i].first;
+				b2 = Data[i + 1].first;
+
 				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
-				Plot.Draw_Line((int)ty, (int)tx, 326, (int)tx, CSET.Dark_Cyan);
-				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
 
+				tx2 = Remap((float)b2.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+
+				if (seperators.size() != 0 && i == seperators[0]) {
+					seperators.erase(seperators.begin());
+				}
+				else {
+					for (double z = 0; z <= 1; z += 0.001) {
+						int nty = SmoothStep_Interpolate(ty, ty2, z);
+						int ntx = Remap(z, 0, 1, tx, tx2);
+						Plot.Set_Color(nty, ntx, Data[i].second);
+
+					}
+					Plot.Draw_Line((int)ty, (int)tx, 326, (int)tx, Data[i].second);			
+				}
 			}
-			
+				b = Data[Data.size()- 2].first;
+				b2 = Data[Data.size() - 1].first;
+
+				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+				tx2 = Remap((float)b2.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+				for (double z = 0; z <= 1; z += 0.001) {
+					int nty = Cosine_Interpolate(ty, ty2, z);
+					int ntx = Remap(z, 0, 1, tx, tx2);
+					Plot.Set_Color(nty, ntx, Data[Data.size() - 1].second);
+
+				}
+
+				Plot.Draw_Line((int)ty2, (int)tx2, 326, (int)tx2, Data[Data.size() - 1].second);
+
+
+
+				for (int i = 0; i < Data.size() - 1; i++) {
+					b = Data[i].first;
+					b2 = Data[i + 1].first;
+
+					tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+					ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+					tx2 = Remap((float)b2.first, (float)Min_X, (float)Max_X, 105, 720);
+					ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+
+					Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+					Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+
+				}
+
+				//last point
+				b = Data[Data.size() - 1].first;
+				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
+				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size()-1].second, S_AA_FILL);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+			}
 			Plot.Write_Image(File_Name);
 		}
+
 		void Add_Point(double const &x, double const &y, Pixel const &color) {
 			for (int i = 0; i < Data.size(); i++) {
 				if (x > Max_X) {
@@ -10334,6 +10639,62 @@ namespace SPlot {
 
 			Data.push_back(ScatterDot(std::pair<double, double>(x, y), color));
 		}
+		void Add_Point(std::vector<std::pair<double, double> > new_points, Pixel const &color) {
+			seperators.push_back((int)(this->Data.size() - 1));
+			for (int i = 0; i < new_points.size(); i++) {
+				if (new_points[i].first > Max_X) {
+					Max_X = new_points[i].first;
+				}
+				if (new_points[i].first < Min_X) {
+					Min_X = new_points[i].first;
+				}
+				if (new_points[i].second > Max_Y) {
+					Max_Y = new_points[i].second;
+				}
+				if (new_points[i].second < Min_Y) {
+					Min_Y = new_points[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			for (int i = 0; i < new_points.size(); i++) {
+				Data.push_back(ScatterDot(new_points[i], color));
+
+			}
+		}
+		void Add_Point(std::vector<std::pair<int, double> > new_points, Pixel const &color) {
+			seperators.push_back((int)(this->Data.size() - 1));
+			for (int i = 0; i < new_points.size(); i++) {
+				if (new_points[i].first > Max_X) {
+					Max_X = new_points[i].first;
+				}
+				if (new_points[i].first < Min_X) {
+					Min_X = new_points[i].first;
+				}
+				if (new_points[i].second > Max_Y) {
+					Max_Y = new_points[i].second;
+				}
+				if (new_points[i].second < Min_Y) {
+					Min_Y = new_points[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			for (int i = 0; i < new_points.size(); i++) {
+				Data.push_back(ScatterDot(new_points[i], color));
+
+			}
+		}
+
+
 		Image Get_Image() {
 			return Plot;
 		}
@@ -10386,6 +10747,41 @@ namespace SPlot {
 
 
 		}
+		Line_Plot(std::vector<std::pair<int, double> > data, std::string X_Label, std::string Y_Label) {
+			for (int i = 0; i < data.size(); i++) {
+				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
+			}
+			mode = S_DEFAULT;
+			x_label = X_Label;
+			y_label = Y_Label;
+			Max_X = std::numeric_limits<double>::min(),
+				Max_Y = std::numeric_limits<double>::min();
+			Min_X = std::numeric_limits<double>::max(),
+				Min_Y = std::numeric_limits<double>::max();
+
+			for (int i = 0; i < Data.size(); i++) {
+				if (data[i].first > Max_X) {
+					Max_X = data[i].first;
+				}
+				if (data[i].first < Min_X) {
+					Min_X = data[i].first;
+				}
+				if (data[i].second > Max_Y) {
+					Max_Y = data[i].second;
+				}
+				if (data[i].second < Min_Y) {
+					Min_Y = data[i].second;
+				}
+			}
+	
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+
+		}
+
+
 		Line_Plot(std::vector<double> x_Values, std::vector<double> y_Values, std::string X_Label, std::string Y_Label) {
 			for (int i = 0; i < x_Values.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
@@ -10484,53 +10880,67 @@ namespace SPlot {
 
 
 		}
-		void Save_Plot(std::string File_Name) {
+		void Save_Plot(std::string File_Name, int markings=4) {
 
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
 			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
 			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
 			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
-			Plot.Draw_Text(325, 750, y_label, CSET.Black);
+			Plot.Draw_Text(325, 730, y_label, CSET.Black);
 			Plot.Draw_Text(65, 400, x_label, CSET.Black);
-			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
-			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / 4;
+			double xx, yy;
+
+			if (this->Min_X < 0) {
+				xx = Remap((float)0, (float)Min_X, (float)Max_X, 105, 720);
+				yy = Remap((float)0, (float)(Min_Y), (float)Max_Y, 565, 80);
+				Plot.Draw_Line(575, xx, 76, xx, CSET.Dark_Gray);
+				Plot.Draw_Line(620, xx + 1, 76, xx + 1, CSET.Dark_Gray);
+				Plot.Draw_Text(630, xx-4, "0", CSET.Black);
+
+			}
+
 
 			std::ostringstream streamObj;
 			streamObj << std::fixed;
 			streamObj << std::setprecision(2);
+			double amount = 419 / markings;
+			double amounty = 335 / markings;
+			double distX = (std::abs(Min_X) + std::abs(Max_X)) / markings;
+			double distY = (std::abs(Min_Y) + std::abs(Max_Y)) / markings;
 
-			Plot.Draw_Text(595, 90 + 0 * 78 * 2, GetPointTwoPrecision(Min_X), CSET.Black);
-
-			Plot.Draw_Text(595, 99 + 1 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 1)), CSET.Black);
-
-			Plot.Draw_Text(595, 99 + 2 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 2)), CSET.Black);
-
-			Plot.Draw_Text(595, 99 + 3 * 78 * 2, GetPointTwoPrecision(((Min_X)+distX * 3)), CSET.Black);
-
+			for (int m = 0; m < markings-1; m++) {
+				xx = Remap((float)99 + m * amount * 2, (float)105, (float)720, Min_X, Max_X);
 
 
-			Plot.Draw_Text(595, 99 + 4 * 78 * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+				Plot.Draw_Text(595, 99 + m * amount * 2, GetPointTwoPrecision((xx)), CSET.Black);
+
+			}
+			Plot.Draw_Text(595, 90 + (markings-1) * amount * 2, GetPointTwoPrecision(Max_X), CSET.Black);
 
 
-			Plot.Draw_Text(575 - 0 * 62 * 2, 40, GetPointTwoPrecision(Min_Y), CSET.Black);
-
-			Plot.Draw_Text(575 - 1 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 1)), CSET.Black);
-
-			Plot.Draw_Text(575 - 2 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 2)), CSET.Black);
 
 
-			Plot.Draw_Text(575 - 3 * 62 * 2, 40, GetPointTwoPrecision(((Min_Y)+distY * 3)), CSET.Black);
 
-			Plot.Draw_Text(575 - 4 * 62 * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+			for (int m = 0; m < markings-1 ; m++) {
+				yy = Remap((float)575 - m * amounty * 2, (float)(565), (float)80, Min_Y, Max_Y);
+
+				Plot.Draw_Text(575 - m * amounty * 2, 40, GetPointTwoPrecision(yy), CSET.Black);
+
+			}
+			Plot.Draw_Text(575 - (markings - 1) * amounty * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+
+
+
 
 
 			if (mode == S_GRID) {
+				amount = 419 / markings;
+				amounty = 335 / markings;;
+				for (int i = 0; i < markings; i++) {
+					Plot.Draw_Line(575 - amounty * i * 2, 90, 575 - amounty * i * 2, 725, CSET.Black);
 
-				for (int i = 0; i < 5; i++) {
-					Plot.Draw_Line(575 - 62 * i * 2, 90, 575 - 62 * i * 2, 725, CSET.Black);
-
-					Plot.Draw_Line(575, 100 + i * 78 * 2, 75, 100 + i * 78 * 2, CSET.Black);
-					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 100 + i * amount * 2, 75, 100 + i * amount * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * amount * 2, 575 + 10, 99 + i * amount * 2, CSET.Black);
 
 
 
@@ -10538,24 +10948,26 @@ namespace SPlot {
 
 			}
 			else if (mode == S_DEFAULT) {
-				for (int i = 0; i < 5; i++) {
+				 amount = 419 / markings;
+				 amounty = 335 / markings;
+				for (int i = 0; i < markings; i++) {
 
-					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
+					Plot.Draw_Line(575 - amounty * i * 2, 100, 575 - amounty * i * 2, 90, CSET.Black);
 
-					Plot.Draw_Line(575, 100 + i * 78 * 2, 575 + 10, 100 + i * 78 * 2, CSET.Black);
-					Plot.Draw_Line(575, 99 + i * 78 * 2, 575 + 10, 99 + i * 78 * 2, CSET.Black);
+					Plot.Draw_Line(575, 100 + i * amount * 2, 575 + 10, 100 + i * amount * 2, CSET.Black);
+					Plot.Draw_Line(575, 99 + i * amount * 2, 575 + 10, 99 + i * amount * 2, CSET.Black);
 
 
 
 				}
 			}
 
-			double tx, ty,tx2,ty2;
-			std::pair<double, double> b,b2;
+			double tx, ty, tx2, ty2;
+			std::pair<double, double> b, b2;
 			Plot.Update_Pixel_Matrix();
-			for (int i = 0; i < Data.size()-1; i++) {
+			for (int i = 0; i < Data.size() - 1; i++) {
 				b = Data[i].first;
-				b2 = Data[i+1].first;
+				b2 = Data[i + 1].first;
 
 				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
@@ -10564,26 +10976,54 @@ namespace SPlot {
 				ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
 
 
-				if (i == seperators[0]) {
+				if (seperators.size() != 0 && i == seperators[0]) {
 					seperators.erase(seperators.begin());
 				}
 				else {
-					Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)ty2, Data[i].second, S_AA_LINE);
+					//Plot.Draw_Circle(tx, ty, 5, CSET.Red, S_AA_FILL);
+					//Cosine_Interpolate()
+
+
+					for (double z = 0; z <= 1; z += 0.001) {
+						int nty = SmoothStep_Interpolate(ty, ty2, z);
+						int ntx = Remap(z, 0, 1, tx, tx2);
+						Plot.Set_Color(nty, ntx, Data[i].second);
+
+
+					}
+
+
+					//Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)nty, Data[i].second, S_AA_LINE);
+			
 				}
 
-				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+				//Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
+				//Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
 			}
-			b = Data[Data.size() - 1].first;
+			b = Data[Data.size()- 2].first;
+			b2 = Data[Data.size() - 1].first;
+
 			tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 			ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
-			Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, S_AA_FILL);
-			Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
 
+			tx2 = Remap((float)b2.first, (float)Min_X, (float)Max_X, 105, 720);
+			ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
+
+			for (double z = 0; z <= 1; z += 0.001) {
+				int nty = SmoothStep_Interpolate(ty, ty2, z);
+				int ntx = Remap(z, 0, 1, tx, tx2);
+				Plot.Set_Color(nty, ntx, Data[Data.size() - 1].second);
+
+			}
+
+			//Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, S_AA_FILL);
+			//Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+
+		
 			Plot.Write_Image(File_Name);
 		}
 		void Add_Point(double const &x, double const &y, Pixel const &color) {
-			seperators.push_back((int)(this->Data.size()-1));
+			seperators.push_back((int)(this->Data.size() - 1));
 			for (int i = 0; i < Data.size(); i++) {
 				if (x > Max_X) {
 					Max_X = x;
@@ -10606,7 +11046,7 @@ namespace SPlot {
 			Data.push_back(ScatterDot(std::pair<double, double>(x, y), color));
 		}
 		void Add_Point(std::vector<std::pair<double, double> > new_points, Pixel const &color) {
-			seperators.push_back((int)(this->Data.size()-1));
+			seperators.push_back((int)(this->Data.size() - 1));
 			for (int i = 0; i < new_points.size(); i++) {
 				if (new_points[i].first > Max_X) {
 					Max_X = new_points[i].first;
@@ -10632,6 +11072,34 @@ namespace SPlot {
 
 			}
 		}
+		void Add_Point(std::vector<std::pair<int, double> > new_points, Pixel const &color) {
+			seperators.push_back((int)(this->Data.size() - 1));
+			for (int i = 0; i < new_points.size(); i++) {
+				if (new_points[i].first > Max_X) {
+					Max_X = new_points[i].first;
+				}
+				if (new_points[i].first < Min_X) {
+					Min_X = new_points[i].first;
+				}
+				if (new_points[i].second > Max_Y) {
+					Max_Y = new_points[i].second;
+				}
+				if (new_points[i].second < Min_Y) {
+					Min_Y = new_points[i].second;
+				}
+			}
+			Max_X += Max_X / 1000;
+			Max_Y += Max_Y / 1000;
+
+			Max_X = std::round(Max_X);
+			Max_Y = std::round(Max_Y);
+
+			for (int i = 0; i < new_points.size(); i++) {
+				Data.push_back(ScatterDot(new_points[i], color));
+
+			}
+		}
+
 
 		Image Get_Image() {
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
