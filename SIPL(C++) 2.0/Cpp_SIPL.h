@@ -173,6 +173,8 @@ inline double Squared_Point_Distance(Point<double> first, Point<double> second) 
 
 
 
+#ifndef  SIPLCOMPLEXSYSTEMS
+#define SIPLCOMPLEXSYSTEMS
 
 
 class Complex {
@@ -286,50 +288,134 @@ public:
 					, Imaginary) * t);
 		}
 	}
-	int bitReverse(int n, int bits) {
-		int reversedN = n;
-		int count = bits - 1;
 
-		n >>= 1;
-		while (n > 0) {
-			reversedN = (reversedN << 1) | (n & 1);
-			count--;
-			n >>= 1;
+
+};
+
+
+std::vector<Complex> Discrete_Fourier_Transform(std::vector<int> &dat) {
+	std::vector<Complex> Res;
+	for (int k = 0; k < dat.size(); k++) {
+		Complex sum(0, 0);
+		for (int n = 0; n < dat.size(); n++) {
+			Complex exp_power(0, 2 * std::_Pi);
+			exp_power = exp_power * -1;
+			exp_power = exp_power / Complex(dat.size(), 0);
+			exp_power = exp_power * Complex(k, 0);
+			exp_power = exp_power * Complex(n, 0);
+			exp_power = exp_power.Exp();
+
+			sum = sum + (Complex(dat[n], 0) * exp_power);
 		}
-
-		return ((reversedN << count) & ((1 << bits) - 1));
+		Res.push_back(sum);
 	}
-	void FFT(std::vector<Complex> Values) {
+	return Res;
+}
+std::vector<Complex> Discrete_Fourier_Transform(std::vector<Complex> &dat) {
+	std::vector<Complex> Res;
+	for (int k = 0; k < dat.size(); k++) {
+		Complex sum(0, 0);
+		for (int n = 0; n < dat.size(); n++) {
+			Complex exp_power(0, 2 * std::_Pi);
+			exp_power = exp_power * -1;
+			exp_power = exp_power / Complex(dat.size(), 0);
+			exp_power = exp_power * Complex(k, 0);
+			exp_power = exp_power * Complex(n, 0);
+			exp_power = exp_power.Exp();
 
-		int bits = (int)(std::log(Values.size()) / std::log(2));
-		for (int j = 1; j < Values.size() / 2; j++) {
-
-			int swapPos = bitReverse(j, bits);
-			Complex temp = Values[j];
-			Values[j] = Values[swapPos];
-			Values[swapPos] = temp;
+			sum = sum + (dat[n] * exp_power);
 		}
+		Res.push_back(sum);
+	}
+	return Res;
+}
 
-		for (int N = 2; N <= Values.size(); N <<= 1) {
-			for (int i = 0; i < Values.size(); i += N) {
-				for (int k = 0; k < N / 2; k++) {
+std::vector<double> Reverse_Discrete_Fourier_Transform(std::vector<Complex> &dat) {
+	std::vector<double> Res;
+	for (int k = 0; k < dat.size(); k++) {
+		Complex sum(0, 0);
+		for (int n = 0; n < dat.size(); n++) {
+			Complex exp_power(0, 2 * std::_Pi);
+			exp_power = exp_power * Complex(k, 0);
+			exp_power = exp_power * Complex(n, 0);
+			exp_power = exp_power / Complex(dat.size(), 0);
 
-					int evenIndex = i + k;
-					int oddIndex = i + k + (N / 2);
-					Complex even = Values[evenIndex];
-					Complex odd = Values[oddIndex];
+			exp_power = exp_power.Exp();
 
-					double term = (-2 * std::_Pi * k) / (double)N;
-					Complex exp = (Complex(std::cos(term), std::sin(term))*(odd));
+			sum = sum + (dat[n] * exp_power);
+		}
+		sum = sum * (Complex(1, 0) / Complex(dat.size(), 0));
+		Res.push_back(sum.Real);
+	}
+	return Res;
+}
+std::vector<Complex> Reverse_Discrete_Fourier_Transform_Complex(std::vector<Complex> &dat) {
+	std::vector<Complex> Res;
+	for (int k = 0; k < dat.size(); k++) {
+		Complex sum(0, 0);
+		for (int n = 0; n < dat.size(); n++) {
+			Complex exp_power(0, 2 * std::_Pi);
+			exp_power = exp_power * Complex(k, 0);
+			exp_power = exp_power * Complex(n, 0);
+			exp_power = exp_power / Complex(dat.size(), 0);
 
-					Values[evenIndex] = even + (exp);
-					Values[oddIndex] = even - (exp);
-				}
+			exp_power = exp_power.Exp();
+
+			sum = sum + (dat[n] * exp_power);
+		}
+		sum = sum * (Complex(1, 0) / Complex(dat.size(), 0));
+		Res.push_back(sum);
+	}
+	return Res;
+}
+
+
+
+int bitReverse(int n, int bits) {
+	int reversedN = n;
+	int count = bits - 1;
+
+	n >>= 1;
+	while (n > 0) {
+		reversedN = (reversedN << 1) | (n & 1);
+		count--;
+		n >>= 1;
+	}
+
+	return ((reversedN << count) & ((1 << bits) - 1));
+}
+void FFT(std::vector<Complex> &Values) {
+
+	int bits = (int)(std::log(Values.size()) / std::log(2));
+	for (int j = 1; j < Values.size() / 2; j++) {
+
+		int swapPos = bitReverse(j, bits);
+		Complex temp = Values[j];
+		Values[j] = Values[swapPos];
+		Values[swapPos] = temp;
+	}
+
+	for (int N = 2; N <= Values.size(); N <<= 1) {
+		for (int i = 0; i < Values.size(); i += N) {
+			for (int k = 0; k < N / 2; k++) {
+
+				int evenIndex = i + k;
+				int oddIndex = i + k + (N / 2);
+				Complex even = Values[evenIndex];
+				Complex odd = Values[oddIndex];
+
+				double term = (-2 * std::_Pi * k) / (double)N;
+				Complex exp = (Complex(std::cos(term), std::sin(term))*(odd));
+
+				Values[evenIndex] = even + (exp);
+				Values[oddIndex] = even - (exp);
 			}
 		}
 	}
+}
 
-};
+#endif // ! SIPLCOMPLEXSYSTEMS
+
 
 std::ostream &operator<<(std::ostream &out, Complex const &source) {
 	if (source.Imaginary > 0.0 && source.Real > 0.0) {
@@ -357,7 +443,7 @@ std::istream &operator>>(std::istream &in, Complex &source) {
 	in >> source.Real >> source.Imaginary;
 	return in;
 }
-
+typedef std::vector<std::vector<Complex> > Complex_Matrix;
 
 class LabPixel {
 public:
@@ -799,6 +885,18 @@ public:
 		this->Rows = Rows;
 		this->Cols = Cols;
 	}
+	Matrix(int Rows, int Cols,std::vector<MType> data) {
+		Matrix_Body = std::vector<std::vector<MType> >(Rows, std::vector<MType>(Cols));
+		int z = 0;
+		for (int i = 0; i < Rows; i++) {
+			for (int j = 0; j < Cols; j++) {
+				Matrix_Body[i][j] = data[z++];
+			}
+		}
+		this->Rows = Rows;
+		this->Cols = Cols;
+	}
+
 	Matrix(int N, char x = IDENTITY_MATRIX) {
 		if (x == IDENTITY_MATRIX) {
 			Matrix_Body = std::vector<std::vector<MType> >(N, std::vector<MType>(N));
@@ -828,7 +926,7 @@ public:
 		this->Rows = 0;
 		this->Cols = 0;
 	}
-	template<class MType> Matrix(Matrix<MType> copy) {
+	template<class MCType> Matrix(Matrix<MCType> &copy) {
 		this->Rows = copy.Rows;
 		this->Cols = copy.Cols;
 		for (int i = 0; i < this->Rows; i++) {
@@ -869,18 +967,16 @@ public:
 	std::vector<MType> Diagonal();
 	Matrix<MType> Get_Upper_Matrix();
 	Matrix<MType> Get_Lower_Matrix();
-	std::vector<Matrix<MType> > LU_Decomposition();
-	std::vector<Matrix<MType> >  QR_Decomposition();
 	double Get_Determinant();
-	std::vector<double> Get_Eigen_Values();
-	Matrix<MType> Get_Eigen_Vectors();
 	std::vector<double>  Gaussian_Elimination(std::vector<double> equals_to);
 	template<class MType> friend std::ostream &operator<<(std::ostream &out, Matrix<MType> const &mat);
 	Matrix<MType> Reshape(int Rows, int Cols);
 	std::vector<MType> Flatten();
+	void Remove_Row(int const &row_index);
+	void Remove_Column(int const &column_index);
+	void Apply_Function_To_Values(MType(*function)(MType));
+	void Add_To_All(MType const &value);
 
-
-protected:
 	std::vector<std::vector<MType> > Matrix_Body;
 };
 
@@ -1136,175 +1232,6 @@ template<class MType> void Matrix<MType>::Random_Fill() {
 		}
 	}
 }
-template<class MType> std::vector<Matrix<MType> > Matrix<MType>::LU_Decomposition() {
-	if (this->Cols != this->Rows) {
-		std::cout << " Error  - Matrix Needs To Be NxN\n";
-		return  std::vector<Matrix<MType> >();
-	}
-	Matrix<double> LU(*this);
-	double *pivot = new double[this->Cols];
-	for (int i = 0; i < this->Cols; i++) {
-		pivot[i] = i;
-	}
-	int pivsign = 1;
-
-	std::vector<MType> LUrowi;
-	double *LUcolj = new double[this->Cols];
-	//std::array<double, this->Cols> LUcolj;
-
-	// Outer loop.
-
-	for (int j = 0; j < this->Cols; j++) {
-		for (int i = 0; i < this->Cols; i++) {
-			LUcolj[i] = LU.Matrix_Body[i][j];
-		}
-
-		for (int i = 0; i < this->Cols; i++) {
-			LUrowi = LU.Matrix_Body[i];
-			int kmax = Mmin(i, j);
-			double s = 0.0;
-			for (int k = 0; k < kmax; k++) {
-				s += LUrowi[k] * LUcolj[k];
-			}
-
-			LUrowi[j] = LUcolj[i] -= s;
-		}
-
-		int p = j;
-		for (int i = j + 1; i < this->Cols; i++) {
-
-			if (Mabs(LUcolj[i]) > Mabs(LUcolj[p])) {
-				p = i;
-			}
-		}
-		if (p != j) {
-			for (int k = 0; k < this->Cols; k++) {
-				double t = LU.Matrix_Body[p][k];
-				LU.Matrix_Body[p][k] = LU.Matrix_Body[j][k];
-				LU.Matrix_Body[j][k] = t;
-			}
-			double k = pivot[p];
-			pivot[p] = pivot[j];
-			pivot[j] = k;
-			pivsign = -pivsign;
-		}
-		if ((j < this->Cols) & (LU[j][j] != 0.0)) {
-			for (int i = j + 1; i < this->Cols; i++) {
-				LU[i][j] /= LU[j][j];
-			}
-		}
-	}
-
-
-	//Matrix[] LUP = new Matrix[3];
-	std::vector< Matrix<double> > LUP(3);
-	Matrix<MType> Lower = LU.Get_Lower_Matrix();
-	for (int i = 0; i < this->Cols; i++) {
-		Lower[i][i] = 1;
-	}
-	Matrix<MType> pivot_mat(1, this->Cols);
-	for (int i = 0; i < this->Cols; i++) {
-		pivot_mat[0][i] = pivot[i];
-	}
-	LUP[0] = Lower;
-	LUP[1] = LU.Get_Upper_Matrix();
-	LUP[2] = pivot_mat;
-	delete[] pivot;
-	return LUP;
-}
-template<class MType> std::vector<Matrix<MType> >  Matrix<MType>::QR_Decomposition() {
-	Matrix QR(*this);
-	std::vector<double> R_diagonal(this->Rows);
-
-	for (int k = 0; k < this->Rows; k++) {
-		double nrm = 0;
-		for (int i = k; i < this->Cols; i++) {
-			nrm = std::sqrt(std::pow(nrm, 2) + std::pow(QR[i][k], 2));
-		}
-
-		if (nrm != 0.0) {
-			if (QR[k][k] < 0) {
-				nrm = -nrm;
-			}
-			for (int i = k; i < this->Cols; i++) {
-				QR[i][k] /= nrm;
-			}
-			QR[k][k] += 1.0;
-
-			for (int j = k + 1; j < this->Cols; j++) {
-				double s = 0.0;
-				for (int i = k; i < this->Cols; i++) {
-					s += QR[i][k] * QR[i][j];
-				}
-				s = -s / QR.Matrix_Body[k][k];
-				for (int i = k; i < this->Cols; i++) {
-					QR[i][j] += s * QR[i][k];
-				}
-			}
-		}
-		R_diagonal[k] = -nrm;
-	}
-
-	int m = this->Rows;
-	int n = this->Cols;
-	Matrix XQ(m, n);
-	Matrix<double> Q(m, n);
-	for (int k = n - 1; k >= 0; k--) {
-		for (int i = 0; i < m; i++) {
-			Q[i][k] = 0.0;
-		}
-		Q[k][k] = 1.0;
-		for (int j = k; j < n; j++) {
-			if (QR[k][k] != 0) {
-				double s = 0.0;
-				for (int i = k; i < m; i++) {
-					s += QR[i][k] * Q[i][j];
-				}
-				s = -s / QR[k][k];
-				for (int i = k; i < m; i++) {
-					Q[i][j] += s * QR[i][k];
-				}
-			}
-		}
-	}
-	XQ = Q;
-	Matrix XR(n, n);
-	Matrix<double> R(n, n);
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			if (i < j) {
-				R[i][j] = QR[i][j];
-			}
-			else if (i == j) {
-				R[i][j] = R_diagonal[i];
-			}
-			else {
-				R[i][j] = 0.0;
-			}
-		}
-	}
-	XR = R;
-
-	Matrix Xh(m, n);
-	Matrix<double> H(m, n);
-	for (int i = 0; i < m; i++) {
-		for (int j = 0; j < n; j++) {
-			if (i >= j) {
-				H[i][j] = QR[i][j];
-			}
-			else {
-				H[i][j] = 0.0;
-			}
-		}
-	}
-	Xh = H;
-	std::vector<Matrix<MType> > Result(3);
-
-	Result[0] = XQ;
-	Result[1] = XR;
-	Result[2] = Xh;
-	return Result;
-}
 template<class MType>  double Matrix<MType>::Get_Determinant() {
 	if (this->Cols != this->Rows) {
 		std::cout << "Matrix Needs To Be NxN\n";
@@ -1323,38 +1250,7 @@ template<class MType>  double Matrix<MType>::Get_Determinant() {
 		return -det;
 	}
 }
-template<class MType>  std::vector<double> Matrix<MType>::Get_Eigen_Values() {
-	Matrix< MType> CopyOfOriginal(*this);
-	Matrix< MType> A(*this);
-	std::vector<Matrix<MType> > QR = this->QR_Decomposition();
-	for (int i = 0; i < 20; i++) {
-		A = QR[1].Dot_Product(QR[0]);
-		this->Matrix_Body = A.Matrix_Body;
-		QR = this->QR_Decomposition();
-	}
 
-	std::vector<double> EigenValues = this->Diagonal();
-	this->Matrix_Body = CopyOfOriginal.Matrix_Body;
-	return EigenValues;
-}
-template<class MType> Matrix<MType> Matrix<MType>::Get_Eigen_Vectors() {
-	Matrix< MType> CopyOfOriginal(*this);
-	Matrix< MType> A(*this);
-	std::vector<Matrix<MType> > QR = this->QR_Decomposition();
-	Matrix<MType> Q(QR[0]);
-
-	for (int i = 0; i < 30; i++) {
-		A = QR[1].Dot_Product(QR[0]);
-		this->Matrix_Body = A.Matrix_Body;
-		QR = this->QR_Decomposition();
-		Q = Q.Dot_Product(QR[0]);
-
-
-	}
-
-	this->Matrix_Body = CopyOfOriginal.Matrix_Body;
-	return Q;
-}
 template<class MType> std::vector<double>  Matrix<MType>::Gaussian_Elimination(std::vector<double> equals_to) {
 	int n = this->Matrix_Body[0].size();
 	for (int p = 0; p < n; p++) {
@@ -1422,6 +1318,248 @@ template<class MType> std::vector<MType> Matrix<MType>::Flatten() {
 		}
 	}
 	return Result;
+}
+template<class MType> void Matrix<MType>::Apply_Function_To_Values(MType(*function)(MType)) {
+	for (int i = 0; i < this->Rows; i++) {
+		for (int j = 0; j < this->Cols; j++) {
+			this->Matrix_Body[i][j] = function(this->Matrix_Body[i][j]);
+		}
+	}
+}
+template<class MType> void Matrix<MType>::Add_To_All(MType const &value) {
+	for (int i = 0; i < this->Rows; i++) {
+		for (int j = 0; j < this->Cols; j++) {
+			this->Matrix_Body[i][j] += value;
+		}
+	}
+}
+
+
+template<class MType> void Matrix<MType>::Remove_Row(int const &row_index) {
+	this->Matrix_Body.erase(this->Matrix_Body.begin() + row_index);
+	this->Rows--;
+}
+template<class MType> void Matrix<MType>::Remove_Column(int const &column_index) {
+	for (int i = 0; i < Rows; i++) {
+		this->Matrix_Body[i].erase(Matrix_Body[i].begin() + column_index);
+	}
+	this->Cols--;
+}
+
+template<class MType> std::vector<Matrix<double> > LU_Decomposition(Matrix<MType>  &source) {
+	if (source.Cols != source.Rows) {
+		std::cout << " Error  - Matrix Needs To Be NxN\n";
+		return  std::vector<Matrix<MType> >();
+	}
+
+	Matrix< double> LU(source.Rows, source.Cols);
+	for (int i = 0; i < source.Rows; i++) {
+		for (int j = 0; j < source.Cols; j++) {
+			LU[i][j] = source[i][j];
+		}
+	}
+
+	double *pivot = new double[source.Cols];
+	for (int i = 0; i < source.Cols; i++) {
+		pivot[i] = i;
+	}
+	int pivsign = 1;
+
+	std::vector<MType> LUrowi;
+	std::vector<double> LUcolj(source.Cols);
+
+	// Outer loop.
+
+	for (int j = 0; j < source.Cols; j++) {
+		for (int i = 0; i < source.Cols; i++) {
+			LUcolj[i] = LU.Matrix_Body[i][j];
+		}
+
+		for (int i = 0; i < source.Cols; i++) {
+			LUrowi = LU.Matrix_Body[i];
+			int kmax = Mmin(i, j);
+			double s = 0.0;
+			for (int k = 0; k < kmax; k++) {
+				s += LUrowi[k] * LUcolj[k];
+			}
+
+			LUrowi[j] = LUcolj[i] -= s;
+		}
+
+		int p = j;
+		for (int i = j + 1; i < source.Cols; i++) {
+
+			if (Mabs(LUcolj[i]) > Mabs(LUcolj[p])) {
+				p = i;
+			}
+		}
+		if (p != j) {
+			for (int k = 0; k < source.Cols; k++) {
+				double t = LU.Matrix_Body[p][k];
+				LU.Matrix_Body[p][k] = LU.Matrix_Body[j][k];
+				LU.Matrix_Body[j][k] = t;
+			}
+			double k = pivot[p];
+			pivot[p] = pivot[j];
+			pivot[j] = k;
+			pivsign = -pivsign;
+		}
+		if ((j < source.Cols) & (LU[j][j] != 0.0)) {
+			for (int i = j + 1; i < source.Cols; i++) {
+				LU[i][j] /= LU[j][j];
+			}
+		}
+	}
+
+
+	//Matrix[] LUP = new Matrix[3];
+	std::vector< Matrix<double> > LUP(3);
+	Matrix<MType> Lower = LU.Get_Lower_Matrix();
+	for (int i = 0; i < source.Cols; i++) {
+		Lower[i][i] = 1;
+	}
+	Matrix<MType> pivot_mat(1, source.Cols);
+	for (int i = 0; i < source.Cols; i++) {
+		pivot_mat[0][i] = pivot[i];
+	}
+	LUP[0] = Lower;
+	LUP[1] = LU.Get_Upper_Matrix();
+	LUP[2] = pivot_mat;
+	delete[] pivot;
+	return LUP;
+}
+template<class MType> std::vector<Matrix<double> > QR_Decomposition(Matrix<MType>  &source) {
+	Matrix<double> QR(source.Rows, source.Cols);
+	for (int i = 0; i < source.Rows; i++) {
+		for (int j = 0; j < source.Cols; j++) {
+			QR[i][j] = source[i][j];
+		}
+	}
+	std::vector<double> R_diagonal(source.Rows);
+
+	for (int k = 0; k < source.Rows; k++) {
+		double nrm = 0;
+		for (int i = k; i < source.Cols; i++) {
+			nrm = std::sqrt(std::pow(nrm, 2) + std::pow(QR[i][k], 2));
+		}
+
+		if (nrm != 0.0) {
+			if (QR[k][k] < 0) {
+				nrm = -nrm;
+			}
+			for (int i = k; i < source.Cols; i++) {
+				QR[i][k] /= nrm;
+			}
+			QR[k][k] += 1.0;
+
+			for (int j = k + 1; j < source.Cols; j++) {
+				double s = 0.0;
+				for (int i = k; i < source.Cols; i++) {
+					s += QR[i][k] * QR[i][j];
+				}
+				s = -s / QR.Matrix_Body[k][k];
+				for (int i = k; i < source.Cols; i++) {
+					QR[i][j] += s * QR[i][k];
+				}
+			}
+		}
+		R_diagonal[k] = -nrm;
+	}
+
+	int m = source.Rows;
+	int n = source.Cols;
+	Matrix<double> XQ(m, n);
+	Matrix<double> Q(m, n);
+	for (int k = n - 1; k >= 0; k--) {
+		for (int i = 0; i < m; i++) {
+			Q[i][k] = 0.0;
+		}
+		Q[k][k] = 1.0;
+		for (int j = k; j < n; j++) {
+			if (QR[k][k] != 0) {
+				double s = 0.0;
+				for (int i = k; i < m; i++) {
+					s += QR[i][k] * Q[i][j];
+				}
+				s = -s / QR[k][k];
+				for (int i = k; i < m; i++) {
+					Q[i][j] += s * QR[i][k];
+				}
+			}
+		}
+	}
+	XQ = Q;
+	Matrix<double> XR(n, n);
+	Matrix<double> R(n, n);
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			if (i < j) {
+				R[i][j] = QR[i][j];
+			}
+			else if (i == j) {
+				R[i][j] = R_diagonal[i];
+			}
+			else {
+				R[i][j] = 0.0;
+			}
+		}
+	}
+	XR = R;
+
+	Matrix<double> Xh(m, n);
+	Matrix<double> H(m, n);
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (i >= j) {
+				H[i][j] = QR[i][j];
+			}
+			else {
+				H[i][j] = 0.0;
+			}
+		}
+	}
+	Xh = H;
+	std::vector<Matrix<double> > Result(3);
+
+	Result[0] = XQ;
+	Result[1] = XR;
+	Result[2] = Xh;
+	return Result;
+}
+
+template<class MType>  std::vector<double> Get_Eigen_Values(Matrix<MType>  &source) {
+	Matrix< double> A(source.Rows, source.Cols);
+	for (int i = 0; i < source.Rows; i++) {
+		for (int j = 0; j < source.Cols; j++) {
+			A[i][j] = source[i][j];
+		}
+	}
+	std::vector<Matrix<double> > QR = QR_Decomposition(A);
+	for (int i = 0; i < 20; i++) {
+		A = QR[1].Dot_Product(QR[0]);
+		QR = QR_Decomposition(A);
+	}
+
+	std::vector<double> EigenValues = A.Diagonal();
+	return EigenValues;
+}
+template<class MType> Matrix<double> Get_Eigen_Vectors(Matrix<MType> const &source) {
+	Matrix< double> A(source.Rows, source.Cols);
+	for (int i = 0; i < source.Rows; i++) {
+		for (int j = 0; j < source.Cols; j++) {
+			A[i][j] = source.Matrix_Body[i][j];
+		}
+	}
+	std::vector<Matrix<double> > QR = QR_Decomposition(A);
+	Matrix<double> Q(QR[0]);
+	for (int i = 0; i < 30; i++) {
+		A = QR[1].Dot_Product(QR[0]);
+		QR = QR_Decomposition(A);
+		Q = Q.Dot_Product(QR[0]);
+
+
+	}
+	return Q;
 }
 
 #endif MATRIX_STRUCTRE_THOTH
@@ -4120,6 +4258,8 @@ public:
 					this->Set_Color(j, i, Color);
 				}
 			}
+			this->Update_Pixel_Matrix();
+
 		}
 		else if (Mode == S_CHECKERED) {
 			if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
@@ -6490,6 +6630,72 @@ public:
 
 		}
 		return Mean / Divider;
+
+	}
+	std::vector<Pixel*> &Get_4_Neighbours(int const &i, int const &j) {
+		std::vector<Pixel*> N4;
+		if (i == 0) {
+			N4.push_back(nullptr);
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i - 1][j]);
+		}
+		if (j == 0) {
+			N4.push_back(nullptr);
+
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i][j - 1]);
+		}
+		if (i == this->Image_Height - 1) {
+			N4.push_back(nullptr);
+
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i + 1][j]);
+
+		}
+		if (j == this->Image_Width + -1) {
+			N4.push_back(nullptr);
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i][j + 1]);
+
+		}
+		return N4;
+
+	}
+	std::vector<Pixel*> &Get_D_Neighbours(int const &i, int const &j) {
+		std::vector<Pixel*> N4;
+		if (i == 0 || j ==0) {
+			N4.push_back(nullptr);
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i - 1][j-1]);
+		}
+		if (j == 0 || i == Image_Height -1) {
+			N4.push_back(nullptr);
+
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i+1][j - 1]);
+		}
+		if (i == 0 || j == this->Image_Width-1) {
+			N4.push_back(nullptr);
+
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i - 1][j+1]);
+
+		}
+		if (j == this->Image_Width + -1 || i == Image_Height-1) {
+			N4.push_back(nullptr);
+		}
+		else {
+			N4.push_back(&this->Pixel_Matrix[i+1][j + 1]);
+
+		}
+		return N4;
 
 	}
 
@@ -9688,65 +9894,6 @@ public:
 		}
 		this->Commint_Matrix_Changes();
 	}
-	std::vector<std::vector<Complex> > Fourier_Transform() {
-		std::vector<std::vector<Complex> > Fourier_Matrix(this->Image_Height);
-		for (int i = 0; i < this->Image_Height; i++) {
-			Fourier_Matrix[i] = std::vector<Complex>(this->Image_Width);
-		}
-		Complex temp = Complex(1, 0);
-		Complex Eval = Complex(std::exp(1.0), 0);
-		Complex Epow;
-		Complex Transition;
-		Complex Sum;
-		double val = 0;
-		for (int i = 0; i < this->Image_Height; i++) {
-			for (int j = 0; j < this->Image_Width; j++) {
-
-				for (int k = 0; k < this->Image_Height; k++) {
-					for (int l = 0; l < this->Image_Width; l++) {
-						temp*(this->Pixel_Matrix[k][l].r);
-						val = 2 * std::_Pi*((((double)(k*i) / this->Image_Height) + ((double)(j*l) / this->Image_Width)));
-						//System.out.format("k: %d, l:%d ,i:%d j:%d  val :  %f  \n",k,l,i,j,val );
-						Transition = Complex(val, 0);
-						Epow = Complex(0, -1);
-						Epow = Epow * (Transition);
-
-						Eval = Eval^(Epow);
-						temp = temp * (Eval);
-
-						Sum = Sum + (temp);
-
-						temp.Real = 1;
-						temp.Imaginary = 0;
-						Eval.Imaginary = 0;
-						Eval.Real = std::exp(1.0);
-						val = 0;
-
-					}
-
-				}
-
-
-				Fourier_Matrix[i][j] = Complex(Sum);
-				Sum.Imaginary = 0;
-				Sum.Real = 0;
-
-			}
-		}
-
-		for (int i = 0; i < this->Image_Height; i++) {
-			for (int j = 0; j < this->Image_Width; j++) {
-				this->Pixel_Matrix[i][j].r = (int)Fourier_Matrix[i][j].Real;
-				this->Pixel_Matrix[i][j].g = (int)Fourier_Matrix[i][j].Real;
-				this->Pixel_Matrix[i][j].b = (int)Fourier_Matrix[i][j].Real;
-
-			}
-		}
-
-		this->Logarithmic_Transformation();
-		return Fourier_Matrix;
-
-	}
 	void Negative_Transformation() {
 		for (int i = 0; i < this->Image_Height; i++) {
 			for (int j = 0; j < this->Image_Width; j++) {
@@ -9993,6 +10140,22 @@ Image Matrix_To_Graysacle(Matrix<double> &source) {
 
 	return Res;
 }
+Image Matrix_To_Graysacle(Matrix<int> &source) {
+	Image Res;
+	Res.Load_Blank_Canvas(source.Rows, source.Cols, Pixel(0, 0, 0));
+	for (int i = 0; i < source.Rows; i++) {
+		for (int j = 0; j < source.Cols; j++) {
+			Res[i][j].r = (int)source[i][j];
+			Res[i][j].g = (int)source[i][j];
+			Res[i][j].b = (int)source[i][j];
+
+		}
+	}
+	Res.Commint_Matrix_Changes();
+
+	return Res;
+}
+
 Image Matrix_To_Graysacle(std::vector<std::vector<double> > &source) {
 	Image Res;
 	Res.Load_Blank_Canvas((int)source.size(), (int)source[0].size(), Pixel(0, 0, 0));
@@ -10008,8 +10171,171 @@ Image Matrix_To_Graysacle(std::vector<std::vector<double> > &source) {
 	return Res;
 }
 
+Complex_Matrix Discrete_Fourier_Transform(Image &source) {
+	std::vector<std::vector<Complex> > Fourier_Matrix;
+	std::vector<std::vector<Complex> > Fourier_Matrix_B;
+	for (int i = 0; i < source.Image_Height; i++) {
+		Fourier_Matrix_B.push_back(std::vector<Complex>(source.Image_Width));
+		for (int j = 0; j < source.Image_Width; j++) {
+			Fourier_Matrix_B[i][j]=(Complex::Zero());
+		}
+
+	}
+
+	Fourier_Matrix.reserve(source.Image_Height);
+
+	for (int i = 0; i < source.Image_Height; i++) {
+		std::vector<int> sample_row;
+
+		for (int j = 0; j < source.Image_Width; j++) {
+			sample_row.push_back(source.Pixel_Matrix[i][j].r);
+		}
+		Fourier_Matrix.push_back(Discrete_Fourier_Transform(sample_row));
+
+	}
+
+	for (int i = 0; i < source.Image_Width; i++) {
+		std::vector<Complex> sample_row;
+
+		for (int j = 0; j < source.Image_Height; j++) {
+			sample_row.push_back(Fourier_Matrix[j][i]);
+		}
+
+		sample_row = Discrete_Fourier_Transform(sample_row);
+
+		for (int j = 0; j < source.Image_Height; j++) {
+			Fourier_Matrix_B[j][i] = sample_row[j];
+		}
+	}
+
+	return Fourier_Matrix_B;
+
+}
+Complex_Matrix Discrete_Fourier_Transform_Shift(Complex_Matrix &source) {
+
+	Complex_Matrix shifted = Complex_Matrix(source);
+
+	int h = source.size(), w = source[0].size();
+	for (int i = 0; i < h / 2; i++) {
+		for (int j = 0; j < w / 2; j++) {
+
+			std::swap(shifted[i][j], shifted[(h / 2) + i][(w / 2) + j]);
+		}
+	}
+
+	for (int i = h / 2; i < h ; i++) {
+		for (int j = 0; j < w/2; j++) {
+			std::swap(shifted[i][j], shifted[i - (h / 2)][j + (w / 2)]);
+		}
+	}
+
+	return shifted;
+
+}
+Complex_Matrix Discrete_Fourier_Transform_Reverse_Shift(Complex_Matrix &source) {
+
+	Complex_Matrix shifted = Complex_Matrix(source);
+
+	int h = source.size(), w = source[0].size();
+	for (int i = 0; i < h / 2; i++) {
+		for (int j = 0; j < w / 2; j++) {
+
+			std::swap(shifted[i][j], shifted[(h / 2) + i][(w / 2) + j]);
+		}
+	}
+
+	for (int i = h / 2; i < h; i++) {
+		for (int j = 0; j < w / 2; j++) {
+			std::swap(shifted[i][j], shifted[i - (h / 2)][j + (w / 2)]);
+		}
+	}
+
+	return shifted;
+
+}
+Matrix<double> Reverse_Discrete_Fourier_Transform(Complex_Matrix &source) {
+	int h = source.size(), w = source[0].size();
+	Complex_Matrix Fourier_Matrix;
+	for (int i = 0; i < h; i++) {
+		Fourier_Matrix.push_back(std::vector<Complex>(w));
+	}
+	
+
+	Matrix<double> Fourier_Matrix_B(h,w);
+
+	for (int i = 0; i < h; i++) {
+		std::vector<Complex> sample_row;
+
+		for (int j = 0; j < w; j++) {
+			sample_row.push_back(source[i][j]);
+		}
+
+		sample_row = Reverse_Discrete_Fourier_Transform_Complex(sample_row);
+		for (int j = 0; j < w; j++) {
+			Fourier_Matrix[i][j] = sample_row[j];
+		}
+
+	}
+
+	for (int i = 0; i < w; i++) {
+		std::vector<Complex> sample_row;
+
+		for (int j = 0; j < h; j++) {
+			sample_row.push_back(Fourier_Matrix[j][i]);
+		}
+
+		std::vector<double> res = Reverse_Discrete_Fourier_Transform(sample_row);
+
+		for (int j = 0; j < h; j++) {
+			Fourier_Matrix_B[j][i] = res[j];
+		}
+	}
+
+	return Fourier_Matrix_B;
+
+}
+std::pair<Image, Image> Fourier_Matrix_To_Image(std::vector<std::vector<Complex> > const &Complex_Matrix) {
+	Image amplitude, phase;
+	int h = Complex_Matrix.size(),w = Complex_Matrix[0].size();
+	Color_Palette CSET;
+	amplitude.Load_Blank_Canvas(h, w, CSET.White);
+	phase.Load_Blank_Canvas(h, w, CSET.White);
+
+	int v = 30;
+
+	for (int i = 0; i < h; i++) {
+		for (int j = 0; j < w; j++) {
+			amplitude.Set_Color(i, j, Pixel(v*std::log10(std::abs(Complex_Matrix[i][j].Real)),  v*std::log10(std::abs(Complex_Matrix[i][j].Real)), v*std::log10(std::abs(Complex_Matrix[i][j].Real))));
+			amplitude.Set_Color(i, j, Pixel(v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary)), v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary)), v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary))));
 
 
+		}
+	}
+
+
+	return std::pair<Image, Image>(amplitude, phase);
+}
+
+
+
+std::vector<Matrix<int> > RGB_Decompose(Image &source) {
+	std::vector<Matrix<int> > Result(3);
+	for (int i = 0; i < 3; i++) {
+		Result[i] = Matrix<int>(source.Image_Height, source.Image_Width);
+	}
+
+	for (int i = 0; i < source.Image_Height; i++) {
+		for (int j = 0; j < source.Image_Width; j++) {
+			Result[0][i][j] = source[i][j].r;
+			Result[1][i][j] = source[i][j].g;
+			Result[2][i][j] = source[i][j].b;
+
+		}
+	}
+
+	return Result;
+
+}
 
 
 
