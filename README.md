@@ -216,6 +216,8 @@ SIPL Offers A Real-Time figure detection algorithm which is parametric like the 
   ### Plotting Templates Supported
   * __Scatter Plot__
   * __Bar Plot__
+  * __Stem Plot__
+  * __Line Plot__
   * __Pie Plot__
   * __Histogram__
   
@@ -225,7 +227,7 @@ SIPL Offers A Real-Time figure detection algorithm which is parametric like the 
   * __Complex Matrix Operations__
   * __Statistical Calculations__
   * __Random Number/Color/Sequance Generation__
-    * __Linear Calculations (Distances/Interpolation..)__
+  * __Linear Calculations (Distances/Interpolations)__
   ### Library Local GUI
   * __Frame Refreshing (For Game/ Video / Animation Creation)__
   * __3D Ploting And Interaction__
