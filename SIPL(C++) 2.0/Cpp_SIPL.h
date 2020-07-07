@@ -25,111 +25,134 @@
 #include <unordered_map>
 #include <cctype>
 #include <iomanip>
+#include <future>
+#include <mutex>
+#include <numeric>
+#include <type_traits>
+#include <any>
 
 
-#define S_HOLLOW 1118
-#define S_FILL 1119
-#define S_AA_FILL 1111
-#define S_AA_HOLLOW 1110
-#define S_CORNERS 1120
-#define S_CHECKERED 1121
-#define S_AA_LINE 1122
-#define S_DEFAULT 1223
-#define S_Median_Filter 1224
-#define S_Mean_Blur 1225
-#define S_Gaussian_Blur 1226
-#define S_Low_Pass 1227
-#define S_High_Pass 1228
-#define S_High_Pass_Streached 1229
-#define S_Unsharp_Mask 1230
-#define S_Sobel_Kernel 1231
-#define S_GREEN_HISTOGRAM 1232
-#define S_BLUE_HISTOGRAM 1233
-#define S_RED_HISTOGRAM 1234
-#define S_RGB_HISTOGRAM 1235
+enum Draw_Modes {
+	HOLLOW					,
+	FILLED			    	,
+	ANTIALIAS_FILLED		,
+	ANTIALIAS_HOLLOW		,
+	DEFAULT					,
+	ANTIALIAS_LINE			,
+	CORNERS					,
+	CHECKERED
+};
+enum Convolution_Kernels {
+	 Median_Filter				,	
+	 Mean_Blur					,	
+	 Gaussian_Blur	 			,	
+	 Low_Pass					,	
+	 High_Pass					,	
+	 High_Pass_Streached	 	,	
+	 Unsharp_Mask				,	
+	 Sobel_Kernel					
+};
+enum Histogram_Type {
+	GREEN_HISTOGRAM		,
+	BLUE_HISTOGRAM		,
+	RED_HISTOGRAM		,
+	RGB_HISTOGRAM
+
+};
+
 #define S_GRID 1236
 #define S_JPG 1237
 #define S_PNG 1238
 #define S_CONNECTED 1338
-
-
-
-
-
 #define degreesToRadians(angleDegrees) ((angleDegrees) * std::_Pi / 180.0)
 #define radiansToDegrees(angleRadians) ((angleRadians) * 180.0 / std::_Pi)
 
 
 
-template<class p_type> class Point {
+template<class p_type>
+class Point {
 public:
-	p_type x, y, z;
-
-	Point() {
-		x = y = z = 0;
+	std::vector<p_type> p_members;
+	Point() {};	
+	Point(int const &amount_of_zeros) {
+		for (int i = 0; i < amount_of_zeros; i++) {
+			p_members.emplace_back(0);
+		}
+	};
+	Point(std::initializer_list<p_type> args) {
+		for (auto& i : args)
+		{
+			this->p_members.emplace_back(i);
+		}
 	}
-	Point(p_type x, p_type y) {
-		this->x = x;
-		this->y = y;
-		this->z = 0;
-	}
-	Point(p_type x, p_type y, p_type z) {
-		this->x = x;
-		this->y = y;
-		this->z = z;
+	int size() const {
+		return (int)this->p_members.size();
 	}
 	double get_Distance(Point<p_type> const &point_B) {
-		return sqrt(((point_B.x - this->x)*(point_B.x - this->x)) + ((point_B.y - this->y)*(point_B.y - this->y)) + ((point_B.z - this->z)*(point_B.z - this->z)));
+		assert(this->size() == point_B.size());
+		double res = 0;
+		for (int i = 0; i < this->size(); i++) {
+			res += (point_B.p_members[i] -this->p_members[i])*(point_B.p_members[i] - this->p_members[i]);
+		}
+		return std::sqrt(res);
 	}
 	static double get_Squared_Distance(Point<p_type> const &point_A, Point<p_type> const &point_B) {
-		return (SQUARE_IT((point_B.x - point_A.x)) + SQUARE_IT((point_B.y - point_A.y)) + SQUARE_IT((point_B.z - point_A.z)));
+		double dist = point_A.get_Distance(point_B);
+		return dist * dist;
 	}
-	Point<p_type> lerp(Point<p_type>  B, double amount) {
-		Point ret;
-		ret.x = this->x + (B.x - this->x)*amount;
-		ret.y = this->y + (B.y - this->y)*amount;
-		ret.z = this->z + (B.z - this->z)*amount;
-
+	Point<p_type> lerp(Point<p_type>  &B, double amount) {
+		assert(this->size() == B.size());
+		Point ret(this->size());
+		for (int i = 0; i < this->size(); i++)
+		{
+			ret[i] = this->p_members[i] + (B[i] - this->p_members[i])*amount;
+			
+		}
 		return ret;
 	}
-	void Divide_All(int Divider) {
-		this->x /= Divider;
-		this->y /= Divider;
-		this->z /= Divider;
-
+	void Divide_All(int &Divider) {
+		for (auto& i : p_members)
+		{
+			i /= Divider;
+		}
 	}
 	friend std::ostream &operator<<(std::ostream &out, Point const &pnt);
 
-	double X_Linear_Interpolation(Point B, double y_value) {
-		return (((y_value - this->y)*(B.x - this->x)) / (B.y - this->y) + this->x);
-
-	}
-	double Y_Linear_Interpolation(Point B, double x_value) {
-		return (x_value - this->x)*(B.y - this->y) / (B.x - this->x) + this->y;
-	}
-	double get_Slope(Point<p_type> const &point_B) {
-		return (point_B.y - this->y) / (point_B.x - this->x);
-	}
-	double get_Magnitude() {
-		return sqrt((SQUARE_IT(this->x)) + (SQUARE_IT(this->y)) + (SQUARE_IT(this->z)));
+	p_type &operator[](int const &index) {
+		assert(index < p_members.size());
+		return this->p_members[index];
 	}
 
 };
-template<class p_type> double X_Linear_Interpolation(Point<p_type> const &A, Point<p_type> const &B, p_type y_value) {
-	return (((y_value - A.y)*(B.x - A.x)) / (B.y - A.y) + A.x);
-}
-template<class p_type> double Y_Linear_Interpolation(Point<p_type> const &A, Point<p_type> const &B, p_type x_value) {
-	return (double)(x_value - A.x)*(B.y - A.y) / (B.x - A.x) + A.y;
-}
 void Quadratic_Equation(double const &a, double const &b, double const &c, double &result_root_a, double &result_root_b) {
 	result_root_a = (-b + std::sqrt(((b*b) - 4 * a*c))) / 2 * a;
 	result_root_b = ((-b - std::sqrt(((b*b) - 4 * a*c)))) / 2 * a;
 }
 template<class p_type> double Point_Dot_Product(Point<p_type> const &A, Point<p_type> const &B) {
-	return A.x*B.x + A.y*B.y + A.z*B.z;
+	assert(A.size() == B.size());
+	p_type res;
+	for (int i = 0; i < A.size(); i++)
+	{
+		res += A[i] * B[i];
+	}
+	return res;
 }
-template<class p_type> std::ostream &operator<<(std::ostream &out, Point< p_type> const &body) {
-	out << "[ " << body.x << ", " << body.y << ", " << body.z << " ]";
+template<class p_type> std::ostream &operator<<(std::ostream &out, Point< p_type> &body) {
+	out << "[ ";
+	for (int i = 0; i < body.size(); i++)
+	{
+		if (i + 1 != body.size()) {
+			out << body.p_members[i] << ", ";
+
+		}
+		else {
+			out << body.p_members[i];
+
+		}
+
+	}
+
+	out<< " ]";
 	return out;
 }
 template<class p_type> std::ostream &operator<<(std::ostream &out, std::vector<Point< p_type> > const &body) {
@@ -139,7 +162,7 @@ template<class p_type> std::ostream &operator<<(std::ostream &out, std::vector<P
 	return out;
 }
 template<class p_type> bool operator<(Point<p_type> const &A, Point<p_type> const &B) {
-	if (A.x < B.x || A.y < B.y || A.x < B.x) {
+	if (A[0] < B[0] || A[1] < B[1] || A[0] < B[0]) {
 		return true;
 	}
 	else {
@@ -166,8 +189,11 @@ template<class p_type> Point<p_type> Get_Largest_Point_In_Vector(std::vector<Poi
 }
 
 inline double Squared_Point_Distance(Point<double> first, Point<double> second) {
-	return (first.x - second.x)*(first.x - second.x) + (first.y - second.y)*(first.y - second.y) + (first.z - second.z)*(first.z - second.z);
+	return (first[0] - second[0])*(first[0] - second[0]) + (first[1] - second[1])*(first[1] - second[1]) + (first[2] - second[2])*(first[2] - second[2]);
 }
+
+
+
 
 
 
@@ -204,6 +230,11 @@ public:
 		this->Real = source.Real;
 		this->Imaginary = source.Imaginary;
 	}
+	void operator=(Complex &source) {
+		this->Real = source.Real;
+		this->Imaginary = source.Imaginary;
+	}
+
 	Complex operator+(Complex const &b) {
 		return Complex(this->Real + b.Real, this->Imaginary + b.Imaginary);
 	}
@@ -227,6 +258,18 @@ public:
 		return this->Log()*(x).Exp();
 
 	}
+	bool operator==(Complex const &b) {
+		if (b.Imaginary == this->Imaginary && this->Real == b.Real) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	bool operator!=(Complex const &b) {
+		return *this == b ? false : true;
+	}
+	
 	Complex Exp() {
 		double expReal = std::exp(Real);
 		return  Complex(expReal *  std::cos(Imaginary), expReal * std::sin(Imaginary));
@@ -288,79 +331,76 @@ public:
 					, Imaginary) * t);
 		}
 	}
-
+	Complex &operator++(int) {
+		this->Real++;
+		return *this;
+	}
 
 };
 
 
 std::vector<Complex> Discrete_Fourier_Transform(std::vector<int> &dat) {
 	std::vector<Complex> Res;
+	Res.reserve(dat.size());
+	int d_size = dat.size();
+
+
 	for (int k = 0; k < dat.size(); k++) {
 		Complex sum(0, 0);
 		for (int n = 0; n < dat.size(); n++) {
-			Complex exp_power(0, 2 * std::_Pi);
-			exp_power = exp_power * -1;
-			exp_power = exp_power / Complex(dat.size(), 0);
-			exp_power = exp_power * Complex(k, 0);
-			exp_power = exp_power * Complex(n, 0);
+			Complex exp_power(0, ((-2 * std::_Pi)/ d_size) *(k*n));
 			exp_power = exp_power.Exp();
-
-			sum = sum + (Complex(dat[n], 0) * exp_power);
+			exp_power.Real *= dat[n];
+			sum = sum + (exp_power);
 		}
-		Res.push_back(sum);
+		Res.emplace_back(sum);
 	}
 	return Res;
 }
 std::vector<Complex> Discrete_Fourier_Transform(std::vector<Complex> &dat) {
 	std::vector<Complex> Res;
+	Res.reserve(dat.size());
+	int d_size = dat.size();
 	for (int k = 0; k < dat.size(); k++) {
 		Complex sum(0, 0);
+		//sum = std::accumulate(dat.begin(), dat.end(), Complex::Zero(), [](Complex &v) {return Complex(0, 0); });
+		
 		for (int n = 0; n < dat.size(); n++) {
-			Complex exp_power(0, 2 * std::_Pi);
-			exp_power = exp_power * -1;
-			exp_power = exp_power / Complex(dat.size(), 0);
-			exp_power = exp_power * Complex(k, 0);
-			exp_power = exp_power * Complex(n, 0);
+			Complex exp_power(0, ((-2 * std::_Pi) / d_size) *(k*n));
 			exp_power = exp_power.Exp();
 
 			sum = sum + (dat[n] * exp_power);
 		}
-		Res.push_back(sum);
+		Res.emplace_back(sum);
 	}
 	return Res;
 }
 
 std::vector<double> Reverse_Discrete_Fourier_Transform(std::vector<Complex> &dat) {
 	std::vector<double> Res;
+	Res.reserve(dat.size());
+	int d_size = dat.size();
 	for (int k = 0; k < dat.size(); k++) {
 		Complex sum(0, 0);
 		for (int n = 0; n < dat.size(); n++) {
-			Complex exp_power(0, 2 * std::_Pi);
-			exp_power = exp_power * Complex(k, 0);
-			exp_power = exp_power * Complex(n, 0);
-			exp_power = exp_power / Complex(dat.size(), 0);
-
+			Complex exp_power(0, ((2 * std::_Pi)*(k*n))/ d_size);
 			exp_power = exp_power.Exp();
-
 			sum = sum + (dat[n] * exp_power);
 		}
 		sum = sum * (Complex(1, 0) / Complex(dat.size(), 0));
-		Res.push_back(sum.Real);
+		Res.emplace_back(sum.Real);
 	}
 	return Res;
 }
 std::vector<Complex> Reverse_Discrete_Fourier_Transform_Complex(std::vector<Complex> &dat) {
 	std::vector<Complex> Res;
+	Res.reserve(dat.size());
+	int d_size = dat.size();
 	for (int k = 0; k < dat.size(); k++) {
 		Complex sum(0, 0);
 		for (int n = 0; n < dat.size(); n++) {
-			Complex exp_power(0, 2 * std::_Pi);
-			exp_power = exp_power * Complex(k, 0);
-			exp_power = exp_power * Complex(n, 0);
-			exp_power = exp_power / Complex(dat.size(), 0);
-
+			Complex exp_power(0, ((2 * std::_Pi)*k*n)/d_size );
 			exp_power = exp_power.Exp();
-
 			sum = sum + (dat[n] * exp_power);
 		}
 		sum = sum * (Complex(1, 0) / Complex(dat.size(), 0));
@@ -385,9 +425,9 @@ int bitReverse(int n, int bits) {
 	return ((reversedN << count) & ((1 << bits) - 1));
 }
 void FFT(std::vector<Complex> &Values) {
-
-	int bits = (int)(std::log(Values.size()) / std::log(2));
-	for (int j = 1; j < Values.size() / 2; j++) {
+	int length = Values.size();
+	int bits = (int)(std::log(length) / std::log(2));
+	for (int j = 1; j < length / 2; j++) {
 
 		int swapPos = bitReverse(j, bits);
 		Complex temp = Values[j];
@@ -395,8 +435,8 @@ void FFT(std::vector<Complex> &Values) {
 		Values[swapPos] = temp;
 	}
 
-	for (int N = 2; N <= Values.size(); N <<= 1) {
-		for (int i = 0; i < Values.size(); i += N) {
+	for (int N = 2; N <= length; N <<= 1) {
+		for (int i = 0; i < length; i += N) {
 			for (int k = 0; k < N / 2; k++) {
 
 				int evenIndex = i + k;
@@ -405,7 +445,8 @@ void FFT(std::vector<Complex> &Values) {
 				Complex odd = Values[oddIndex];
 
 				double term = (-2 * std::_Pi * k) / (double)N;
-				Complex exp = (Complex(std::cos(term), std::sin(term))*(odd));
+				
+				Complex exp = Complex(std::cos(term), std::sin(term))*(odd);
 
 				Values[evenIndex] = even + (exp);
 				Values[oddIndex] = even - (exp);
@@ -413,6 +454,18 @@ void FFT(std::vector<Complex> &Values) {
 		}
 	}
 }
+
+Complex operator*(int const &num, Complex const &x) {
+	Complex copy(num*x.Real, num*x.Imaginary);
+	return copy;
+}
+Complex operator+(int const &num, Complex const &x) {
+	return Complex(num+x.Real, x.Imaginary);
+}
+Complex operator"" i(unsigned long long const y) {
+	return Complex(0, (double)y);
+}
+
 
 #endif // ! SIPLCOMPLEXSYSTEMS
 
@@ -444,6 +497,8 @@ std::istream &operator>>(std::istream &in, Complex &source) {
 	return in;
 }
 typedef std::vector<std::vector<Complex> > Complex_Matrix;
+
+
 
 class LabPixel {
 public:
@@ -482,9 +537,9 @@ public:
 	/*
 	 * public void RGB_to_LAB(Pixel RGB) { Point XYZ = this->RGB_to_XYZ(RGB); double
 	 * Xn = 95.0489; double Yn = 100; double Zn = 108.8840; this->L= 116 *
-	 * (LavConvFunction((XYZ.y/Yn))) - 16; this->A = 500 *
-	 * (LavConvFunction((XYZ.x/Xn)) - LavConvFunction((XYZ.y/Yn))); this->B = 200 *
-	 * (LavConvFunction((XYZ.y/Yn)) - LavConvFunction((XYZ.z/Zn)));
+	 * (LavConvFunction((XYZ[1]/Yn))) - 16; this->A = 500 *
+	 * (LavConvFunction((XYZ[0]/Xn)) - LavConvFunction((XYZ[1]/Yn))); this->B = 200 *
+	 * (LavConvFunction((XYZ[1]/Yn)) - LavConvFunction((XYZ[2]/Zn)));
 	 *
 	 * }
 	 */
@@ -756,7 +811,7 @@ LabPixel RGB_to_LAB(Pixel RGB) {
 	LabPixel result(lab[0], lab[1], lab[2]);
 	return result;
 }
-Point<double> LABtoXYZ(LabPixel lab) {
+Point<double> LABtoXYZ(LabPixel &lab) {
 	Point<double> xyz;
 
 	float y = ((float)lab.L + (float)16.0) / (float)116.0;
@@ -781,14 +836,14 @@ Point<double> LABtoXYZ(LabPixel lab) {
 	else
 		z = (float)((z - 16 / 116) / 7.787);
 
-	xyz.x = x * 95.0489;
-	xyz.y = y * 100;
-	xyz.z = z * 108.8840;
+	xyz[0] = x * 95.0489;
+	xyz[1] = y * 100;
+	xyz[2] = z * 108.8840;
 
 	return xyz;
 }
 Pixel XYZtoRGB(Point<double> XYZ) {
-	float x = (float)XYZ.x, y = (float)XYZ.y, z = (float)XYZ.z;
+	float x = (float)XYZ[0], y = (float)XYZ[1], z = (float)XYZ[2];
 	std::vector<int> rgb(3, 0);
 
 	x /= 100;
@@ -2344,9 +2399,6 @@ public:
 			}
 		}
 	}
-
-
-
 };
 Font_Sprite FSPRITE;
 
@@ -3329,7 +3381,7 @@ Font_Sprite FSPRITE;
 
 
 double squared_3Point_distance(Point<double> first, Point<double> second) {
-	return (first.x - second.x)*(first.x - second.x) + (first.y - second.y)*(first.y - second.y) + (first.z - second.z)*(first.z - second.z);
+	return (first[0] - second[0])*(first[0] - second[0]) + (first[1] - second[1])*(first[1] - second[1]) + (first[2] - second[2])*(first[2] - second[2]);
 }
 double Color_DistanceSq(Pixel a, Pixel b) {
 	double  recored;
@@ -3367,30 +3419,19 @@ int Color_Distance(Pixel a, Pixel b) {
 //
 
 
-template<class T> double getMean(std::vector<T> Data) {
+template<class T> double getMean(std::vector<T> &Data) {
 	double sum = 0;
-	for (int i = 0; i < Data.size(); i++) {
-		sum += Data[i];
-	}
-
+	sum = std::accumulate(Data.begin(), Data.end(), 0);
 	return sum / Data.size();
 }
-template<class T> double getMedian(std::vector<T> Data) {
-	std::vector<T> tmp;
-
-	tmp = Data;
+template<class T> double getMedian(std::vector<T> &Data) {
+	std::vector<T> tmp(Data);
 	std::sort(tmp.begin(), tmp.end());
-	if (tmp.size() % 2 == 0) {
-		return (double)(tmp[tmp.size() / 2] + (double)tmp[(tmp.size() / 2) - 1]) / 2;
-	}
-	else {
-
-		return tmp[tmp.size() / 2];
-	}
+	return tmp.size() % 2 == 0 ? (double)(tmp[tmp.size() / 2] + (double)tmp[(tmp.size() / 2) - 1]) / 2 : tmp[tmp.size() / 2];
 }
 template<class T>  double getStandard_Deviation(std::vector<T> Data) {
-	double mean = this->getMean(Data);
-	double sum = 0;
+	double mean = getMean(Data);
+	T sum = 0;
 	for (int i = 0; i < Data.size(); i++) {
 		sum += ((Data[i] - mean)*(Data[i] - mean));
 	}
@@ -3402,14 +3443,8 @@ template<class T> double getVariance(std::vector<T>  Data) {
 	double Deviation = getStandard_Deviation(Data);
 	return (Deviation)*(Deviation);
 }
-template<class T> T getMin(std::vector<T> Data) {
-	T min = std::numeric_limits<T>::max();
-	for (int i = 1; i < Data.size(); i++) {
-		if (Data[i] < min) {
-			min = Data[i];
-		}
-	}
-	return min;
+template<class T> T getMin(std::vector<T> &Data) {
+	return *std::min_element(Data.begin(),Data.end());
 }
 double nthRoot(int A, int N) {
 	double xPre = std::rand() % 10;
@@ -3430,6 +3465,7 @@ double nthRoot(int A, int N) {
 template<class T> T getMax(std::vector<std::vector<T> > data) {
 	int max = std::numeric_limits<T>::min();
 	for (int i = 0; i < data.size(); i++) {
+		//max = std::max_element(data[i].begin(), data[i].end());
 		for (int j = 0; j < data[i].size(); j++) {
 			std::vector<T> temp = data[i];
 			if (temp[j] > max) {
@@ -3437,9 +3473,6 @@ template<class T> T getMax(std::vector<std::vector<T> > data) {
 			}
 		}
 	}
-
-
-
 	return max;
 
 }
@@ -3459,14 +3492,8 @@ template<class T> T getMin(std::vector<std::vector<T> > data) {
 	return max;
 
 }
-template<class T> T getMax(std::vector<T> data) {
-	int max = std::numeric_limits<T>::max();
-	for (int j = 0; j < data.size(); j++) {
-		if (data[j] > max) {
-			max = data[j];
-		}
-	}
-	return max;
+template<class T> T getMax(std::vector<T> &data) {
+	return *std::max_element(data.begin(), data.end());
 }
 double Remap(double value, double fromMin, double fromMax, double toMin, double toMax)
 {
@@ -3611,13 +3638,15 @@ private:
 	unsigned int im_size;
 	int pos_X, pos_Y;
 	unsigned short MODE = 0;
+
 	void init_pixel_matrix() {
 
-
+		this->Pixel_Matrix.reserve(Image_Height);
 		for (int i = 0; i < this->Image_Height; i++) {
-			this->Pixel_Matrix.push_back(std::vector<Pixel>());
+			this->Pixel_Matrix.emplace_back();
+			this->Pixel_Matrix[i].reserve(this->Image_Width);
 			for (int j = 0; j < this->Image_Width; j++) {
-				this->Pixel_Matrix[i].push_back(Pixel(0, 0, 0));
+				this->Pixel_Matrix[i].emplace_back( 0, 0, 0 );
 			}
 		}
 
@@ -3653,6 +3682,19 @@ private:
 		}
 
 	}
+	void init_pixel_matrix(Pixel const &init_color) {
+
+		this->Pixel_Matrix.reserve(Image_Height);
+		for (int i = 0; i < this->Image_Height; i++) {
+			this->Pixel_Matrix.emplace_back();
+			this->Pixel_Matrix[i].reserve(this->Image_Width);
+			for (int j = 0; j < this->Image_Width; j++) {
+				this->Pixel_Matrix[i].emplace_back(init_color.r, init_color.g, init_color.b);
+			}
+		}
+
+	}
+
 	void BresenhamsLine(int start_y, int start_x, int target_y, int target_x, Pixel color) {
 		double dx, sx, dy, sy, err, e2;
 		double x0 = start_y, x1 = target_y, y0 = start_x, y1 = target_x;
@@ -3685,7 +3727,7 @@ private:
 
 		}
 	}
-	std::vector<Point<double> > K_Means(const std::vector<Point<double> >& data, size_t k, size_t number_of_iterations) {
+	std::vector<Point<double> > K_Means(const std::vector<Point<double> > &data, size_t k, size_t number_of_iterations) {
 		static std::random_device seed; //seed for psudo random engine 
 		static std::mt19937 random_number_generator(seed()); //merssene twisster using the PR seed
 		std::uniform_int_distribution<std::size_t> indices(0, data.size() - 1);
@@ -3719,9 +3761,9 @@ private:
 
 			for (size_t point = 0; point < data.size(); ++point) {
 				const auto cluster = assignments[point];
-				new_means[cluster].x += data[point].x;
-				new_means[cluster].y += data[point].y;
-				new_means[cluster].z += data[point].z;
+				new_means[cluster][0] += data[point].p_members[0];
+				new_means[cluster][1] += data[point].p_members[1];
+				new_means[cluster][2] += data[point].p_members[2];
 				counts[cluster] += 1;
 			}
 
@@ -3729,9 +3771,9 @@ private:
 			for (size_t cluster = 0; cluster < k; ++cluster) {
 				// Turn 0/0 into 0/1 to avoid zero division.
 				const auto count = std::max<std::size_t>(1, counts[cluster]);
-				means[cluster].x = new_means[cluster].x / count;
-				means[cluster].y = new_means[cluster].y / count;
-				means[cluster].z = new_means[cluster].z / count;
+				means[cluster][0] = new_means[cluster][0] / count;
+				means[cluster][1] = new_means[cluster][1] / count;
+				means[cluster][2] = new_means[cluster][2] / count;
 
 			}
 		}
@@ -3818,7 +3860,7 @@ public:
 				double	percent = percent_x * percent_y;
 				
 
-				Set_Color(j, i, Pixel(Color.r*percent, Color.g*percent, Color.b*percent));
+				Set_Color((int)j, (int)i, Pixel((int)Color.r*percent, (int)Color.g*percent, (int)Color.b*percent));
 			}
 		}
 	}
@@ -4196,7 +4238,7 @@ public:
 				}
 			}
 
-			this->init_pixel_matrix();
+			this->init_pixel_matrix(Background_Color);
 
 		}
 		else if (mode == S_PNG) {
@@ -4243,9 +4285,9 @@ public:
 		this->Image_Height = tmp.Image_Height;
 	}
 
-	void Draw_Square(int center_x, int center_y, int param_a, int param_b, Pixel Color, int Mode = S_FILL) {
+	void Draw_Square(int center_x, int center_y, int param_a, int param_b, Pixel Color, int Mode = Draw_Modes::FILLED) {
 
-		if (Mode == S_FILL) {
+		if (Mode == Draw_Modes::FILLED) {
 
 			if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
 				std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
@@ -4261,7 +4303,7 @@ public:
 			this->Update_Pixel_Matrix();
 
 		}
-		else if (Mode == S_CHECKERED) {
+		else if (Mode == Draw_Modes::CHECKERED) {
 			if (center_x + param_a > this->Image_Width || center_y + param_b >= this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
 				std::cout << "Square Out Of Image Range, Action Aborted\nPlease Specify Size And Position In Image Range\n";
 				return;
@@ -4281,7 +4323,7 @@ public:
 				}
 			}
 		}
-		else if (Mode == S_CORNERS) {
+		else if (Mode == Draw_Modes::CORNERS) {
 
 			this->Draw_Line(center_x, center_y, param_a, center_y, Color);
 			this->Draw_Line(center_x, center_y, center_x, param_b, Color);
@@ -4291,7 +4333,7 @@ public:
 
 
 		}
-		else if (Mode == S_HOLLOW) {
+		else if (Mode == Draw_Modes::HOLLOW) {
 
 			if (center_x + param_a >= this->Image_Width || center_y + param_b >=
 				this->Image_Height || center_x - param_a < 0 || center_y - param_b < 0) {
@@ -4315,12 +4357,12 @@ public:
 		}
 	}
 
-	void Draw_Line(int start_Y, int start_X, int target_Y, int target_X, Pixel color, int Mode = S_DEFAULT) {
-		if (Mode == S_DEFAULT) {
+	void Draw_Line(int start_Y, int start_X, int target_Y, int target_X, Pixel color, int Mode = Draw_Modes::DEFAULT) {
+		if (Mode == Draw_Modes::DEFAULT) {
 			this->BresenhamsLine(start_Y, start_X, target_Y, target_X, color);
 			this->Update_Pixel_Matrix();
 		}
-		else if (Mode == S_AA_LINE) {
+		else if (Mode ==  Draw_Modes::ANTIALIAS_LINE) {
 
 			int x0 = start_X;
 			int y0 = start_Y;
@@ -4435,9 +4477,9 @@ public:
 
 	}
 
-	void Draw_Circle(int center_x, int center_y, int c_radius, Pixel color, int Mode = S_HOLLOW) {
+	void Draw_Circle(int center_x, int center_y, int c_radius, Pixel color, int Mode = Draw_Modes::HOLLOW) {
 
-		if (Mode == S_FILL) {
+		if (Mode == Draw_Modes::FILLED) {
 
 			int x = 0, y;
 			if (center_x + c_radius > Image_Width || center_x - c_radius <0 || center_y + c_radius > Image_Height || center_y - c_radius < 0) {
@@ -4454,7 +4496,7 @@ public:
 				}
 			}
 		}
-		else if (Mode == S_HOLLOW) {
+		else if (Mode == Draw_Modes::HOLLOW) {
 			int x, y, r2;
 			if (center_x + c_radius >= this->Image_Width || center_x - c_radius <= 0 || center_y + c_radius >= this->Image_Height || center_y - c_radius <= 0) {
 				std::cout << "Line Out Of Image Range\nDraw Action Aborted\n";
@@ -4487,7 +4529,7 @@ public:
 				Pixel_Matrix[center_y - x][center_x - y] = color;
 			}
 		}
-		else if (Mode == S_AA_HOLLOW) {
+		else if (Mode ==  Draw_Modes::ANTIALIAS_HOLLOW) {
 			if (center_x + c_radius >= this->Image_Width || center_x - c_radius <= 0 || center_y + c_radius >= this->Image_Height || center_y - c_radius <= 0) {
 				std::cout << "Line Out Of Image Range\nDraw Action Aborted\n";
 				return;
@@ -4527,1643 +4569,14 @@ public:
 
 
 		}
-		else if (Mode == S_AA_FILL) {
-			this->Draw_Circle(center_x, center_y, c_radius - 1, color, S_FILL);
-			this->Draw_Circle(center_x, center_y, c_radius, color, S_AA_HOLLOW);
+		else if (Mode == Draw_Modes::ANTIALIAS_FILLED) {
+			this->Draw_Circle(center_x, center_y, c_radius - 1, color, Draw_Modes::FILLED);
+			this->Draw_Circle(center_x, center_y, c_radius, color,  Draw_Modes::ANTIALIAS_HOLLOW);
 
 		}
 	}
 
-	/*void Draw_Text(int center_y, int center_x, std::string text, Pixel color) {
 
-		int text_length = (int)text.length();
-		int start_x, draw_y, flag = 0, temp = 0;
-		if (center_x + (9 * (text_length / 2)) > Image_Width || center_x - (9 * (text_length / 2)) < 0
-			|| center_y + 4 > Image_Height || center_y - 4 < 0) {
-			std::cout << "Text Longer The Image Frame, Aborting...\n";
-			return;
-		}
-
-		start_x = center_x - (9 * (text_length / 2));
-		draw_y = center_y - 4;
-
-		for (int i = 0; i < text.length(); i++) {
-
-			switch (text[i])
-			{
-
-			case '0':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Zero[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '1':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.One[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '2':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Two[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '3':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Three[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '4':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Four[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '5':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Five[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '6':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Six[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '7':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Seven[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '8':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Eight[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '9':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Nine[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'A':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.A[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'B':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.B[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'C':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.C[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'D':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.D[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'E':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.E[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'F':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.F[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'G':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.G[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'H':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.H[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'I':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.I[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'J':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.J[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'K':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.K[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'L':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.L[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'M':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.M[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'N':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.N[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'O':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.O[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'P':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.P[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'Q':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Q[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'R':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.R[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'S':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.S[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'T':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.T[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'U':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.U[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'V':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.V[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'W':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.W[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-
-				break;
-
-			case 'X':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.X[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'Y':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Y[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'Z':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Z[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'a':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.a[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'b':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.b[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'c':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.c[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'd':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.d[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'e':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.e[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'f':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.f[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'g':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.g[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'h':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.h[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'i':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.i[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'j':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.j[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'k':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.k[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'l':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.l[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'm':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.m[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'n':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.n[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'o':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.o[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'p':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.p[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'q':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.q[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case 'r':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.r[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 's':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.S[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 't':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.t[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'u':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.u[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'v':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.v[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'w':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.w[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-
-				break;
-
-			case 'x':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.x[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'y':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.y[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case 'z':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.z[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '?':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.question_mark[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '!':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.exclamation_point[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '(':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Left_Braket[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case ')':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Right_Braket[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '&':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Ampersand[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case ',':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Comma[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case '[':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Square_Braket_Left[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-			case ']':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Square_Braket_Right[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case ' ':
-				temp += 9;
-				break;
-
-			case ':':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Colon[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case '=':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.EqualSign[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case '+':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.PlusSign[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case '%':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Precent[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case '*':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Astersik[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case '.':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Dot[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-			case ';':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.Semi_Colon[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-			case '-':
-				temp = start_x;
-				while (flag != 81) {
-
-					if ((flag + 1) % 9 == 0) {
-						draw_y++;
-						start_x = temp;
-					}
-					if (TYPELOADF.MinusSign[flag] == 1) {
-						this->Set_Color(draw_y, start_x, color);
-						Pixel_Matrix[draw_y][start_x] = color;
-
-					}
-					start_x++;
-					flag++;
-				}
-
-				flag = 0;
-				break;
-
-
-
-			default:
-				break;
-
-
-			}
-
-
-
-			draw_y = center_y - 4;
-			start_x = temp;
-			start_x += 9;
-
-		}
-
-
-
-	}*/
 
 	void Draw_Text(int const &y, int const &x, const std::string& sText, Pixel const &col = Pixel(0,0,0), uint32_t scale = 1) {
 
@@ -6704,7 +5117,7 @@ public:
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
 				if (Pixel_Matrix[i][j] == Target) {
-					this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+					this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 				}
 			}
 		}
@@ -6717,7 +5130,7 @@ public:
 			for (int i = 0; i < Image_Height; i++) {
 				for (int j = 0; j < Image_Width; j++) {
 					if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-						this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+						this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 					}
 				}
 			}
@@ -6726,7 +5139,7 @@ public:
 			for (int i = 0; i < Source.Image_Height; i++) {
 				for (int j = 0; j < Source.Image_Width; j++) {
 					if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-						this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+						this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 					}
 				}
 			}
@@ -6740,7 +5153,7 @@ public:
 				for (int i = 0; i < Image_Height; i++) {
 					for (int j = 0; j < Image_Width; j++) {
 						if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 						}
 					}
 				}
@@ -6749,7 +5162,7 @@ public:
 				for (int i = 0; i < Source.Image_Height; i++) {
 					for (int j = 0; j < Source.Image_Width; j++) {
 						if (Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j]) {
-							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 						}
 					}
 				}
@@ -6761,7 +5174,7 @@ public:
 				for (int i = 0; i < Image_Height; i++) {
 					for (int j = 0; j < Image_Width; j++) {
 						if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50) {
-							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 						}
 					}
 				}
@@ -6770,7 +5183,7 @@ public:
 				for (int i = 0; i < Source.Image_Height; i++) {
 					for (int j = 0; j < Source.Image_Width; j++) {
 						if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) < 50) {
-							this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+							this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 						}
 					}
 				}
@@ -6815,7 +5228,7 @@ public:
 
 
 		for (int m = 0; m < Blobs.size(); ++m) {
-			this->Draw_Square(Blobs[m].Upleft_Y, Blobs[m].Upleft_X, Blobs[m].Downright_Y, Blobs[m].Downright_X, frame_color, S_CORNERS);
+			this->Draw_Square(Blobs[m].Upleft_Y, Blobs[m].Upleft_X, Blobs[m].Downright_Y, Blobs[m].Downright_X, frame_color, Draw_Modes::CORNERS);
 		}
 
 
@@ -6850,7 +5263,7 @@ public:
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
 				if (Color_Distance(this->Pixel_Matrix[i][j], Source.Pixel_Matrix[i][j]) > 2) {
-					this->Draw_Square(i, j, 2, 2, cset.Red, S_HOLLOW);
+					this->Draw_Square(i, j, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 				}
 			}
 		}
@@ -6865,12 +5278,11 @@ public:
 			return;
 		}
 		Color_Palette cset;
-
 		if (mode == ("Strict")) {
 			for (int i = 0; i < Image_Height; i++) {
 				for (int j = 0; j < Image_Width; j++) {
 					if (!(Pixel_Matrix[i][j] == Source.Pixel_Matrix[i][j])) {
-						this->Draw_Square(j, i, 2, 2, cset.Red, S_HOLLOW);
+						this->Draw_Square(j, i, 2, 2, cset.Red, Draw_Modes::HOLLOW);
 					}
 				}
 			}
@@ -7719,7 +6131,7 @@ public:
 	}
 	double Pixel_Dataframe_Difference(Pixel Pix, Point<double> DF_point) {
 		double distance;
-		distance = ((DF_point.x - Pix.r)*(DF_point.x - Pix.r) + (DF_point.y - Pix.g)*(DF_point.y - Pix.g) + (DF_point.z - Pix.b)*(DF_point.z - Pix.b));
+		distance = ((DF_point[0] - Pix.r)*(DF_point[0] - Pix.r) + (DF_point[1] - Pix.g)*(DF_point[1] - Pix.g) + (DF_point[2] - Pix.b)*(DF_point[2] - Pix.b));
 		return std::sqrt(distance);
 	}
 	void Image_Segmentation(int k, int iterations) {
@@ -7729,8 +6141,7 @@ public:
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				image_ThreeD_Mat.push_back(Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g,
-					this->Pixel_Matrix[i][j].b));
+				image_ThreeD_Mat.push_back(Point<double>({ (double)this->Pixel_Matrix[i][j].r, (double)this->Pixel_Matrix[i][j].g,(double)this->Pixel_Matrix[i][j].b }));
 			}
 		}
 
@@ -7751,9 +6162,9 @@ public:
 					}
 				}
 
-				Pixel_Matrix[i][j].r = (int)temp.x;
-				Pixel_Matrix[i][j].g = (int)temp.y;
-				Pixel_Matrix[i][j].b = (int)temp.z;
+				Pixel_Matrix[i][j].r = (int)temp[0];
+				Pixel_Matrix[i][j].g = (int)temp[1];
+				Pixel_Matrix[i][j].b = (int)temp[2];
 
 			}
 		}
@@ -7807,12 +6218,12 @@ public:
 
 		for (int k = 0; k < (int)Blobs.size(); ++k) {
 
-			Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, S_CORNERS);
-			//Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = new Pixel(CSET.Yellow);
+			Draw_Square(Blobs[k].Downright_X, Blobs[k].Downright_Y, Blobs[k].Upleft_X, Blobs[k].Upleft_Y, frame_color, Draw_Modes::CORNERS);
+			//Pixel_Matrix[Blobs.get(k).Upleft_X][Blobs.get(k).Upleft_Y] = new Pixel(CSET[1]ellow);
 			//Pixel_Matrix[Blobs.get(k).Downright_X][Blobs.get(k).Downright_Y] = new Pixel(CSET.Green);
 
 
-
+			
 		}
 	}
 
@@ -7866,7 +6277,7 @@ public:
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				imData.push_back(Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
+				imData.push_back(Point<double>({ (double)this->Pixel_Matrix[i][j].r, (double)this->Pixel_Matrix[i][j].g, (double)this->Pixel_Matrix[i][j].b }));
 			}
 		}
 
@@ -7878,9 +6289,9 @@ public:
 		lx = 0;
 
 		for (int m = 0; m < Means.size(); m++) {
-			palette_sample.r = (int)Means[m].x;
-			palette_sample.g = (int)Means[m].y;
-			palette_sample.b = (int)Means[m].z;
+			palette_sample.r = (int)Means[m][0];
+			palette_sample.g = (int)Means[m][1];
+			palette_sample.b = (int)Means[m][2];
 
 			for (int j = 0; j < 199; j++) {
 				palette_image.Draw_Line(j, lx, j, lx + 199, palette_sample);
@@ -7933,7 +6344,7 @@ public:
 
 		for (int i = 0; i < Image_Height; i++) {
 			for (int j = 0; j < Image_Width; j++) {
-				imData.push_back(Point<double>(this->Pixel_Matrix[i][j].r, this->Pixel_Matrix[i][j].g, this->Pixel_Matrix[i][j].b));
+				imData.push_back(Point<double>({ (double)this->Pixel_Matrix[i][j].r, (double)this->Pixel_Matrix[i][j].g, (double)this->Pixel_Matrix[i][j].b }));
 			}
 		}
 
@@ -7954,14 +6365,14 @@ public:
 				for (int m = 0; m < Average_Colors.size(); m++) {
 					if (Pixel_Dataframe_Difference(Pixel_Matrix[i][j], Average_Colors[m]) < best_dist) {
 						best_dist = Pixel_Dataframe_Difference(Pixel_Matrix[i][j], Average_Colors[m]);
-						temp.x = Average_Colors[m].x;
-						temp.y = Average_Colors[m].y;
-						temp.z = Average_Colors[m].z;
+						temp[0] = Average_Colors[m][0];
+						temp[1] = Average_Colors[m][1];
+						temp[2] = Average_Colors[m][2];
 
 					}
 				}
 
-				Pixel_Matrix[i][j] = Pixel((int)temp.x, (int)temp.y, (int)temp.z);
+				Pixel_Matrix[i][j] = Pixel((int)temp[0], (int)temp[1], (int)temp[2]);
 
 
 			}
@@ -8032,14 +6443,14 @@ public:
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
 				//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
-				Points.push_back(Point<double>(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
-					Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b));
+				Points.push_back(Point<double>({ (double)Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, (double)Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
+					(double)Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b }));
 				break;
 			}
 
 			//dots.push_back(this->Pixel_Matrix[(int)floor(x0)][(int)floor(y0)]);
-			Points.push_back(Point<double>(Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
-				Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b));
+			Points.push_back(Point<double>({ (double)Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].r, (double)Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].g,
+				(double)Pixel_Matrix[(int)std::floor(x0)][(int)std::floor(y0)].b }));
 
 			e2 = 2 * err;
 			if (e2 >= dy) {
@@ -8054,9 +6465,9 @@ public:
 		}
 
 		Res = K_Means(Points, 1, 100);
-		Dom_Color.r = (int)Res[0].x;
-		Dom_Color.g = (int)Res[0].y;
-		Dom_Color.b = (int)Res[0].z;
+		Dom_Color.r = (int)Res[0][0];
+		Dom_Color.g = (int)Res[0][1];
+		Dom_Color.b = (int)Res[0][2];
 
 		return Dom_Color;
 	}
@@ -8146,11 +6557,11 @@ public:
 		err = dx + dy;  //error value
 		while (true) {
 			if (x0 == x1 && y0 == y1) {
-				Points.push_back(Point<double>((int)x0, (int)y0, 0));
+				Points.push_back(Point<double>({ x0, y0, 0 }));
 				break;
 			}
 
-			Points.push_back(Point<double>((int)x0, (int)y0, 0));
+			Points.push_back(Point<double>({ x0, y0, 0 }));
 
 			e2 = 2 * err;
 			if (e2 >= dy) {
@@ -8288,17 +6699,11 @@ public:
 				c = pixels[index + this->Image_Width];
 				d = pixels[index + this->Image_Width + 1];
 
-				// blue element
-				// Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
 				blue = (float)(a.b *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.b*this->Image_Width*(1 - this->Image_Height) + c.b*this->Image_Height*(1 - this->Image_Width) +
 					d.b*this->Image_Height*this->Image_Width);
 
-				// green element
-				// Yg = Ag(1-w)(1-h) + Bg(w)(1-h) + Cg(h)(1-w) + Dg(wh)
 				green = (float)(a.g *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.g*this->Image_Width*(1 - this->Image_Height) + c.g*this->Image_Height*(1 - this->Image_Width) +
 					d.g*this->Image_Height*this->Image_Width);
-				// red element
-				// Yr = Ar(1-w)(1-h) + Br(w)(1-h) + Cr(h)(1-w) + Dr(wh)
 				red = (float)(a.r *((1 - this->Image_Width)*(1 - this->Image_Height)) + b.r*this->Image_Width*(1 - this->Image_Height) + c.r*this->Image_Height*(1 - this->Image_Width) +
 					d.r*this->Image_Height*this->Image_Width);
 
@@ -8324,8 +6729,8 @@ public:
 		int validation_level = 0;
 		int n_valid_bounty = 10;
 		Point<double> left_eye, right_eye;
-		left_eye.x = right_eye.x = 0;
-		left_eye.y = right_eye.y = 0;
+		left_eye[0] = right_eye[0] = 0;
+		left_eye[1] = right_eye[1] = 0;
 		Pixel black;
 		Pixel skin_graph, nose_graph, forhead_graph, chin_graph;
 		black.r = black.g = black.b = 0;
@@ -8335,8 +6740,8 @@ public:
 
 				if (flag == 0) {
 					if (Pixel_Matrix[i][j].r < treshold  && Pixel_Matrix[i][j].g < treshold && Pixel_Matrix[i][j].b < treshold) {
-						left_eye.x = j;
-						left_eye.y = i;
+						left_eye[0] = j;
+						left_eye[1] = i;
 						flag = 1;
 #ifdef FaceDebug	
 
@@ -8352,29 +6757,29 @@ public:
 						break;
 					}
 					else if (Pixel_Matrix[i][j].r < treshold && Pixel_Matrix[i][j].g < treshold && Pixel_Matrix[i][j].b < treshold && distance > 30) {
-						right_eye.x = j;
-						right_eye.y = i;
+						right_eye[0] = j;
+						right_eye[1] = i;
 						flag = 2;
 						//i += 4;
 #ifdef FaceDebug
 
 
 						Draw_Circle(j, i, 3, CSET.Red); //detected eye location -right eye
-						Draw_Circle((int)left_eye.x, (int)left_eye.y, 3, CSET.Green); //detected eye location -right eye
+						Draw_Circle((int)left_eye[0], (int)left_eye[1], 3, CSET.Green); //detected eye location -right eye
 #endif
 
 
 					//defenition of skin graphs for validation sequance
-						skin_graph = Pixel_Matrix[(int)(left_eye.y)][(int)(left_eye.x) + (distance / 2)];
-						if ((left_eye.y) + (distance / 2) < Image_Height && (left_eye.x) + (distance / 2) < Image_Width) {
-							nose_graph = Pixel_Matrix[(int)(left_eye.y) + (distance / 2)][(int)(left_eye.x) + (distance / 2)];
+						skin_graph = Pixel_Matrix[(int)(left_eye[1])][(int)(left_eye[0]) + (distance / 2)];
+						if ((left_eye[1]) + (distance / 2) < Image_Height && (left_eye[0]) + (distance / 2) < Image_Width) {
+							nose_graph = Pixel_Matrix[(int)(left_eye[1]) + (distance / 2)][(int)(left_eye[0]) + (distance / 2)];
 						}
-						if (left_eye.y - (distance / 4) > 0) {
-							forhead_graph = Pixel_Matrix[(int)(left_eye.y - (distance / 4))][(int)(left_eye.x) + (distance / 2)];
+						if (left_eye[1] - (distance / 4) > 0) {
+							forhead_graph = Pixel_Matrix[(int)(left_eye[1] - (distance / 4))][(int)(left_eye[0]) + (distance / 2)];
 						}
-						if (left_eye.y + 1.3*distance < Image_Height) {
+						if (left_eye[1] + 1.3*distance < Image_Height) {
 							int temp = (int)1.3*distance;
-							chin_graph = Pixel_Matrix[(int)(left_eye.y + (temp))][(int)(left_eye.x) + (distance / 2)];
+							chin_graph = Pixel_Matrix[(int)(left_eye[1] + (temp))][(int)(left_eye[0]) + (distance / 2)];
 						}
 						//
 
@@ -8388,11 +6793,11 @@ public:
 				}
 
 			}
-			if (flag == 2 && distance > 50 && left_eye.x + (distance / 2) < Image_Width &&
-				left_eye.y + (distance / 2) < Image_Height &&Color_Distance(Pixel_Matrix[(int)(left_eye.y) + (distance / 2)][(int)(left_eye.x) + (distance / 2)], black) > min_d) {
+			if (flag == 2 && distance > 50 && left_eye[0] + (distance / 2) < Image_Width &&
+				left_eye[1] + (distance / 2) < Image_Height &&Color_Distance(Pixel_Matrix[(int)(left_eye[1]) + (distance / 2)][(int)(left_eye[0]) + (distance / 2)], black) > min_d) {
 
 
-				skin_graph = Pixel_Matrix[(int)(left_eye.y)][(int)(left_eye.x) + (distance / 2)];
+				skin_graph = Pixel_Matrix[(int)(left_eye[1])][(int)(left_eye[0]) + (distance / 2)];
 
 				if (skin_graph.r < 120 && skin_graph.g < 120 && skin_graph.b < 120) {
 					continue;
@@ -8405,37 +6810,37 @@ public:
 
 #ifdef FaceDebug
 
-				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 3, CSET.Blue); //sking graph location
-				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 4, CSET.Red); //sking graph location
-				Draw_Circle((int)(left_eye.x) + (distance / 2), (int)(left_eye.y), 2, CSET.Green); //sking graph location
+				Draw_Circle((int)(left_eye[0]) + (distance / 2), (int)(left_eye[1]), 3, CSET.Blue); //sking graph location
+				Draw_Circle((int)(left_eye[0]) + (distance / 2), (int)(left_eye[1]), 4, CSET.Red); //sking graph location
+				Draw_Circle((int)(left_eye[0]) + (distance / 2), (int)(left_eye[1]), 2, CSET.Green); //sking graph location
 
-				Draw_Line((int)left_eye.y, (int)left_eye.x, (int)left_eye.y, (int)left_eye.x + distance / 2, CSET.Black); // line to cetner point 
+				Draw_Line((int)left_eye[1], (int)left_eye[0], (int)left_eye[1], (int)left_eye[0] + distance / 2, CSET.Black); // line to cetner point 
 #endif
-				if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye.y + distance / 2][(int)left_eye.x]) < grap_thresh) {
+				if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye[1] + distance / 2][(int)left_eye[0]]) < grap_thresh) {
 
-					if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye.y + distance / 2][(int)left_eye.x]) < skin_thresh) { // left chick cmp
+					if (Color_Distance(skin_graph, Pixel_Matrix[(int)left_eye[1] + distance / 2][(int)left_eye[0]]) < skin_thresh) { // left chick cmp
 
 						validation_level++; //level 1
 
-						if (Distance_Neighbors(treshold, (int)left_eye.y + distance / 2, (int)left_eye.x)) {
+						if (Distance_Neighbors(treshold, (int)left_eye[1] + distance / 2, (int)left_eye[0])) {
 							validation_level += n_valid_bounty;
 							std::cout << ("Validated --Neighbor-- left chick: " + validation_level) << "\n";
 
 						}
 						//#ifdef FaceDebug
-						Draw_Circle((int)(left_eye.x), (int)(left_eye.y) + (distance / 2), 3, CSET.White); //chick graph location -left eye-
-						Draw_Line((int)left_eye.y, (int)left_eye.x, (int)left_eye.y + distance / 2, (int)left_eye.x, CSET.White); // line to chick point -left eye-
+						Draw_Circle((int)(left_eye[0]), (int)(left_eye[1]) + (distance / 2), 3, CSET.White); //chick graph location -left eye-
+						Draw_Line((int)left_eye[1], (int)left_eye[0], (int)left_eye[1] + distance / 2, (int)left_eye[0], CSET.White); // line to chick point -left eye-
 						std::cout << ("Validated left chick: " + validation_level) << std::endl;
 						//#endif // FaceDebug
 
 
 					}
 
-					if (Color_Distance(skin_graph, Pixel_Matrix[(int)right_eye.y + distance / 2][(int)right_eye.x]) < skin_thresh) {//right chick
+					if (Color_Distance(skin_graph, Pixel_Matrix[(int)right_eye[1] + distance / 2][(int)right_eye[0]]) < skin_thresh) {//right chick
 						validation_level++; //level 2
 						std::cout << ("Validated Right chick: " + validation_level) << std::endl;
 
-						if (Distance_Neighbors(treshold, (int)right_eye.y + distance / 2, (int)right_eye.x)) {
+						if (Distance_Neighbors(treshold, (int)right_eye[1] + distance / 2, (int)right_eye[0])) {
 							validation_level += n_valid_bounty;
 							std::cout << ("Validated  --Neighbor-- right chick: " + validation_level) << std::endl;
 
@@ -8447,14 +6852,14 @@ public:
 
 					if (Color_Distance(skin_graph, forhead_graph) < grap_thresh) { //forhead vs skin center cmp
 #ifdef FaceDebug
-						Draw_Circle((int)left_eye.x + distance / 2, (int)left_eye.y - (distance / 4), 3, CSET.White); //at forhead
-						Draw_Line((int)left_eye.y, (int)left_eye.x + distance / 2, (int)left_eye.y - (distance / 4), (int)left_eye.x + distance / 2, CSET.White);
+						Draw_Circle((int)left_eye[0] + distance / 2, (int)left_eye[1] - (distance / 4), 3, CSET.White); //at forhead
+						Draw_Line((int)left_eye[1], (int)left_eye[0] + distance / 2, (int)left_eye[1] - (distance / 4), (int)left_eye[0] + distance / 2, CSET.White);
 
 #endif
 						validation_level++; //level 3
 						std::cout << ("Validated Forhead - Center: " + validation_level) << std::endl;
 
-						if (Distance_Neighbors(treshold, (int)left_eye.y - (distance / 4), (int)left_eye.x + distance / 2)) {
+						if (Distance_Neighbors(treshold, (int)left_eye[1] - (distance / 4), (int)left_eye[0] + distance / 2)) {
 							validation_level += n_valid_bounty;
 							std::cout << ("Validated  --Neighbor-- Forhead - Center: " + validation_level) << std::endl;
 
@@ -8468,14 +6873,14 @@ public:
 
 					if (Color_Distance(nose_graph, skin_graph) < grap_thresh) {//nose vs middle face cmp
 #ifdef FaceDebug
-						Draw_Circle((int)left_eye.x + distance / 2, (int)left_eye.y + distance / 2, 3, CSET.White);
-						//Draw_Line(left_eye.x + distance / 2, left_eye.y, left_eye.x + distance / 2, left_eye.y + (distance / 2), 'W');
+						Draw_Circle((int)left_eye[0] + distance / 2, (int)left_eye[1] + distance / 2, 3, CSET.White);
+						//Draw_Line(left_eye[0] + distance / 2, left_eye[1], left_eye[0] + distance / 2, left_eye[1] + (distance / 2), 'W');
 
 #endif
 						validation_level++; //level 4
 						std::cout << ("Validated Nose - Center: " + validation_level) << std::endl;
 
-						if (Distance_Neighbors(treshold, (int)left_eye.y + distance / 2, (int)left_eye.x + distance / 2)) {
+						if (Distance_Neighbors(treshold, (int)left_eye[1] + distance / 2, (int)left_eye[0] + distance / 2)) {
 							validation_level += n_valid_bounty;
 							std::cout << ("Validated  --Neighbor-- Nose - Center: " + validation_level) << std::endl;
 
@@ -8485,14 +6890,14 @@ public:
 
 					if (Color_Distance(chin_graph, skin_graph) < grap_thresh) {//chin vs middle face cmp
 #ifdef FaceDebug
-						Draw_Circle((int)left_eye.x + distance / 2, (int)(left_eye.y + 1.3*distance), 3, CSET.White);
-						Draw_Line((int)left_eye.y, (int)left_eye.x + distance / 2, (int)(left_eye.y + 1.3*(distance)), (int)left_eye.x + distance / 2, CSET.White);
+						Draw_Circle((int)left_eye[0] + distance / 2, (int)(left_eye[1] + 1.3*distance), 3, CSET.White);
+						Draw_Line((int)left_eye[1], (int)left_eye[0] + distance / 2, (int)(left_eye[1] + 1.3*(distance)), (int)left_eye[0] + distance / 2, CSET.White);
 
 #endif
 						validation_level++; //level 5
 						std::cout << ("Validated Chin - Center: " + validation_level) << std::endl;
 
-						if (Distance_Neighbors(treshold, (int)left_eye.y + (int)(1.3*distance), (int)left_eye.x + distance / 2)) {
+						if (Distance_Neighbors(treshold, (int)left_eye[1] + (int)(1.3*distance), (int)left_eye[0] + distance / 2)) {
 							validation_level += n_valid_bounty;
 							std::cout << ("Validated  --Neighbor-- Chin - Center: " + validation_level) << std::endl;
 
@@ -8509,14 +6914,14 @@ public:
 
 
 					//right eye validate for v2 yet to be added to calculation
-					Draw_Line((int)right_eye.y, (int)right_eye.x, (int)right_eye.y, (int)right_eye.x - distance / 2, CSET.Black); // line to cetner point from -right eye-
-					Draw_Circle((int)(right_eye.x), (int)(right_eye.y) + (distance / 2), 3, CSET.White); //chick graph location -right eye- 
-					Draw_Line((int)right_eye.y, (int)right_eye.x, (int)right_eye.y + distance / 2, (int)right_eye.x, CSET.White); // line to chick point -right eye-
+					Draw_Line((int)right_eye[1], (int)right_eye[0], (int)right_eye[1], (int)right_eye[0] - distance / 2, CSET.Black); // line to cetner point from -right eye-
+					Draw_Circle((int)(right_eye[0]), (int)(right_eye[1]) + (distance / 2), 3, CSET.White); //chick graph location -right eye- 
+					Draw_Line((int)right_eye[1], (int)right_eye[0], (int)right_eye[1] + distance / 2, (int)right_eye[0], CSET.White); // line to chick point -right eye-
 
 #endif
 
 					if (validation_level >= 30) {
-						Draw_Square((int)left_eye.x + distance / 2, (int)left_eye.y + distance / 2, distance, distance, CSET.Red);
+						Draw_Square((int)left_eye[0] + distance / 2, (int)left_eye[1] + distance / 2, distance, distance, CSET.Red);
 						i += 4;
 						validation_level = 0;
 					}
@@ -8836,7 +7241,7 @@ public:
 
 
 	void Image_Convolution(int Mode) {
-		if (Mode == S_Median_Filter) {
+		if (Mode == Convolution_Kernels::Median_Filter) {
 			std::vector<int> GroupR(9);
 			std::vector<int> GroupG(9);
 			std::vector<int> GroupB(9);
@@ -8896,7 +7301,7 @@ public:
 			this->Crop_Image(1, 1, this->Image_Height - 1, this->Image_Width - 1);
 
 		}
-		else if (Mode == S_Mean_Blur) {
+		else if (Mode == Convolution_Kernels::Mean_Blur) {
 
 			std::vector<std::vector<int> > Kernel(3);
 			Kernel[0] = std::vector<int>(3);
@@ -8961,7 +7366,7 @@ public:
 			this->Crop_Image(1, 1, this->Image_Height - 1, this->Image_Width - 1);
 
 		}
-		else if (Mode == S_Gaussian_Blur) {
+		else if (Mode == Convolution_Kernels::Gaussian_Blur) {
 			std::vector<std::vector<int> > Kernel(3);
 			Kernel[0] = std::vector<int>(3);
 			Kernel[1] = std::vector<int>(3);
@@ -9025,7 +7430,7 @@ public:
 			this->Crop_Image(1, 1, this->Image_Height - 1, this->Image_Width - 1);
 
 		}
-		else if (Mode == S_Low_Pass) {
+		else if (Mode == Convolution_Kernels::Low_Pass) {
 			std::vector<std::vector<double> > Kernel(3);
 			Kernel[0] = std::vector<double>(3);
 			Kernel[1] = std::vector<double>(3);
@@ -9089,7 +7494,7 @@ public:
 			this->Crop_Image(1, 1, this->Image_Height - 1, this->Image_Width - 1);
 
 		}
-		else if (Mode == S_High_Pass) {
+		else if (Mode == Convolution_Kernels::High_Pass) {
 			std::vector<std::vector<double> > Kernel(3);
 			Kernel[0] = std::vector<double>(3);
 			Kernel[1] = std::vector<double>(3);
@@ -9160,7 +7565,7 @@ public:
 			this->Commint_Matrix_Changes();
 
 		}
-		else if (Mode == S_High_Pass_Streached) {
+		else if (Mode == Convolution_Kernels::High_Pass_Streached) {
 			std::vector<std::vector<double> > Kernel(3);
 			Kernel[0] = std::vector<double>(3);
 			Kernel[1] = std::vector<double>(3);
@@ -9231,7 +7636,7 @@ public:
 			this->Commint_Matrix_Changes();
 
 		}
-		else if (Mode == S_Unsharp_Mask) {
+		else if (Mode == Convolution_Kernels::Unsharp_Mask) {
 			std::vector<std::vector<double> > Kernel(3);
 			Kernel[0] = std::vector<double>(3);
 			Kernel[1] = std::vector<double>(3);
@@ -9317,7 +7722,7 @@ public:
 
 
 		}
-		else if (Mode == S_Sobel_Kernel) {
+		else if (Mode == Convolution_Kernels::Sobel_Kernel) {
 			std::vector<std::vector<double> > Kernel_x(3);
 			Kernel_x[0] = std::vector<double>(3);
 			Kernel_x[1] = std::vector<double>(3);
@@ -9603,7 +8008,7 @@ public:
 				Pixel oldpixel = this->Pixel_Matrix[i][j];
 				Pixel newpixel;
 				for (int k = 0; k < Palette_Size; k++) {
-					double distance = ACP[k].get_Distance(Point<double>(oldpixel.r, oldpixel.g, oldpixel.b));
+					double distance = ACP[k].get_Distance(Point<double>({ (double)oldpixel.r, (double)oldpixel.g, (double)oldpixel.b }));
 					if (minDistance > distance) {
 						minDistance = distance;
 						//System.out.println(distance);
@@ -9612,7 +8017,7 @@ public:
 					}
 				}
 				minDistance = std::numeric_limits<double>::max();
-				newpixel = Pixel((int)ACP[pos].x, (int)ACP[pos].y, (int)ACP[pos].z);
+				newpixel = Pixel((int)ACP[pos][0], (int)ACP[pos][1], (int)ACP[pos][2]);
 				this->Pixel_Matrix[i][j] = newpixel;
 				double quant_error_r = (oldpixel.r - newpixel.r);
 				double quant_error_g = (oldpixel.g - newpixel.g);
@@ -9690,7 +8095,7 @@ public:
 		}
 		this->Load_Blank_Canvas(this->Image_Height, this->Image_Width, Pixel(0, 0, 0));
 		for (int i = 0; i < circles.size(); i++) {
-			this->Draw_Circle(circles[i].x, circles[i].y, circles[i].r, circles[i].Color, S_FILL);
+			this->Draw_Circle(circles[i].x, circles[i].y, circles[i].r, circles[i].Color, Draw_Modes::FILLED);
 		}
 
 
@@ -9780,9 +8185,9 @@ public:
 			B_Mean += i * ((double)Histogram_B[i] / (this->Image_Height*this->Image_Width));
 
 		}
-		Var.x = R_Mean;
-		Var.y = G_Mean;
-		Var.z = B_Mean;
+		Var[0] = R_Mean;
+		Var[1] = G_Mean;
+		Var[2] = B_Mean;
 
 
 
@@ -9810,9 +8215,9 @@ public:
 
 		}
 
-		Var.x = R_Var;
-		Var.y = G_Var;
-		Var.z = B_Var;
+		Var[0] = R_Var;
+		Var[1] = G_Var;
+		Var[2] = B_Var;
 
 
 
@@ -9840,9 +8245,9 @@ public:
 
 		}
 
-		Var.x = R_Var;
-		Var.y = G_Var;
-		Var.z = B_Var;
+		Var[0] = R_Var;
+		Var[1] = G_Var;
+		Var[2] = B_Var;
 
 
 
@@ -10124,6 +8529,24 @@ private:
 	}
 
 };
+std::vector<Matrix<int> > RGB_Decompose(Image &source) {
+	std::vector<Matrix<int> > Result(3);
+	for (int i = 0; i < 3; i++) {
+		Result[i] = Matrix<int>(source.Image_Height, source.Image_Width);
+	}
+
+	for (int i = 0; i < source.Image_Height; i++) {
+		for (int j = 0; j < source.Image_Width; j++) {
+			Result[0][i][j] = source[i][j].r;
+			Result[1][i][j] = source[i][j].g;
+			Result[2][i][j] = source[i][j].b;
+
+		}
+	}
+
+	return Result;
+
+}
 
 Image Matrix_To_Graysacle(Matrix<double> &source) {
 	Image Res;
@@ -10173,35 +8596,33 @@ Image Matrix_To_Graysacle(std::vector<std::vector<double> > &source) {
 
 Complex_Matrix Discrete_Fourier_Transform(Image &source) {
 	std::vector<std::vector<Complex> > Fourier_Matrix;
-	std::vector<std::vector<Complex> > Fourier_Matrix_B;
-	for (int i = 0; i < source.Image_Height; i++) {
-		Fourier_Matrix_B.push_back(std::vector<Complex>(source.Image_Width));
-		for (int j = 0; j < source.Image_Width; j++) {
-			Fourier_Matrix_B[i][j]=(Complex::Zero());
-		}
-
-	}
-
 	Fourier_Matrix.reserve(source.Image_Height);
+	std::vector<std::vector<Complex> > Fourier_Matrix_B(source.Image_Height, std::vector<Complex>(source.Image_Width));
+	Fourier_Matrix_B.reserve(source.Image_Height);
+
+	std::vector<Matrix<int> > RGB = RGB_Decompose(source);
 
 	for (int i = 0; i < source.Image_Height; i++) {
 		std::vector<int> sample_row;
-
-		for (int j = 0; j < source.Image_Width; j++) {
-			sample_row.push_back(source.Pixel_Matrix[i][j].r);
-		}
-		Fourier_Matrix.push_back(Discrete_Fourier_Transform(sample_row));
+		sample_row.reserve(source.Image_Width);
+		sample_row = RGB[0][i];
+		Fourier_Matrix.emplace_back(Discrete_Fourier_Transform(sample_row));
 
 	}
 
 	for (int i = 0; i < source.Image_Width; i++) {
 		std::vector<Complex> sample_row;
+		sample_row.reserve(source.Image_Height);
 
 		for (int j = 0; j < source.Image_Height; j++) {
-			sample_row.push_back(Fourier_Matrix[j][i]);
+			sample_row.emplace_back(Fourier_Matrix[j][i]);
 		}
 
+		//FFT(sample_row);
 		sample_row = Discrete_Fourier_Transform(sample_row);
+
+		
+
 
 		for (int j = 0; j < source.Image_Height; j++) {
 			Fourier_Matrix_B[j][i] = sample_row[j];
@@ -10294,19 +8715,19 @@ Matrix<double> Reverse_Discrete_Fourier_Transform(Complex_Matrix &source) {
 	return Fourier_Matrix_B;
 
 }
-std::pair<Image, Image> Fourier_Matrix_To_Image(std::vector<std::vector<Complex> > const &Complex_Matrix) {
+std::pair<Image, Image> Fourier_Matrix_To_Image(std::vector<std::vector<Complex> > const &Complex_Matrix,int const& light_mag = 15) {
 	Image amplitude, phase;
-	int h = Complex_Matrix.size(),w = Complex_Matrix[0].size();
+	int h = Complex_Matrix.size(), w = Complex_Matrix[0].size();
 	Color_Palette CSET;
 	amplitude.Load_Blank_Canvas(h, w, CSET.White);
 	phase.Load_Blank_Canvas(h, w, CSET.White);
 
-	int v = 30;
+	int v = light_mag;
 
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
-			amplitude.Set_Color(i, j, Pixel(v*std::log10(std::abs(Complex_Matrix[i][j].Real)),  v*std::log10(std::abs(Complex_Matrix[i][j].Real)), v*std::log10(std::abs(Complex_Matrix[i][j].Real))));
-			amplitude.Set_Color(i, j, Pixel(v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary)), v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary)), v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary))));
+			amplitude.Set_Color(i, j, Pixel(v*std::log10(std::abs(Complex_Matrix[i][j].Real)), v*std::log10(std::abs(Complex_Matrix[i][j].Real)), v*std::log10(std::abs(Complex_Matrix[i][j].Real))));
+			phase.Set_Color(i, j, Pixel(v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary)), v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary)), v*std::log10(std::abs(Complex_Matrix[i][j].Imaginary))));
 
 
 		}
@@ -10318,24 +8739,6 @@ std::pair<Image, Image> Fourier_Matrix_To_Image(std::vector<std::vector<Complex>
 
 
 
-std::vector<Matrix<int> > RGB_Decompose(Image &source) {
-	std::vector<Matrix<int> > Result(3);
-	for (int i = 0; i < 3; i++) {
-		Result[i] = Matrix<int>(source.Image_Height, source.Image_Width);
-	}
-
-	for (int i = 0; i < source.Image_Height; i++) {
-		for (int j = 0; j < source.Image_Width; j++) {
-			Result[0][i][j] = source[i][j].r;
-			Result[1][i][j] = source[i][j].g;
-			Result[2][i][j] = source[i][j].b;
-
-		}
-	}
-
-	return Result;
-
-}
 
 
 
@@ -10355,7 +8758,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10389,7 +8792,7 @@ namespace SPlot {
 			for (int i = 0; i < x_Values.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10423,7 +8826,7 @@ namespace SPlot {
 			Data = data;
 			x_label = X_Label;
 			y_label = Y_Label;
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			Max_X = std::numeric_limits<double>::min(),
 				Max_Y = std::numeric_limits<double>::min();
 			Min_X = std::numeric_limits<double>::max(),
@@ -10453,7 +8856,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], color));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10486,9 +8889,9 @@ namespace SPlot {
 		void Save_Plot(std::string File_Name) {
 
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, Draw_Modes::CORNERS);
 			Plot.Draw_Text(325, 750, y_label, CSET.Black);
 			Plot.Draw_Text(65, 400, x_label, CSET.Black);
 			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
@@ -10536,7 +8939,7 @@ namespace SPlot {
 				}
 
 			}
-			else if (mode == S_DEFAULT) {
+			else if (mode == Draw_Modes::DEFAULT) {
 				for (int i = 0; i < 5; i++) {
 
 					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
@@ -10556,8 +8959,8 @@ namespace SPlot {
 				b = Data[i].first;
 				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
-				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, Draw_Modes::ANTIALIAS_FILLED);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 			}
 
 			Plot.Write_Image(File_Name);
@@ -10599,7 +9002,7 @@ namespace SPlot {
 		double Max_X, Max_Y, Min_Y, Min_X;
 		std::string x_label, y_label;
 		Color_Palette CSET;
-		int mode = S_DEFAULT;
+		int mode = Draw_Modes::DEFAULT;
 		std::vector<int> seperators;
 
 	public:
@@ -10607,7 +9010,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10641,7 +9044,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10676,7 +9079,7 @@ namespace SPlot {
 			for (int i = 0; i < x_Values.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10710,7 +9113,7 @@ namespace SPlot {
 			Data = data;
 			x_label = X_Label;
 			y_label = Y_Label;
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			Max_X = std::numeric_limits<double>::min(),
 				Max_Y = std::numeric_limits<double>::min();
 			Min_X = std::numeric_limits<double>::max(),
@@ -10740,7 +9143,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], color));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -10773,9 +9176,9 @@ namespace SPlot {
 		void Save_Plot(std::string File_Name,int mod=0) {
 			
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, Draw_Modes::CORNERS);
 			Plot.Draw_Text(325, 750, y_label, CSET.Black);
 			Plot.Draw_Text(65, 400, x_label, CSET.Black);
 			double xx, yy;
@@ -10785,7 +9188,7 @@ namespace SPlot {
 				yy = Remap((float)0, (float)(Min_Y), (float)Max_Y, 565, 80);
 				Plot.Draw_Line(575, xx, 76, xx, CSET.Black);
 				Plot.Draw_Line(620, xx + 1, 76, xx + 1, CSET.Dark_Gray);
-				Plot.Draw_Text(630, xx - 4, "0", CSET.Black);
+				Plot.Draw_Text(630, (int)xx - 4, "0", CSET.Black);
 
 			}
 			std::ostringstream streamObj;
@@ -10799,10 +9202,10 @@ namespace SPlot {
 				xx = Remap((float)99 + m * amount * 2, (float)105, (float)720, Min_X, Max_X);
 
 
-				Plot.Draw_Text(595, 99 + m * amount * 2, GetPointTwoPrecision((xx)), CSET.Black);
+				Plot.Draw_Text(595, (int)(99 + m * amount * 2), GetPointTwoPrecision((xx)), CSET.Black);
 
 			}
-			Plot.Draw_Text(595, 90 + (4 - 1) * amount * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+			Plot.Draw_Text(595, (int)(90 + (4 - 1) * amount * 2), GetPointTwoPrecision(Max_X), CSET.Black);
 
 
 
@@ -10811,10 +9214,10 @@ namespace SPlot {
 			for (int m = 0; m < 4 - 1; m++) {
 				yy = Remap((float)575 - m * amounty * 2, (float)(565), (float)80, Min_Y, Max_Y);
 
-				Plot.Draw_Text(575 - m * amounty * 2, 40, GetPointTwoPrecision(yy), CSET.Black);
+				Plot.Draw_Text((int)(575 - m * amounty * 2), 40, GetPointTwoPrecision(yy), CSET.Black);
 
 			}
-			Plot.Draw_Text(575 - (4 - 1) * amounty * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+			Plot.Draw_Text((int)(575 - (4 - 1) * amounty * 2), 40, GetPointTwoPrecision(Max_Y), CSET.Black);
 
 
 
@@ -10831,7 +9234,7 @@ namespace SPlot {
 				}
 
 			}
-			else if (mode == S_DEFAULT) {
+			else if (mode == Draw_Modes::DEFAULT) {
 				for (int i = 0; i < 4; i++) {
 
 					double amount = 419 / 4;
@@ -10864,8 +9267,8 @@ namespace SPlot {
 					tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 					ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
 					Plot.Draw_Line((int)ty, (int)tx, 326, (int)tx, Data[i].second);
-					Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-					Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+					Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, Draw_Modes::ANTIALIAS_FILLED);
+					Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 
 				}
 			}
@@ -10928,8 +9331,8 @@ namespace SPlot {
 					ty2 = Remap((float)b2.second, (float)(Min_Y), (float)Max_Y, 565, 80);
 
 
-					Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-					Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+					Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, Draw_Modes::ANTIALIAS_FILLED);
+					Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 
 				}
 
@@ -10937,8 +9340,8 @@ namespace SPlot {
 				b = Data[Data.size() - 1].first;
 				tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 				ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
-				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size()-1].second, S_AA_FILL);
-				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size()-1].second, Draw_Modes::ANTIALIAS_FILLED);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 			}
 			Plot.Write_Image(File_Name);
 		}
@@ -11043,7 +9446,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -11077,7 +9480,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -11112,7 +9515,7 @@ namespace SPlot {
 			for (int i = 0; i < x_Values.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(std::pair<double, double>(x_Values[i], y_Values[i]), CSET.Royal_Blue));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -11146,7 +9549,7 @@ namespace SPlot {
 			Data = data;
 			x_label = X_Label;
 			y_label = Y_Label;
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			Max_X = std::numeric_limits<double>::min(),
 				Max_Y = std::numeric_limits<double>::min();
 			Min_X = std::numeric_limits<double>::max(),
@@ -11176,7 +9579,7 @@ namespace SPlot {
 			for (int i = 0; i < data.size(); i++) {
 				Data.push_back(std::pair<std::pair<double, double>, Pixel >(data[i], color));
 			}
-			mode = S_DEFAULT;
+			mode = Draw_Modes::DEFAULT;
 			x_label = X_Label;
 			y_label = Y_Label;
 			Max_X = std::numeric_limits<double>::min(),
@@ -11209,9 +9612,9 @@ namespace SPlot {
 		void Save_Plot(std::string File_Name, int markings=4) {
 
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, Draw_Modes::CORNERS);
 			Plot.Draw_Text(325, 730, y_label, CSET.Black);
 			Plot.Draw_Text(65, 400, x_label, CSET.Black);
 			double xx, yy;
@@ -11219,9 +9622,9 @@ namespace SPlot {
 			if (this->Min_X < 0) {
 				xx = Remap((float)0, (float)Min_X, (float)Max_X, 105, 720);
 				yy = Remap((float)0, (float)(Min_Y), (float)Max_Y, 565, 80);
-				Plot.Draw_Line(575, xx, 76, xx, CSET.Dark_Gray);
-				Plot.Draw_Line(620, xx + 1, 76, xx + 1, CSET.Dark_Gray);
-				Plot.Draw_Text(630, xx-4, "0", CSET.Black);
+				Plot.Draw_Line(575, (int)(xx), 76, xx, CSET.Dark_Gray);
+				Plot.Draw_Line(620, (int)(xx + 1), 76, xx + 1, CSET.Dark_Gray);
+				Plot.Draw_Text(630, (int)(xx-4), "0", CSET.Black);
 
 			}
 
@@ -11238,10 +9641,10 @@ namespace SPlot {
 				xx = Remap((float)99 + m * amount * 2, (float)105, (float)720, Min_X, Max_X);
 
 
-				Plot.Draw_Text(595, 99 + m * amount * 2, GetPointTwoPrecision((xx)), CSET.Black);
+				Plot.Draw_Text(595, (int)(99 + m * amount * 2), GetPointTwoPrecision((xx)), CSET.Black);
 
 			}
-			Plot.Draw_Text(595, 90 + (markings-1) * amount * 2, GetPointTwoPrecision(Max_X), CSET.Black);
+			Plot.Draw_Text(595, (int)(90 + (markings-1) * amount * 2), GetPointTwoPrecision(Max_X), CSET.Black);
 
 
 
@@ -11250,10 +9653,10 @@ namespace SPlot {
 			for (int m = 0; m < markings-1 ; m++) {
 				yy = Remap((float)575 - m * amounty * 2, (float)(565), (float)80, Min_Y, Max_Y);
 
-				Plot.Draw_Text(575 - m * amounty * 2, 40, GetPointTwoPrecision(yy), CSET.Black);
+				Plot.Draw_Text((int)(575 - m * amounty * 2), 40, GetPointTwoPrecision(yy), CSET.Black);
 
 			}
-			Plot.Draw_Text(575 - (markings - 1) * amounty * 2, 40, GetPointTwoPrecision(Max_Y), CSET.Black);
+			Plot.Draw_Text((int)(575 - (markings - 1) * amounty * 2), 40, GetPointTwoPrecision(Max_Y), CSET.Black);
 
 
 
@@ -11273,7 +9676,7 @@ namespace SPlot {
 				}
 
 			}
-			else if (mode == S_DEFAULT) {
+			else if (mode == Draw_Modes::DEFAULT) {
 				 amount = 419 / markings;
 				 amounty = 335 / markings;
 				for (int i = 0; i < markings; i++) {
@@ -11306,7 +9709,7 @@ namespace SPlot {
 					seperators.erase(seperators.begin());
 				}
 				else {
-					//Plot.Draw_Circle(tx, ty, 5, CSET.Red, S_AA_FILL);
+					//Plot.Draw_Circle(tx, ty, 5, CSET.Red,  Draw_Modes::ANTIALIADraw_Modes::FILLED);
 					//Cosine_Interpolate()
 
 
@@ -11319,12 +9722,12 @@ namespace SPlot {
 					}
 
 
-					//Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)nty, Data[i].second, S_AA_LINE);
+					//Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)nty, Data[i].second,  Draw_Modes::ANTIALIAS_LINE);
 			
 				}
 
-				//Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-				//Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+				//Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second,  Draw_Modes::ANTIALIADraw_Modes::FILLED);
+				//Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 			}
 			b = Data[Data.size()- 2].first;
 			b2 = Data[Data.size() - 1].first;
@@ -11342,8 +9745,8 @@ namespace SPlot {
 
 			}
 
-			//Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, S_AA_FILL);
-			//Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+			//Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second,  Draw_Modes::ANTIALIADraw_Modes::FILLED);
+			//Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 
 		
 			Plot.Write_Image(File_Name);
@@ -11373,6 +9776,7 @@ namespace SPlot {
 		}
 		void Add_Point(std::vector<std::pair<double, double> > new_points, Pixel const &color) {
 			seperators.push_back((int)(this->Data.size() - 1));
+			
 			for (int i = 0; i < new_points.size(); i++) {
 				if (new_points[i].first > Max_X) {
 					Max_X = new_points[i].first;
@@ -11427,11 +9831,12 @@ namespace SPlot {
 		}
 
 
+
 		Image Get_Image() {
 			Plot.Load_Blank_Canvas(650, 800, CSET.White_Smoke);
-			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, S_CORNERS);
-			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, S_CORNERS);
+			Plot.Draw_Square(75, 100, 575, 725, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(74, 99, 576, 726, CSET.Black, Draw_Modes::CORNERS);
+			Plot.Draw_Square(73, 98, 577, 727, CSET.Black, Draw_Modes::CORNERS);
 			Plot.Draw_Text(325, 750, y_label, CSET.Black);
 			Plot.Draw_Text(65, 400, x_label, CSET.Black);
 			double distX = (std::abs(Min_X) + std::abs(Max_X)) / 4;
@@ -11479,7 +9884,7 @@ namespace SPlot {
 				}
 
 			}
-			else if (mode == S_DEFAULT) {
+			else if (mode == Draw_Modes::DEFAULT) {
 				for (int i = 0; i < 5; i++) {
 
 					Plot.Draw_Line(575 - 62 * i * 2, 100, 575 - 62 * i * 2, 90, CSET.Black);
@@ -11507,16 +9912,16 @@ namespace SPlot {
 
 
 
-				Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)ty2, Data[i].second, S_AA_LINE);
+				Plot.Draw_Line((int)tx, (int)ty, (int)tx2, (int)ty2, Data[i].second,  Draw_Modes::ANTIALIAS_LINE);
 
-				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second, S_AA_FILL);
-				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+				Plot.Draw_Circle((int)tx, (int)ty, 3, Data[i].second,  Draw_Modes::ANTIALIAS_FILLED);
+				Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 			}
 			b = Data[Data.size() - 1].first;
 			tx = Remap((float)b.first, (float)Min_X, (float)Max_X, 105, 720);
 			ty = Remap((float)b.second, (float)(Min_Y), (float)Max_Y, 565, 80);
-			Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, S_AA_FILL);
-			Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke, S_AA_HOLLOW);
+			Plot.Draw_Circle((int)tx, (int)ty, 3, Data[Data.size() - 1].second, Draw_Modes::ANTIALIAS_FILLED);
+			Plot.Draw_Circle((int)tx, (int)ty, 4, CSET.White_Smoke,  Draw_Modes::ANTIALIAS_HOLLOW);
 
 			return Plot;
 		}
@@ -11542,9 +9947,9 @@ namespace SPlot {
 		}
 		Image histo;
 		histo.Load_Blank_Canvas(600, 755, CSET.White);
-		histo.Draw_Square(100, 100, 500, 640, CSET.Black, S_CORNERS);
-		histo.Draw_Square(99, 99, 501, 641, CSET.Black, S_CORNERS);
-		histo.Draw_Square(98, 98, 502, 642, CSET.Black, S_CORNERS);
+		histo.Draw_Square(100, 100, 500, 640, CSET.Black, Draw_Modes::CORNERS);
+		histo.Draw_Square(99, 99, 501, 641, CSET.Black, Draw_Modes::CORNERS);
+		histo.Draw_Square(98, 98, 502, 642, CSET.Black, Draw_Modes::CORNERS);
 
 		histo.Draw_Line(102, 90, 102, 99, CSET.Black);
 		histo.Draw_Text(102, 40, std::to_string(max_y), CSET.Black);
@@ -11638,9 +10043,9 @@ namespace SPlot {
 
 		Image histo;
 		histo.Load_Blank_Canvas(600, 755, CSET.White);
-		histo.Draw_Square(100, 100, 500, 640, CSET.Black, S_CORNERS);
-		histo.Draw_Square(99, 99, 501, 641, CSET.Black, S_CORNERS);
-		histo.Draw_Square(98, 98, 502, 642, CSET.Black, S_CORNERS);
+		histo.Draw_Square(100, 100, 500, 640, CSET.Black, Draw_Modes::CORNERS);
+		histo.Draw_Square(99, 99, 501, 641, CSET.Black, Draw_Modes::CORNERS);
+		histo.Draw_Square(98, 98, 502, 642, CSET.Black, Draw_Modes::CORNERS);
 
 		histo.Draw_Line(102, 90, 102, 99, CSET.Black);
 		for (int i = 0; i <= 400; i += 101) {
@@ -11665,7 +10070,7 @@ namespace SPlot {
 			histo.Draw_Text(520, 108 + i, std::to_string(i / 2), CSET.Black);
 		}
 
-		if (Channel == S_RED_HISTOGRAM) {
+		if (Channel == Histogram_Type::RED_HISTOGRAM) {
 			histo.Draw_Text(90, 345, "RED HISTOGRAM", CSET.Black);
 			for (int i = 0; i < 512; i += 2) {
 				histo.Draw_Line(499, 108 + i, 499 - (int)Remap(xxR[i / 2], 0, max_y, 0, 399 * Multiplyer), 108 + i, CSET.Red);
@@ -11674,7 +10079,7 @@ namespace SPlot {
 			}
 
 		}
-		else if (Channel == S_GREEN_HISTOGRAM) {
+		else if (Channel == Histogram_Type::GREEN_HISTOGRAM) {
 			histo.Draw_Text(90, 345, "GREEN HISTOGRAM", CSET.Black);
 			for (int i = 0; i < 512; i += 2) {
 				histo.Draw_Line(499, 108 + i, 499 - (int)Remap(xxG[i / 2], 0, max_y, 0, 399 * Multiplyer), 108 + i, CSET.Green);
@@ -11682,7 +10087,7 @@ namespace SPlot {
 			}
 
 		}
-		else if (Channel == S_BLUE_HISTOGRAM) {
+		else if (Channel == Histogram_Type::BLUE_HISTOGRAM) {
 			histo.Draw_Text(90, 345, "BLUE HISTOGRAM", CSET.Black);
 			for (int i = 0; i < 512; i += 2) {
 				histo.Draw_Line(499, 108 + i, 499 - (int)Remap(xxB[i / 2], 0, max_y, 0, 399 * Multiplyer), 108 + i, CSET.Blue);
@@ -11691,7 +10096,7 @@ namespace SPlot {
 			}
 
 		}
-		else if (Channel == S_RGB_HISTOGRAM) {
+		else if (Channel == Histogram_Type::RGB_HISTOGRAM) {
 			histo.Draw_Text(90, 345, "RGB HISTOGRAM", CSET.Black);
 			for (int i = 0; i < 512; i += 2) {
 				histo.Draw_Line(499, 108 + i, 499 - (int)Remap(xxR[i / 2], 0, max_y, 0, 399 * Multiplyer), 108 + i, CSET.Red);
@@ -11768,13 +10173,13 @@ namespace SPlot {
 
 		int label_frame_h = 100;
 		int addit = (int)Sizes.size() * 45;
-		Pie.Draw_Square(label_frame_h - 1, 519, label_frame_h + addit - 1, 749, Pixel(50, 50, 50), S_CORNERS);
-		Pie.Draw_Square(label_frame_h, 520, label_frame_h + addit, 750, Pixel(10, 10, 10), S_CORNERS);
-		Pie.Draw_Square(label_frame_h + 1, 521, label_frame_h + addit + 1, 751, CSET.Black, S_CORNERS);
+		Pie.Draw_Square(label_frame_h - 1, 519, label_frame_h + addit - 1, 749, Pixel(50, 50, 50), Draw_Modes::CORNERS);
+		Pie.Draw_Square(label_frame_h, 520, label_frame_h + addit, 750, Pixel(10, 10, 10), Draw_Modes::CORNERS);
+		Pie.Draw_Square(label_frame_h + 1, 521, label_frame_h + addit + 1, 751, CSET.Black, Draw_Modes::CORNERS);
 
 		Pie.Update_Pixel_Matrix();
 		for (int i = 1; i <= Sizes.size(); i++) {
-			Pie.Draw_Circle(545, label_frame_h - 20 + i * 45, 8, Colors[i - 1], S_FILL);
+			Pie.Draw_Circle(545, label_frame_h - 20 + i * 45, 8, Colors[i - 1], Draw_Modes::FILLED);
 		}
 		Pie.Commint_Matrix_Changes();
 		for (int i = 1; i <= Sizes.size(); i++) {
@@ -11790,4 +10195,1643 @@ namespace SPlot {
 
 	}
 
+
+
 }
+
+
+
+
+
+
+/*
+
+
+int text_length = (int)text.length();
+int start_x, draw_y, flag = 0, temp = 0;
+if (center_x + (9 * (text_length / 2)) > Image_Width || center_x - (9 * (text_length / 2)) < 0
+	|| center_y + 4 > Image_Height || center_y - 4 < 0) {
+	std::cout << "Text Longer The Image Frame, Aborting...\n";
+	return;
+}
+
+start_x = center_x - (9 * (text_length / 2));
+draw_y = center_y - 4;
+
+for (int i = 0; i < text.length(); i++) {
+
+	switch (text[i])
+	{
+
+	case '0':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF[2]ero[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '1':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.One[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '2':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Two[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '3':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Three[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '4':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Four[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '5':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Five[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '6':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Six[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '7':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Seven[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '8':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Eight[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '9':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Nine[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'A':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.A[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'B':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.B[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'C':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.C[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'D':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.D[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'E':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.E[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'F':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.F[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'G':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.G[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'H':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.H[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'I':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.I[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'J':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.J[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'K':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.K[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'L':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.L[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'M':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.M[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'N':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.N[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'O':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.O[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'P':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.P[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'Q':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Q[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'R':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.R[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'S':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.S[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'T':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.T[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'U':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.U[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'V':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.V[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'W':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.W[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+
+		break;
+
+	case 'X':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.X[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'Y':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF[1][flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'Z':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Z[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'a':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.a[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'b':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.b[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'c':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.c[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'd':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.d[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'e':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.e[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'f':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.f[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'g':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.g[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'h':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.h[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'i':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.i[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'j':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.j[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'k':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.k[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'l':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.l[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'm':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.m[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'n':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.n[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'o':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.o[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'p':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.p[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'q':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.q[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case 'r':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.r[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 's':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.S[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 't':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.t[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'u':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.u[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'v':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.v[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'w':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.w[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+
+		break;
+
+	case 'x':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.x[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'y':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF[1][flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case 'z':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.z[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case '?':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.question_mark[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case '!':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.exclamation_point[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case '(':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Left_Braket[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case ')':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Right_Braket[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case '&':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Ampersand[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case ',':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Comma[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case '[':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Square_Braket_Left[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+	case ']':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Square_Braket_Right[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case ' ':
+		temp += 9;
+		break;
+
+	case ':':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Colon[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case '=':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.EqualSign[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case '+':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.PlusSign[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case '%':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Precent[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case '*':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Astersik[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case '.':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Dot[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+	case ';':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.Semi_Colon[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+	case '-':
+		temp = start_x;
+		while (flag != 81) {
+
+			if ((flag + 1) % 9 == 0) {
+				draw_y++;
+				start_x = temp;
+			}
+			if (TYPELOADF.MinusSign[flag] == 1) {
+				this->Set_Color(draw_y, start_x, color);
+				Pixel_Matrix[draw_y][start_x] = color;
+
+			}
+			start_x++;
+			flag++;
+		}
+
+		flag = 0;
+		break;
+
+
+
+	default:
+		break;
+
+
+	}
+
+
+
+	draw_y = center_y - 4;
+	start_x = temp;
+	start_x += 9;
+
+}
+
+
+
+	}*/
